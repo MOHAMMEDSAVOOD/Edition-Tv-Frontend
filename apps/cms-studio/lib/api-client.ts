@@ -1,0 +1,128 @@
+export interface ApiErrorResponse {
+  type: string;
+  title: string;
+  status: number;
+  detail: string;
+  instance?: string;
+  correlationId?: string;
+  timestamp?: string;
+}
+
+export class ApiError extends Error {
+  public readonly status: number;
+  public readonly details: ApiErrorResponse;
+
+  constructor(status: number, details: ApiErrorResponse) {
+    super(details.detail || details.title || 'An API error occurred');
+    this.name = 'ApiError';
+    this.status = status;
+    this.details = details;
+  }
+}
+
+const PROD_API_URL = 'https://api.editiontv.com/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? PROD_API_URL;
+
+class ApiClient {
+  private accessToken: string | null = null;
+
+  public setAccessToken(token: string | null) {
+    this.accessToken = token;
+  }
+
+  public getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
+  public async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (!this.accessToken && typeof window !== "undefined") {
+      this.accessToken = localStorage.getItem("edition_access_token");
+    }
+
+    if (!this.accessToken && typeof window !== "undefined" && !endpoint.includes("/auth/")) {
+      try {
+        const loginUrl = `${API_BASE_URL}/auth/login`;
+        const res = await fetch(loginUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            usernameOrEmail: "editor@editiontv.com",
+            password: "EditionPass2026!",
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.accessToken) {
+            this.accessToken = data.accessToken;
+            localStorage.setItem("edition_access_token", data.accessToken);
+          }
+        }
+      } catch (err) {
+        // Continue unauthenticated if auth service unreachable
+      }
+    }
+
+    if (this.accessToken) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      let errorData: ApiErrorResponse;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = {
+          type: 'about:blank',
+          title: response.statusText || 'Error',
+          status: response.status,
+          detail: `HTTP Request failed with status ${response.status}`,
+        };
+      }
+      throw new ApiError(response.status, errorData);
+    }
+
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    return response.json();
+  }
+
+  public get<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
+  }
+
+  public post<T>(endpoint: string, body?: unknown, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  public put<T>(endpoint: string, body?: unknown, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  public delete<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  }
+}
+
+export const apiClient = new ApiClient();

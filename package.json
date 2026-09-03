@@ -1,0 +1,38 @@
+{
+  "name": "edition-platform-frontend-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:public-web",
+    "build": "npm run build:public-web",
+    "dev:public-web": "npm run dev --prefix apps/public-web",
+    "dev:cms": "npm run dev --prefix apps/cms-studio",
+    "dev:reporter": "npm run dev --prefix apps/reporter-studio",
+    "dev:live": "npm run dev --prefix apps/live-editorial",
+    "dev:ai": "npm run dev --prefix apps/ai-studio",
+    "dev:analytics": "npm run dev --prefix apps/analytics",
+    "dev:admin": "npm run dev --prefix apps/admin",
+    "build:public-web": "npm run build --prefix apps/public-web",
+    "build:cms": "npm run build --prefix apps/cms-studio",
+    "build:reporter": "npm run build --prefix apps/reporter-studio",
+    "build:live": "npm run build --prefix apps/live-editorial",
+    "build:ai": "npm run build --prefix apps/ai-studio",
+    "build:analytics": "npm run build --prefix apps/analytics",
+    "build:admin": "npm run build --prefix apps/admin",
+    "lint:public-web": "npm run lint --prefix apps/public-web",
+    "lint:cms": "npm run lint --prefix apps/cms-studio",
+    "lint:reporter": "npm run lint --prefix apps/reporter-studio",
+    "lint:live": "npm run lint --prefix apps/live-editorial",
+    "lint:ai": "npm run lint --prefix apps/ai-studio",
+    "lint:analytics": "npm run lint --prefix apps/analytics",
+    "lint:admin": "npm run lint --prefix apps/admin",
+    "lint": "npm run lint:public-web && npm run lint:cms && npm run lint:admin",
+    "format": "npx -y prettier --write \"**/*.{js,jsx,ts,tsx,json,md,css}\"",
+    "build:all": "npm run build:public-web && npm run build:cms && npm run build:reporter && npm run build:live && npm run build:ai && npm run build:analytics && npm run build:admin",
+    "lint:all": "npm run lint:public-web && npm run lint:cms && npm run lint:reporter && npm run lint:live && npm run lint:ai && npm run lint:analytics && npm run lint:admin"
+  }
+}

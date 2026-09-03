@@ -1,0 +1,744 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import {
+  X,
+  Download,
+  Copy,
+  Check,
+  Share2,
+  Globe,
+  Twitter,
+  Linkedin,
+  Facebook,
+  Send,
+  Mail,
+  MessageSquare,
+  Trophy,
+  Briefcase,
+  Cpu,
+  Landmark,
+} from "lucide-react";
+import { ArticleDetail } from "@/services/articleService";
+import { QRCodeSVG } from "./QRCodeSVG";
+
+interface StorySharePosterModalProps {
+  article: ArticleDetail;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function StorySharePosterModal({
+  article,
+  isOpen,
+  onClose,
+}: StorySharePosterModalProps) {
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedImage, setCopiedImage] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState<"poster" | "social">("poster");
+  const [previewScale, setPreviewScale] = useState(0.35);
+  const [wrapperHeight, setWrapperHeight] = useState(570);
+
+  // Automatic category detection
+  const categoryName = (article.category || "").toLowerCase();
+
+  const isPoliticsCategory =
+    categoryName.includes("politic") ||
+    categoryName.includes("gov") ||
+    categoryName.includes("election") ||
+    categoryName.includes("policy") ||
+    categoryName.includes("state");
+
+  const isTechnologyCategory =
+    categoryName.includes("tech") ||
+    categoryName.includes("technology") ||
+    categoryName.includes("ai") ||
+    categoryName.includes("science") ||
+    categoryName.includes("digital") ||
+    categoryName.includes("cyber") ||
+    categoryName.includes("gadget");
+
+  const isWorldCategory =
+    categoryName.includes("world") ||
+    categoryName.includes("global") ||
+    categoryName.includes("international") ||
+    categoryName.includes("foreign");
+
+  const isBusinessCategory =
+    categoryName.includes("business") ||
+    categoryName.includes("biz") ||
+    categoryName.includes("finance") ||
+    categoryName.includes("market") ||
+    categoryName.includes("economy");
+
+  const defaultFrameMode:
+    | "sports"
+    | "business"
+    | "world"
+    | "technology"
+    | "politics" = isPoliticsCategory
+    ? "politics"
+    : isTechnologyCategory
+    ? "technology"
+    : isWorldCategory
+    ? "world"
+    : isBusinessCategory
+    ? "business"
+    : "sports";
+
+  const [selectedCategoryFrame, setSelectedCategoryFrame] = useState<
+    "auto" | "sports" | "business" | "world" | "technology" | "politics"
+  >("auto");
+
+  const canonicalPosterRef = useRef<HTMLDivElement>(null);
+  const previewWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Dynamically compute preview scale while keeping canonical poster 1024x1536
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updateScale = () => {
+      if (previewWrapperRef.current) {
+        const wrapperWidth = previewWrapperRef.current.clientWidth;
+        if (wrapperWidth > 0) {
+          const scale = wrapperWidth / 1024;
+          setPreviewScale(scale);
+          setWrapperHeight(wrapperWidth * (1536 / 1024));
+        }
+      }
+    };
+
+    updateScale();
+    const timer = setTimeout(updateScale, 50);
+    window.addEventListener("resize", updateScale);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateScale);
+    };
+  }, [isOpen, activeTab]);
+
+  const [activePosterFrame, setActivePosterFrame] = useState<string>("");
+
+  const activeFrameMode =
+    selectedCategoryFrame === "auto"
+      ? defaultFrameMode
+      : selectedCategoryFrame;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+    const loadTemplate = async () => {
+      let base64 = "";
+      switch (activeFrameMode) {
+        case "politics":
+          base64 = (await import("./politicsPosterTemplateBase64")).POLITICS_POSTER_TEMPLATE_BASE64;
+          break;
+        case "technology":
+          base64 = (await import("./technologyPosterTemplateBase64")).TECHNOLOGY_POSTER_TEMPLATE_BASE64;
+          break;
+        case "world":
+          base64 = (await import("./worldPosterTemplateBase64")).WORLD_POSTER_TEMPLATE_BASE64;
+          break;
+        case "business":
+          base64 = (await import("./businessPosterTemplateBase64")).BUSINESS_POSTER_TEMPLATE_BASE64;
+          break;
+        default:
+          base64 = (await import("./sportsPosterTemplateBase64")).SPORTS_POSTER_TEMPLATE_BASE64;
+          break;
+      }
+      if (isMounted) setActivePosterFrame(base64);
+    };
+    loadTemplate();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, activeFrameMode]);
+
+  if (!isOpen) return null;
+
+  const currentUrl =
+    typeof window !== "undefined"
+      ? window.location.href
+      : `https://editiontv.com/articles/${article.slug}`;
+
+  const shareTitle = article.headline || article.title;
+  const shareText = `${shareTitle}\n\nRead full story on Edition TV:`;
+
+  const headlineText = article.headline || article.title || "";
+  const descriptionText = article.subtitle || article.summary || "";
+
+  // Dynamic Headline Font Sizing
+  const getHeadlineFontSize = (text: string) => {
+    if (text.length < 40) return "54px";
+    if (text.length < 75) return "46px";
+    return "38px";
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(currentUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  // Single Source of Truth HTML2Canvas Capture with onclone transform stripping
+  const captureCanonicalPoster = async () => {
+    const element = canonicalPosterRef.current;
+    if (!element) return null;
+
+    const html2canvasModule = await import("html2canvas");
+    const html2canvasFn = html2canvasModule.default;
+
+    return await html2canvasFn(element, {
+      useCORS: true,
+      allowTaint: true,
+      scale: 1,
+      width: 1024,
+      height: 1536,
+      windowWidth: 1024,
+      windowHeight: 1536,
+      backgroundColor: "#000000",
+      logging: false,
+      onclone: (clonedDoc, clonedElement) => {
+        // Strip preview CSS scale transform from cloned element and parents in the cloned document
+        clonedElement.style.transform = "none";
+        clonedElement.style.position = "relative";
+        clonedElement.style.left = "0px";
+        clonedElement.style.top = "0px";
+        clonedElement.style.margin = "0px";
+
+        let parent = clonedElement.parentElement;
+        while (parent) {
+          parent.style.transform = "none";
+          parent.style.width = "1024px";
+          parent.style.height = "1536px";
+          parent.style.margin = "0px";
+          parent.style.padding = "0px";
+          parent = parent.parentElement;
+        }
+      },
+    });
+  };
+
+  const handleDownloadPoster = async () => {
+    setGenerating(true);
+    try {
+      const canvas = await captureCanonicalPoster();
+      if (!canvas) return;
+
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `${article.slug || "edition-tv"}-${activeFrameMode}-poster.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Failed to generate poster image:", err);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCopyPosterImage = async () => {
+    setGenerating(true);
+    try {
+      const canvas = await captureCanonicalPoster();
+      if (!canvas) return;
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob }),
+          ]);
+          setCopiedImage(true);
+          setTimeout(() => setCopiedImage(false), 2500);
+        } catch {
+          handleDownloadPoster();
+        }
+      });
+    } catch (err) {
+      console.error("Failed to copy poster image:", err);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: descriptionText,
+          url: currentUrl,
+        });
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      copyToClipboard();
+    }
+  };
+
+  const socialChannels = [
+    {
+      name: "X (Twitter)",
+      icon: Twitter,
+      color: "bg-black text-white hover:bg-zinc-800",
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`,
+    },
+    {
+      name: "LinkedIn",
+      icon: Linkedin,
+      color: "bg-[#0A66C2] text-white hover:bg-[#084e96]",
+      url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
+    },
+    {
+      name: "Facebook",
+      icon: Facebook,
+      color: "bg-[#1877F2] text-white hover:bg-[#135ab7]",
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
+    },
+    {
+      name: "WhatsApp",
+      icon: Send,
+      color: "bg-[#25D366] text-white hover:bg-[#1da851]",
+      url: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${currentUrl}`)}`,
+    },
+    {
+      name: "Telegram",
+      icon: Send,
+      color: "bg-[#229ED9] text-white hover:bg-[#1a7cae]",
+      url: `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareTitle)}`,
+    },
+    {
+      name: "Reddit",
+      icon: MessageSquare,
+      color: "bg-[#FF4500] text-white hover:bg-[#cc3700]",
+      url: `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(shareTitle)}`,
+    },
+    {
+      name: "Email",
+      icon: Mail,
+      color: "bg-slate-700 text-white hover:bg-slate-800",
+      url: `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(`${shareText}\n\n${currentUrl}`)}`,
+    },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-slate-950 text-white rounded-2xl shadow-2xl border border-slate-800 overflow-hidden my-auto">
+        {/* Modal Top Header Bar */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-900/90">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-red-600 text-white rounded-lg shadow-sm">
+              <Share2 className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-100 font-serif">
+                Edition TV Poster Generator
+              </h3>
+              <p className="text-[11px] text-slate-400 font-sans">
+                Canonical 1024 × 1536 px Social Media Poster Export
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-full text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Tab & Frame Selection */}
+        <div className="flex border-b border-slate-800 bg-slate-900/50 p-2 px-5 justify-between items-center flex-wrap gap-2">
+          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab("poster")}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-1.5 px-5 rounded-lg text-xs font-bold font-sans transition-all ${
+                activeTab === "poster"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              <span>Poster Template</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("social")}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-1.5 px-5 rounded-lg text-xs font-bold font-sans transition-all ${
+                activeTab === "social"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>Social Share Links</span>
+            </button>
+          </div>
+
+          {activeTab === "poster" && (
+            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+              <button
+                onClick={() => setSelectedCategoryFrame("sports")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  activeFrameMode === "sports"
+                    ? "bg-red-600/90 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Trophy className="h-3 w-3" />
+                <span>Sports</span>
+              </button>
+              <button
+                onClick={() => setSelectedCategoryFrame("business")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  activeFrameMode === "business"
+                    ? "bg-blue-600/90 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Briefcase className="h-3 w-3" />
+                <span>Business</span>
+              </button>
+              <button
+                onClick={() => setSelectedCategoryFrame("world")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  activeFrameMode === "world"
+                    ? "bg-emerald-600/90 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Globe className="h-3 w-3" />
+                <span>World</span>
+              </button>
+              <button
+                onClick={() => setSelectedCategoryFrame("technology")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  activeFrameMode === "technology"
+                    ? "bg-purple-600/90 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Cpu className="h-3 w-3" />
+                <span>Tech</span>
+              </button>
+              <button
+                onClick={() => setSelectedCategoryFrame("politics")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  activeFrameMode === "politics"
+                    ? "bg-amber-600/90 text-white"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Landmark className="h-3 w-3" />
+                <span>Politics</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Body Content */}
+        <div className="p-4 sm:p-6 space-y-6 max-h-[78vh] overflow-y-auto">
+          {activeTab === "poster" ? (
+            <div className="space-y-6">
+              {/* PREVIEW CONTAINER - VISUALLY SCALES THE SINGLE CANONICAL 1024x1536 POSTER */}
+              <div className="flex justify-center bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-900 overflow-hidden">
+                <div
+                  ref={previewWrapperRef}
+                  className="relative w-full max-w-[380px] rounded-xl overflow-hidden shadow-2xl border border-slate-800"
+                  style={{
+                    height: `${wrapperHeight}px`,
+                  }}
+                >
+                  {/* Scaled view of the exact 1024x1536 Canonical Poster */}
+                  <div
+                    style={{
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top left",
+                      width: "1024px",
+                      height: "1536px",
+                    }}
+                  >
+                    {/* CANONICAL 1024 × 1536 RENDERER (SINGLE SOURCE OF TRUTH FOR PREVIEW & EXPORT) */}
+                    <div
+                      ref={canonicalPosterRef}
+                      style={{
+                        position: "relative",
+                        width: "1024px",
+                        height: "1536px",
+                        backgroundColor: "#000000",
+                        overflow: "hidden",
+                        fontFamily: "'Georgia', 'Times New Roman', serif",
+                        userSelect: "none",
+                      }}
+                    >
+                      {/* LAYER 1: Real CMS Article Image Background (z-0) */}
+                      {article.featuredImageUrl ? (
+                        <div
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            backgroundImage: `url("${article.featuredImageUrl}")`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center 20%",
+                            backgroundRepeat: "no-repeat",
+                            filter: "brightness(0.92) contrast(1.08)",
+                            zIndex: 0,
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            background:
+                              "linear-gradient(135deg, #2a010a 0%, #090104 50%, #000000 100%)",
+                            zIndex: 0,
+                          }}
+                        />
+                      )}
+
+                      {/* LAYER 2A: Full-Width Top Header #E4002B Crimson Brand Glow (z-5) */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: "320px",
+                          background:
+                            "linear-gradient(to bottom, rgba(228, 0, 43, 0.50) 0%, rgba(228, 0, 43, 0.18) 55%, transparent 100%)",
+                          filter: "blur(20px)",
+                          pointerEvents: "none",
+                          zIndex: 5,
+                        }}
+                      />
+
+                      {/* LAYER 2B: Readability Dark Gradient (z-10) */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: "960px",
+                          background:
+                            "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.80) 60%, transparent 100%)",
+                          pointerEvents: "none",
+                          zIndex: 10,
+                        }}
+                      />
+
+                      {/* LAYER 3 & 4: Dynamic Headline & Description Container */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: "360px",
+                          left: "67px",
+                          right: "120px",
+                          textAlign: "left",
+                          zIndex: 20,
+                        }}
+                      >
+                        <h1
+                          style={{
+                            fontSize: getHeadlineFontSize(headlineText),
+                            fontWeight: 700,
+                            color: "#FFFFFF",
+                            fontFamily:
+                              "'Georgia', 'Times New Roman', 'Merriweather', serif",
+                            fontStyle: "normal",
+                            lineHeight: 1.2,
+                            letterSpacing: "-0.015em",
+                            margin: 0,
+                            padding: 0,
+                            display: "block",
+                            wordBreak: "break-word",
+                            filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.98))",
+                          }}
+                        >
+                          {headlineText}
+                        </h1>
+
+                        {/* LAYER 4: Dynamic CMS Article Description */}
+                        {descriptionText && (
+                          <p
+                            style={{
+                              marginTop: "16px",
+                              fontSize: "28px",
+                              lineHeight: 1.35,
+                              color: "#F8FAFC",
+                              fontFamily:
+                                "'Inter', 'Helvetica Neue', 'Arial', sans-serif",
+                              fontWeight: 600,
+                              fontStyle: "normal",
+                              margin: "16px 0 0 0",
+                              padding: 0,
+                              display: "block",
+                              wordBreak: "break-word",
+                              filter: "drop-shadow(0 3px 12px rgba(0,0,0,0.98))",
+                            }}
+                          >
+                            {descriptionText}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* LAYER 5: Dynamic Camera-Scannable QR Code Scanner (Placed EXACTLY inside white QR placeholder box: left=640px, top=1324px, width=135px, height=136px) */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: "640px",
+                          top: "1324px",
+                          width: "135px",
+                          height: "136px",
+                          backgroundColor: "#FFFFFF",
+                          borderRadius: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          padding: "4px",
+                          zIndex: 20,
+                        }}
+                      >
+                        <QRCodeSVG
+                          value={currentUrl}
+                          size={127}
+                          bgColor="#FFFFFF"
+                          fgColor="#000000"
+                        />
+                      </div>
+
+                      {/* LAYER 6: OFFICIAL TRANSPARENT PNG FRAME OVERLAY (z-30 - TOP LAYER) */}
+                      <img
+                        src={activePosterFrame}
+                        alt={`${activeFrameMode} Poster Frame`}
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          width: "1024px",
+                          height: "1536px",
+                          objectFit: "cover",
+                          pointerEvents: "none",
+                          zIndex: 30,
+                          opacity: 1,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={handleDownloadPoster}
+                  disabled={generating}
+                  className="flex items-center justify-center gap-2 bg-[#E50914] text-white font-bold text-xs py-3 px-4 rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>
+                    {generating
+                      ? "Exporting 1024×1536 PNG..."
+                      : "Download 1024×1536 Poster PNG"}
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleCopyPosterImage}
+                  disabled={generating}
+                  className="flex items-center justify-center gap-2 bg-slate-800 text-slate-100 font-bold text-xs py-3 px-4 rounded-xl hover:bg-slate-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50 border border-slate-700"
+                >
+                  {copiedImage ? (
+                    <>
+                      <Check className="h-4 w-4 text-emerald-400" />
+                      <span className="text-emerald-400">
+                        Copied Poster Image!
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 text-slate-300" />
+                      <span>Copy Poster to Clipboard</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Copy Direct Link */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-300 font-sans uppercase tracking-wider block">
+                  Direct Story Link
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={currentUrl}
+                    className="flex-1 px-3.5 py-2.5 text-xs border border-slate-800 bg-slate-950 rounded-xl font-mono text-slate-200 focus:outline-none"
+                  />
+                  <button
+                    onClick={copyToClipboard}
+                    className="flex items-center gap-1.5 bg-red-600 text-white font-bold text-xs py-2.5 px-4 rounded-xl hover:bg-red-700 transition-colors"
+                  >
+                    {copiedLink ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-white" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy Link</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Social Channels Grid */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-300 font-sans uppercase tracking-wider block">
+                  Share to Social Networks
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {socialChannels.map((channel) => {
+                    const Icon = channel.icon;
+                    return (
+                      <a
+                        key={channel.name}
+                        href={channel.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={`flex items-center gap-2.5 p-3 rounded-xl text-xs font-bold transition-all shadow-xs ${channel.color}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{channel.name}</span>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mobile Native Share Sheet */}
+              <div className="pt-4 border-t border-slate-800 text-center">
+                <button
+                  onClick={handleNativeShare}
+                  className="w-full flex items-center justify-center gap-2 bg-slate-800 text-slate-200 font-bold text-xs py-3 px-4 rounded-xl hover:bg-slate-700 transition-colors border border-slate-700"
+                >
+                  <Share2 className="h-4 w-4 text-red-500" />
+                  <span>Open System Share Sheet (Mobile / OS)</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

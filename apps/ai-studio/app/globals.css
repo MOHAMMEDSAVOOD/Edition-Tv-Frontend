@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* ChatGPT / Cursor style Sleek Dark Violet & Cyan AI Palette */
+  --background: 260 25% 6%;        /* Deep AI Night #0C0A12 */
+  --foreground: 260 10% 95%;
+  --card: 260 25% 9%;              /* #13101D */
+  --card-foreground: 260 10% 95%;
+  --popover: 260 25% 9%;
+  --popover-foreground: 260 10% 95%;
+  --primary: 263 70% 64%;          /* Vivid Purple #8B5CF6 */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 20% 15%;
+  --secondary-foreground: 260 10% 90%;
+  --muted: 260 20% 15%;
+  --muted-foreground: 260 10% 60%;
+  --accent: 189 94% 43%;           /* Neon Cyan #06B6D4 */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 260 20% 18%;
+  --input: 260 20% 18%;
+  --ring: 263 70% 64%;
+  --radius: 0.5rem;
+
+  --sidebar-bg: 260 25% 5%;
+  --sidebar-fg: 260 10% 90%;
+  --sidebar-border: 260 20% 14%;
+}
+
+.dark {
+  --background: 260 25% 6%;
+  --foreground: 260 10% 95%;
+  --card: 260 25% 9%;
+  --card-foreground: 260 10% 95%;
+  --popover: 260 25% 9%;
+  --popover-foreground: 260 10% 95%;
+  --primary: 263 70% 64%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 260 20% 15%;
+  --secondary-foreground: 260 10% 90%;
+  --muted: 260 20% 15%;
+  --muted-foreground: 260 10% 60%;
+  --accent: 189 94% 43%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 260 20% 18%;
+  --input: 260 20% 18%;
+  --ring: 263 70% 64%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html, body {
+  font-family: 'Inter', sans-serif;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ai-gradient-text {
+  background: linear-gradient(135deg, #A855F7 0%, #06B6D4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ai-glow {
+  box-shadow: 0 0 20px -5px rgba(139, 92, 246, 0.3);
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

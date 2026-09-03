@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Bloomberg Terminal / Control Room High-Contrast Dark Theme */
+  --background: 220 25% 4%;        /* Pitch Black / Dark Blue #080B10 */
+  --foreground: 40 100% 90%;       /* Bright Amber Light #FFF3D6 */
+  --card: 220 25% 7%;              /* #0E131C */
+  --card-foreground: 40 100% 90%;
+  --popover: 220 25% 7%;
+  --popover-foreground: 40 100% 90%;
+  --primary: 38 100% 50%;          /* Bloomberg Terminal Amber #FF9900 */
+  --primary-foreground: 0 0% 0%;
+  --secondary: 220 20% 12%;
+  --secondary-foreground: 40 100% 90%;
+  --muted: 220 20% 12%;
+  --muted-foreground: 220 15% 60%;
+  --accent: 38 100% 50%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 85% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 20% 16%;
+  --input: 220 20% 16%;
+  --ring: 38 100% 50%;
+  --radius: 0px;                   /* Sharp terminal corners */
+
+  --terminal-green: 142 76% 45%;
+  --terminal-amber: 38 100% 50%;
+  --terminal-red: 0 85% 60%;
+  --terminal-blue: 217 91% 60%;
+}
+
+.dark {
+  --background: 220 25% 4%;
+  --foreground: 40 100% 90%;
+  --card: 220 25% 7%;
+  --card-foreground: 40 100% 90%;
+  --popover: 220 25% 7%;
+  --popover-foreground: 40 100% 90%;
+  --primary: 38 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 220 20% 12%;
+  --secondary-foreground: 40 100% 90%;
+  --muted: 220 20% 12%;
+  --muted-foreground: 220 15% 60%;
+  --accent: 38 100% 50%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 85% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 20% 16%;
+  --input: 220 20% 16%;
+  --ring: 38 100% 50%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html, body {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  height: 100%;
+  overflow: hidden;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

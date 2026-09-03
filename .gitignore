@@ -1,0 +1,31 @@
+# Node / Next.js / Monorepo
+node_modules/
+.next/
+out/
+.open-next/
+.wrangler/
+build/
+*.log
+pnpm-debug.log*
+yarn-error.log*
+npm-debug.log*
+
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local Environment & Secrets
+.env
+.env.production
+.env.local
+.env.*.local
+*.pem
+*.key
+*.pfx
+
+# Local References
+.oss-references/
