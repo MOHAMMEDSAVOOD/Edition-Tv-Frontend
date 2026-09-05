@@ -286,7 +286,8 @@ export function NewsSourcesClient() {
       const token = apiClient.getAccessToken();
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch("http://localhost:8080/api/v1/admin/news-sources/opml/export", { headers });
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.editiontv.com/api/v1";
+      const res = await fetch(`${baseUrl}/admin/news-sources/opml/export`, { headers });
       if (res.ok) {
         const xmlText = await res.text();
         const blob = new Blob([xmlText], { type: "application/xml" });
@@ -307,7 +308,8 @@ export function NewsSourcesClient() {
       const token = apiClient.getAccessToken();
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
-      const res = await fetch("http://localhost:8080/api/v1/admin/news-sources/db/export", { headers });
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.editiontv.com/api/v1";
+      const res = await fetch(`${baseUrl}/admin/news-sources/db/export`, { headers });
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);

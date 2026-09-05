@@ -60,18 +60,14 @@ function getServerApiBaseUrl(): string {
   return (
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "http://localhost:8080/api/v1"
+    "https://api.editiontv.com/api/v1"
   );
 }
 
-/**
- * For Client Components: always uses the public URL embedded at build time.
- * Production fallback (commented out for dev testing): "https://api.editiontv.com/api/v1"
- */
 const CLIENT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8080/api/v1";
+  "https://api.editiontv.com/api/v1";
 
 // ---------------------------------------------------------------------------
 // 1. serverFetch — use ONLY in Server Components

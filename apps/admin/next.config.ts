@@ -5,8 +5,8 @@ import path from "path";
 // Prod → NEXT_PUBLIC_API_URL=https://edition-tv-backend.onrender.com/api/v1 (from .env.production)
 // Production origin (commented out for dev testing): "https://edition-tv-backend.onrender.com/api/v1"
 const backendOrigin =
-  (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1")
-    .replace(/\/api\/v1\/?$/, ""); // strip path — rewrite only needs the origin
+  (process.env.NEXT_PUBLIC_API_URL ?? "https://api.editiontv.com/api/v1")
+    .replace(/\/api\/v1\/?$/, "");
 
 const nextConfig: NextConfig = {
   output: "standalone",
