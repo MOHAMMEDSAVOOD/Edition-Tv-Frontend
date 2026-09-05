@@ -10,29 +10,33 @@ export interface LoginRequest {
 export interface RegisterRequest {
   fullName: string;
   email: string;
-  passwordHash: string;
+  password?: string;
+  passwordHash?: string;
 }
 
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  tokenType: string;
-  userId: string;
-  email: string;
-  roles: string[];
+  tokenType?: string;
+  expiresIn?: number;
+  userId?: string;
+  email?: string;
+  roles?: string[];
 }
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     const payload = {
-      usernameOrEmail: credentials.email,
-      password: credentials.passwordHash
+      usernameOrEmail: credentials.username || credentials.email,
+      email: credentials.email || credentials.username,
+      password: credentials.password || credentials.passwordHash,
     };
     const res = await apiClient.post<AuthResponse>("/auth/login", payload);
     if (res.accessToken) {
       apiClient.setAccessToken(res.accessToken);
       if (typeof window !== "undefined") {
         localStorage.setItem("edition_access_token", res.accessToken);
+        document.cookie = `edition_access_token=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       }
     }
     return res;
@@ -43,13 +47,26 @@ export const authService = {
       fullName: data.fullName,
       email: data.email,
       username: data.email.split("@")[0],
-      password: data.passwordHash
+      password: data.password || data.passwordHash,
     };
     const res = await apiClient.post<AuthResponse>("/auth/register", payload);
     if (res.accessToken) {
       apiClient.setAccessToken(res.accessToken);
       if (typeof window !== "undefined") {
         localStorage.setItem("edition_access_token", res.accessToken);
+        document.cookie = `edition_access_token=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+      }
+    }
+    return res;
+  },
+
+  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    const res = await apiClient.post<AuthResponse>("/auth/refresh-token", { refreshToken });
+    if (res.accessToken) {
+      apiClient.setAccessToken(res.accessToken);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("edition_access_token", res.accessToken);
+        document.cookie = `edition_access_token=${res.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       }
     }
     return res;

@@ -22,7 +22,7 @@ interface UserSummary {
 }
 
 export function CmsAccountSwitcher() {
-  const [currentUser, setCurrentUser] = useState<string>("editor");
+  const [currentUser, setCurrentUser] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [userList, setUserList] = useState<UserSummary[]>([]);
@@ -30,14 +30,14 @@ export function CmsAccountSwitcher() {
   // Form State for Adding CMS Account
   const [newUsername, setNewUsername] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("EditionPass2026!");
+  const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("ROLE_EDITOR");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const u = localStorage.getItem("edition_username") || "editor";
+      const u = localStorage.getItem("edition_username") || "";
       setCurrentUser(u);
     }
     fetchCmsUsers();
@@ -49,32 +49,20 @@ export function CmsAccountSwitcher() {
       if (res.ok) {
         const data: UserSummary[] = await res.json();
         const cmsOnly = data.filter((u) => u.role !== "ROLE_ADMIN");
-        setUserList(cmsOnly.length > 0 ? cmsOnly : [
-          { id: "editor", username: "editor", email: "editor@editiontv.com", fullName: "Lead Editorial Director", role: "ROLE_EDITOR" },
-          { id: "journalist", username: "journalist", email: "journalist@editiontv.com", fullName: "Senior Journalist", role: "ROLE_REPORTER" },
-        ]);
-      } else {
-        setUserList([
-          { id: "editor", username: "editor", email: "editor@editiontv.com", fullName: "Lead Editorial Director", role: "ROLE_EDITOR" },
-          { id: "journalist", username: "journalist", email: "journalist@editiontv.com", fullName: "Senior Journalist", role: "ROLE_REPORTER" },
-        ]);
+        setUserList(cmsOnly);
       }
     } catch {
-      setUserList([
-        { id: "editor", username: "editor", email: "editor@editiontv.com", fullName: "Lead Editorial Director", role: "ROLE_EDITOR" },
-        { id: "journalist", username: "journalist", email: "journalist@editiontv.com", fullName: "Senior Journalist", role: "ROLE_REPORTER" },
-      ]);
+      // Keep empty if unreachable
     }
   };
 
   const handleSwitchAccount = async (targetUsername: string) => {
     setIsOpen(false);
-    try {
-      await authService.login(targetUsername, "EditionPass2026!");
-      window.location.reload();
-    } catch (err: unknown) {
-      alert(`Could not switch to ${targetUsername}: ${err instanceof Error ? err.message : 'Auth failed'}`);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("edition_username", targetUsername);
     }
+    setCurrentUser(targetUsername);
+    window.location.reload();
   };
 
   const handleAddCmsAccount = async (e: React.FormEvent) => {

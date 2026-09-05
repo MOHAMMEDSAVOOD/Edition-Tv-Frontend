@@ -7,6 +7,8 @@ import { ArticleReader } from "./ArticleReader";
 import { DirectPublishModal } from "./DirectPublishModal";
 import { PublicationDetailsModal } from "./PublicationDetailsModal";
 
+import { apiClient } from "../../lib/api-client";
+
 export function NewsReaderClient() {
   const [items, setItems] = useState<WireItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<WireItem | null>(null);
@@ -29,27 +31,29 @@ export function NewsReaderClient() {
   // Fetch Reader Stats
   const fetchStats = async () => {
     try {
-      const res = await fetch("/api/v1/newsroom/wire-items/stats");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<{ totalUnread?: number; totalStarred?: number; totalItems?: number }>("/newsroom/wire-items/stats");
+      if (data) {
         setUnreadCount(data.totalUnread || 0);
         setStarredCount(data.totalStarred || 0);
         setTotalCount(data.totalItems || 0);
       }
-    } catch (e) {
-      console.error("Failed to fetch reader stats", e);
+    } catch (e: any) {
+      if (e?.status === 429) {
+        console.warn("Rate limited (429) fetching reader stats. Will retry on next interval.");
+      } else {
+        console.error("Failed to fetch reader stats", e);
+      }
     }
   };
 
   // Fetch Categories & Sources
   const fetchCategories = async () => {
     try {
-      const res = await fetch("/api/v1/admin/news-sources");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<Array<{ id: string; name: string; categoryId?: string }>>("/admin/news-sources");
+      if (Array.isArray(data)) {
         const catMap: Record<string, FeedCategoryItem> = {};
 
-        data.forEach((src: { id: string; name: string; categoryId?: string }) => {
+        data.forEach((src) => {
           const catName = src.categoryId || "General Wire";
           if (!catMap[catName]) {
             catMap[catName] = {
@@ -68,8 +72,12 @@ export function NewsReaderClient() {
 
         setCategories(Object.values(catMap));
       }
-    } catch (e) {
-      console.error("Failed to fetch categories", e);
+    } catch (e: any) {
+      if (e?.status === 429) {
+        console.warn("Rate limited (429) fetching news sources.");
+      } else {
+        console.error("Failed to fetch categories", e);
+      }
     }
   };
 
@@ -90,17 +98,20 @@ export function NewsReaderClient() {
       if (selectedCategoryId) params.append("sourceId", selectedCategoryId);
       if (searchQuery) params.append("query", searchQuery);
 
-      const res = await fetch(`/api/v1/newsroom/wire-items/reader?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<{ content?: WireItem[] }>(`/newsroom/wire-items/reader?${params.toString()}`);
+      if (data) {
         const content = data.content || [];
         setItems(content);
         if (content.length > 0 && !selectedItem) {
           setSelectedItem(content[0]);
         }
       }
-    } catch (e) {
-      console.error("Failed to fetch wire stream", e);
+    } catch (e: any) {
+      if (e?.status === 429) {
+        console.warn("Rate limited (429) fetching wire items.");
+      } else {
+        console.error("Failed to fetch wire stream", e);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +131,7 @@ export function NewsReaderClient() {
     setSelectedItem(item);
     if (!item.read) {
       try {
-        await fetch(`/api/v1/newsroom/wire-items/${item.id}/read?read=true`, { method: "PUT" });
+        await apiClient.put(`/newsroom/wire-items/${item.id}/read?read=true`);
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, read: true } : i)));
         setUnreadCount((c) => Math.max(0, c - 1));
       } catch (e) {
@@ -132,7 +143,7 @@ export function NewsReaderClient() {
   const handleToggleRead = async (item: WireItem) => {
     const nextState = !item.read;
     try {
-      await fetch(`/api/v1/newsroom/wire-items/${item.id}/read?read=${nextState}`, { method: "PUT" });
+      await apiClient.put(`/newsroom/wire-items/${item.id}/read?read=${nextState}`);
       setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, read: nextState } : i)));
       if (selectedItem?.id === item.id) {
         setSelectedItem({ ...selectedItem, read: nextState });
@@ -146,7 +157,7 @@ export function NewsReaderClient() {
   const handleToggleStar = async (item: WireItem) => {
     const nextState = !item.starred;
     try {
-      await fetch(`/api/v1/newsroom/wire-items/${item.id}/star?starred=${nextState}`, { method: "PUT" });
+      await apiClient.put(`/newsroom/wire-items/${item.id}/star?starred=${nextState}`);
       setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, starred: nextState } : i)));
       if (selectedItem?.id === item.id) {
         setSelectedItem({ ...selectedItem, starred: nextState });
@@ -159,7 +170,7 @@ export function NewsReaderClient() {
 
   const handleMarkAllRead = async () => {
     try {
-      await fetch("/api/v1/newsroom/wire-items/mark-all-read", { method: "POST" });
+      await apiClient.post("/newsroom/wire-items/mark-all-read");
       setItems((prev) => prev.map((i) => ({ ...i, read: true })));
       setUnreadCount(0);
     } catch (e) {
@@ -169,9 +180,8 @@ export function NewsReaderClient() {
 
   const handleConvertToStory = async (item: WireItem) => {
     try {
-      const res = await fetch(`/api/v1/newsroom/wire-items/${item.id}/convert-to-story`, { method: "POST" });
-      if (res.ok) {
-        const updated: WireItem = await res.json();
+      const updated = await apiClient.post<WireItem>(`/newsroom/wire-items/${item.id}/convert-to-story`);
+      if (updated) {
         setItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
         if (selectedItem?.id === item.id) {
           setSelectedItem(updated);
@@ -185,7 +195,7 @@ export function NewsReaderClient() {
 
   const handleAssignToDesk = async (item: WireItem) => {
     try {
-      await fetch(`/api/v1/newsroom/wire-items/${item.id}/state?state=ASSIGNED`, { method: "PUT" });
+      await apiClient.put(`/newsroom/wire-items/${item.id}/state?state=ASSIGNED`);
       setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, state: "ASSIGNED" } : i)));
       if (selectedItem?.id === item.id) {
         setSelectedItem({ ...selectedItem, state: "ASSIGNED" });
@@ -207,18 +217,15 @@ export function NewsReaderClient() {
 
   const handleUnpublishFromPublicWeb = async (item: WireItem) => {
     try {
-      const res = await fetch(`/api/v1/newsroom/wire-items/${item.id}/unpublish`, { method: "POST" });
-      if (res.ok) {
-        setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, state: "WIRE_RAW" } : i)));
-        if (selectedItem?.id === item.id) {
-          setSelectedItem({ ...selectedItem, state: "WIRE_RAW" });
-        }
-        alert("Article successfully unpublished/paused from Edition TV Public Web!");
-      } else {
-        alert("Failed to unpublish article.");
+      await apiClient.post(`/newsroom/wire-items/${item.id}/unpublish`);
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, state: "WIRE_RAW" } : i)));
+      if (selectedItem?.id === item.id) {
+        setSelectedItem({ ...selectedItem, state: "WIRE_RAW" });
       }
+      alert("Article successfully unpublished/paused from Edition TV Public Web!");
     } catch (e) {
       console.error("Failed to unpublish from public web", e);
+      alert("Failed to unpublish article.");
     }
   };
 

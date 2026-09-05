@@ -4,7 +4,7 @@ import { ArticleFeedItem } from "@/services/feedService";
 function getHighResImageUrl(url?: string): string | undefined {
   if (!url || url.trim() === "") return undefined;
   if (url.includes("ichef.bbci.co.uk")) {
-    return url.replace(/\/standard\/\d+\//, "/standard/1024/").replace(/\/cpsprodpb\/\d+\//, "/cpsprodpb/1024/");
+    return url.replace(/\/standard\/\d+\//, "/standard/800/");
   }
   if (url.includes("w=") || url.includes("width=")) {
     return url.replace(/([?&]w=)\d+/gi, "$11200").replace(/([?&]width=)\d+/gi, "$11200");
@@ -36,41 +36,70 @@ function inferCategory(headline?: string, summary?: string): string {
 }
 
 export const feedMapper = {
-  toArticleFeedItem(dto: FeedItemResponseDto): ArticleFeedItem {
-    const publishedDate = dto.publishedAt ? new Date(dto.publishedAt) : new Date();
+  toArticleFeedItem(dto: any): ArticleFeedItem {
+    if (!dto) {
+      return {
+        id: "placeholder",
+        slug: "news-update",
+        headline: "News Story",
+        title: "News Story",
+        subtitle: "",
+        summary: "",
+        bodyHtml: "",
+        category: "World",
+        topic: "World",
+        authorId: "1",
+        authorName: "Edition News Desk",
+        authorTitle: "Correspondent",
+        publishedAt: new Date().toLocaleDateString("en-US"),
+        readingTime: "3 min read",
+        readingTimeMinutes: 3,
+        featuredImageUrl: "",
+        viewsCount: 100,
+        commentsCount: 0,
+        tags: ["world"],
+        summaryPoints: [],
+      };
+    }
+
+    const publishedDate = dto.publishedAt || dto.createdAt ? new Date(dto.publishedAt || dto.createdAt) : new Date();
     const formattedDate = publishedDate.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
 
-    const categoryName = (dto.category && dto.category !== "General") ? dto.category : inferCategory(dto.headline, dto.summary);
+    const headlineText = dto.headline || dto.title || dto.name || "News Update";
+    const summaryText = dto.summary || dto.content || dto.description || dto.leadParagraph || "Latest news update from Edition TV.";
+    const rawCategory = typeof dto.category === "string" ? dto.category : dto.category?.name;
+    const categoryName = (rawCategory && rawCategory !== "General") ? rawCategory : inferCategory(headlineText, summaryText);
 
     return {
-      id: dto.articleId || dto.id || `art-${dto.slug}`,
-      slug: dto.slug,
-      headline: dto.headline,
-      title: dto.headline,
-      subtitle: dto.summary || dto.headline,
-      summary: dto.summary || "Latest breaking analysis from Edition TV correspondents.",
-      bodyHtml: `<p>${dto.summary || dto.headline}</p>`,
+      id: String(dto.articleId || dto.id || dto.slug || Math.random()),
+      slug: dto.slug || String(dto.id || "news-article"),
+      headline: headlineText,
+      title: headlineText,
+      subtitle: summaryText,
+      summary: summaryText,
+      bodyHtml: `<p>${summaryText}</p>`,
       category: categoryName,
       topic: categoryName,
-      authorId: dto.authorId || "1",
-      authorName: dto.authorName || "Edition News Desk",
+      authorId: String(dto.authorId || dto.author?.id || "1"),
+      authorName: dto.authorName || dto.author?.name || dto.author?.username || "Edition News Desk",
       authorTitle: "Correspondent",
       publishedAt: formattedDate,
-      readingTime: "5 min read",
-      readingTimeMinutes: 5,
+      readingTime: "4 min read",
+      readingTimeMinutes: 4,
       featuredImageUrl: getHighResImageUrl(
         dto.featuredImageUrl ||
-        (dto as any).coverImageUrl ||
-        (dto as any).mediaThumbnailUrl ||
-        (dto as any).imageUrl ||
+        dto.coverImageUrl ||
+        dto.mediaThumbnailUrl ||
+        dto.imageUrl ||
+        dto.url ||
         ""
       ) || "",
-      viewsCount: dto.viewCount || 1000,
-      commentsCount: 12,
+      viewsCount: dto.viewCount || dto.viewsCount || 100,
+      commentsCount: dto.commentsCount || 0,
       tags: [categoryName.toLowerCase()],
       summaryPoints: [],
     };

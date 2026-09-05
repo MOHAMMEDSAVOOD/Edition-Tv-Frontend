@@ -21,14 +21,11 @@ export class ApiError extends Error {
 }
 
 // ─── API Base URL Resolution ──────────────────────────────────────────────────
-// DEV  → set via NEXT_PUBLIC_API_URL in each app's .env.development
-//         (resolves to https://api.editiontv.com/api/v1)
-// PROD → set via NEXT_PUBLIC_API_URL in each app's .env.production
-//         (resolves to https://api.editiontv.com/api/v1)
-//         Falls back to the Render production URL if the variable is missing.
-// ─────────────────────────────────────────────────────────────────────────────
-const PROD_API_URL = 'https://api.editiontv.com/api/v1';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? PROD_API_URL;
+// Production Base URL (commented out for dev testing):
+// const PROD_API_URL = 'https://api.editiontv.com/api/v1';
+// Localhost Dev Base URL:
+const DEV_API_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? DEV_API_URL;
 
 class ApiClient {
   private accessToken: string | null = null;

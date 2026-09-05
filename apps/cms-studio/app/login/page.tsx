@@ -22,23 +22,12 @@ import { authService } from "@/services/authService";
 
 export default function CmsLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("editor");
-  const [password, setPassword] = useState("EditionPass2026!");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  const presets = [
-    { label: "Editor Director", user: "editor", pass: "EditionPass2026!", role: "EDITORIAL DIRECTOR" },
-    { label: "Senior Journalist", user: "journalist", pass: "EditionPass2026!", role: "NEWS CORRESPONDENT" },
-  ];
-
-  const handlePresetSelect = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setError(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,40 +143,8 @@ export default function CmsLoginPage() {
                 Login
               </h2>
               <p className="text-sm text-slate-500 font-sans">
-                Login to your account. Select your editorial role to access the story composition workspace.
+                Login to your account. Enter your editorial credentials to access the story composition workspace.
               </p>
-            </div>
-
-            {/* Quick Editorial Role Selection */}
-            <div>
-              <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500 block mb-2 font-bold">
-                Select Editorial Role:
-              </label>
-              <div className="grid grid-cols-1 gap-2.5">
-                {presets.map((p) => (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => handlePresetSelect(p.user, p.pass)}
-                    className={`w-full p-3 rounded-xl border text-left transition-all duration-200 text-xs font-mono flex items-center justify-between ${
-                      username === p.user
-                        ? "bg-red-50 border-red-500 text-red-900 shadow-sm"
-                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Feather className="h-4 w-4 text-red-600" />
-                      <div>
-                        <span className="font-bold text-slate-900 block">{p.label}</span>
-                        <span className="text-[10px] text-slate-500">Username: {p.user}</span>
-                      </div>
-                    </div>
-                    <span className="text-[9px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded border border-red-200 uppercase">
-                      {p.role}
-                    </span>
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Alerts */}
@@ -206,7 +163,7 @@ export default function CmsLoginPage() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
               <div>
                 <label className="text-xs font-semibold text-slate-700 block mb-1.5">
                   Editorial Username
@@ -215,10 +172,13 @@ export default function CmsLoginPage() {
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     type="text"
+                    name="edition_cms_user"
+                    id="edition_cms_user"
+                    autoComplete="off"
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="editor or journalist"
+                    placeholder="Enter username or email"
                     className="w-full bg-slate-50 border border-slate-200 focus:border-red-600 focus:bg-white focus:ring-2 focus:ring-red-600/10 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm transition outline-none font-medium"
                   />
                 </div>
@@ -232,6 +192,9 @@ export default function CmsLoginPage() {
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     type={showPassword ? "text" : "password"}
+                    name="edition_cms_pass"
+                    id="edition_cms_pass"
+                    autoComplete="new-password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

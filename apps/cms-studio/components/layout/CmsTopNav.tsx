@@ -7,7 +7,7 @@ import { authService } from "@/services/authService";
 import { CmsAccountSwitcher } from "@/components/auth/CmsAccountSwitcher";
 
 export function CmsTopNav() {
-  const [username, setUsername] = useState("editor");
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {

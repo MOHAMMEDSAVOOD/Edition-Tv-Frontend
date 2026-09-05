@@ -7,7 +7,7 @@ import { AdminAccountSwitcher } from "@/components/auth/AdminAccountSwitcher";
 
 export function AdminTopNav() {
   const [cluster, setCluster] = useState("us-east-1-prod");
-  const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {

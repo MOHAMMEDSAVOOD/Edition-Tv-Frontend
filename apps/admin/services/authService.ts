@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.editiontv.com/api/v1";
+// Production Base URL (commented out for dev testing): "https://api.editiontv.com/api/v1"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api/v1";
 
 export interface LoginResponse {
   accessToken: string;
@@ -14,12 +15,14 @@ export const authService = {
     const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usernameOrEmail, password }),
+      body: JSON.stringify({ usernameOrEmail, email: usernameOrEmail, password }),
     });
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || errData.message || "Invalid credentials. Please check your username and password.");
+      throw new Error(
+        errData.detail || errData.message || errData.title || "Invalid credentials. Please check your username and password."
+      );
     }
 
     const data: LoginResponse = await res.json();
@@ -29,6 +32,26 @@ export const authService = {
         localStorage.setItem("edition_username", usernameOrEmail);
         document.cookie = `edition_access_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
       }
+    }
+    return data;
+  },
+
+  async refreshToken(refreshToken: string): Promise<LoginResponse> {
+    const res = await fetch(`${API_BASE}/auth/refresh-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.detail || errData.message || "Failed to refresh token.");
+    }
+
+    const data: LoginResponse = await res.json();
+    if (data.accessToken && typeof window !== "undefined") {
+      localStorage.setItem("edition_access_token", data.accessToken);
+      document.cookie = `edition_access_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
     }
     return data;
   },

@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.editiontv.com/api/v1";
+// Production Base URL (commented out for dev testing): "https://api.editiontv.com/api/v1"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
 
 export interface LoginResponse {
   accessToken: string;

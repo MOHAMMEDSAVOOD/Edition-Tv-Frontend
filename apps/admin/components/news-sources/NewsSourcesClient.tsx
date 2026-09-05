@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiClient } from "../../lib/api-client";
 import {
   Rss,
   Plus,
@@ -112,23 +113,32 @@ export function NewsSourcesClient() {
   const fetchSourcesAndRuns = async () => {
     setLoading(true);
     try {
-      const [resSources, resRuns, resCats, resLabels, resOpml, resStats] = await Promise.all([
-        fetch("/api/v1/admin/news-sources"),
-        fetch("/api/v1/admin/news-sources/runs/recent"),
-        fetch("/api/v1/admin/news-sources/categories"),
-        fetch("/api/v1/admin/news-sources/labels"),
-        fetch("/api/v1/admin/news-sources/opml/dynamic"),
-        fetch("/api/v1/admin/news-sources/statistics"),
+      const [dataSources, dataRuns, dataCats, dataLabels, dataOpml, dataStats] = await Promise.all([
+        apiClient.get<any>("/admin/news-sources").catch(() => []),
+        apiClient.get<any>("/admin/news-sources/runs/recent").catch(() => []),
+        apiClient.get<any>("/admin/news-sources/categories").catch(() => []),
+        apiClient.get<any>("/admin/news-sources/labels").catch(() => []),
+        apiClient.get<any>("/admin/news-sources/opml/dynamic").catch(() => []),
+        apiClient.get<any>("/admin/news-sources/statistics").catch(() => null),
       ]);
 
-      if (resSources.ok) setSources(await resSources.json());
-      if (resRuns.ok) setRuns(await resRuns.json());
-      if (resCats.ok) setCategories(await resCats.json());
-      if (resLabels.ok) setLabels(await resLabels.json());
-      if (resOpml.ok) setDynamicOpmlList(await resOpml.json());
-      if (resStats.ok) setStatsData(await resStats.json());
-    } catch (e) {
-      console.error("Failed to load news sources data:", e);
+      const toArray = (val: any) => {
+        if (Array.isArray(val)) return val;
+        if (val && Array.isArray(val.content)) return val.content;
+        if (val && Array.isArray(val.data)) return val.data;
+        if (val && Array.isArray(val.sources)) return val.sources;
+        if (val && Array.isArray(val.items)) return val.items;
+        return [];
+      };
+
+      setSources(toArray(dataSources));
+      setRuns(toArray(dataRuns));
+      setCategories(toArray(dataCats));
+      setLabels(toArray(dataLabels));
+      setDynamicOpmlList(toArray(dataOpml));
+      if (dataStats) setStatsData(dataStats);
+    } catch (e: any) {
+      console.error("Failed to fetch news sources data", e);
     } finally {
       setLoading(false);
     }
@@ -141,24 +151,36 @@ export function NewsSourcesClient() {
   const handleCreateSource = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("/api/v1/admin/news-sources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
-        setIsAddModalOpen(false);
-        setFormData({ name: "", description: "", baseUrl: "", category: "General" });
-        fetchSourcesAndRuns();
+      const payload = {
+        name: formData.name,
+        description: formData.description || formData.name,
+        baseUrl: formData.baseUrl,
+        feedUrl: formData.baseUrl,
+        url: formData.baseUrl,
+        sourceType: "RSS",
+        category: formData.category || "General News",
+        active: true,
+        paused: false,
+      };
+
+      const created = await apiClient.post<NewsSource>("/admin/news-sources", payload);
+      setIsAddModalOpen(false);
+      setFormData({ name: "", description: "", baseUrl: "", category: "General News" });
+      setTestResult(null);
+
+      if (created && created.id) {
+        setSources((prev) => [created, ...prev]);
       }
-    } catch (e) {
+      await fetchSourcesAndRuns();
+    } catch (e: any) {
       console.error("Failed to create source:", e);
+      alert(`Failed to add news source: ${e?.message || "Unknown error"}`);
     }
   };
 
   const handleTogglePause = async (sourceId: string, currentPaused: boolean) => {
     try {
-      await fetch(`/api/v1/admin/news-sources/${sourceId}/pause?pause=${!currentPaused}`, { method: "PUT" });
+      await apiClient.put(`/admin/news-sources/${sourceId}/pause?pause=${!currentPaused}`);
       fetchSourcesAndRuns();
     } catch (e) {
       console.error("Failed to toggle pause:", e);
@@ -167,7 +189,7 @@ export function NewsSourcesClient() {
 
   const handleTriggerFetch = async (sourceId: string) => {
     try {
-      await fetch(`/api/v1/admin/news-sources/${sourceId}/trigger-fetch`, { method: "POST" });
+      await apiClient.post(`/admin/news-sources/${sourceId}/trigger-fetch`);
       fetchSourcesAndRuns();
     } catch (e) {
       console.error("Failed to trigger fetch:", e);
@@ -177,7 +199,7 @@ export function NewsSourcesClient() {
   const handleDeleteSource = async (sourceId: string) => {
     if (!confirm("Are you sure you want to delete this news source?")) return;
     try {
-      await fetch(`/api/v1/admin/news-sources/${sourceId}`, { method: "DELETE" });
+      await apiClient.delete(`/admin/news-sources/${sourceId}`);
       fetchSourcesAndRuns();
     } catch (e) {
       console.error("Failed to delete source:", e);
@@ -189,14 +211,10 @@ export function NewsSourcesClient() {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch(`/api/v1/admin/news-sources/test-feed?feedUrl=${encodeURIComponent(testFeedUrl)}`, { method: "POST" });
-      if (res.ok) {
-        setTestResult(await res.json());
-      } else {
-        setTestResult({ valid: false, errorMessage: `Server returned status ${res.status}` });
-      }
-    } catch {
-      setTestResult({ valid: false, errorMessage: "Failed to connect to backend test-feed endpoint" });
+      const res = await apiClient.post<TestFeedResult>(`/admin/news-sources/test-feed?feedUrl=${encodeURIComponent(testFeedUrl)}`);
+      setTestResult(res);
+    } catch (e: any) {
+      setTestResult({ valid: false, errorMessage: e?.message || "Failed to connect to backend test-feed endpoint" });
     } finally {
       setTesting(false);
     }
@@ -206,16 +224,10 @@ export function NewsSourcesClient() {
     e.preventDefault();
     if (!newCatName) return;
     try {
-      const res = await fetch("/api/v1/admin/news-sources/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCatName, description: newCatDesc }),
-      });
-      if (res.ok) {
-        setNewCatName("");
-        setNewCatDesc("");
-        fetchSourcesAndRuns();
-      }
+      await apiClient.post("/admin/news-sources/categories", { name: newCatName, description: newCatDesc });
+      setNewCatName("");
+      setNewCatDesc("");
+      fetchSourcesAndRuns();
     } catch (e) {
       console.error("Failed to add category:", e);
     }
@@ -225,16 +237,10 @@ export function NewsSourcesClient() {
     e.preventDefault();
     if (!newOpmlUrl) return;
     try {
-      const res = await fetch("/api/v1/admin/news-sources/opml/dynamic", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categoryName: newOpmlCategory || "Dynamic Imports", opmlUrl: newOpmlUrl }),
-      });
-      if (res.ok) {
-        setNewOpmlCategory("");
-        setNewOpmlUrl("");
-        fetchSourcesAndRuns();
-      }
+      await apiClient.post("/admin/news-sources/opml/dynamic", { categoryName: newOpmlCategory || "Dynamic Imports", opmlUrl: newOpmlUrl });
+      setNewOpmlCategory("");
+      setNewOpmlUrl("");
+      fetchSourcesAndRuns();
     } catch (e) {
       console.error("Failed to add dynamic OPML:", e);
     }
@@ -244,15 +250,9 @@ export function NewsSourcesClient() {
     e.preventDefault();
     if (!newLabelName) return;
     try {
-      const res = await fetch("/api/v1/admin/news-sources/labels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newLabelName }),
-      });
-      if (res.ok) {
-        setNewLabelName("");
-        fetchSourcesAndRuns();
-      }
+      await apiClient.post("/admin/news-sources/labels", { name: newLabelName });
+      setNewLabelName("");
+      fetchSourcesAndRuns();
     } catch (e) {
       console.error("Failed to add label:", e);
     }
@@ -260,7 +260,7 @@ export function NewsSourcesClient() {
 
   const handleDeleteLabel = async (id: string) => {
     try {
-      await fetch(`/api/v1/admin/news-sources/labels/${id}`, { method: "DELETE" });
+      await apiClient.delete(`/admin/news-sources/labels/${id}`);
       fetchSourcesAndRuns();
     } catch (e) {
       console.error("Failed to delete label:", e);
@@ -270,17 +270,12 @@ export function NewsSourcesClient() {
   const handleImportOpml = async () => {
     if (!opmlXmlInput) return;
     try {
-      const res = await fetch("/api/v1/admin/news-sources/opml/import", {
-        method: "POST",
+      const result = await apiClient.post<any>("/admin/news-sources/opml/import", opmlXmlInput, {
         headers: { "Content-Type": "application/xml" },
-        body: opmlXmlInput,
       });
-      if (res.ok) {
-        const result = await res.json();
-        setImportMessage(`Successfully imported ${result.sourcesCreated || 1} sources and ${result.feedsCreated || 1} feeds.`);
-        setOpmlXmlInput("");
-        fetchSourcesAndRuns();
-      }
+      setImportMessage(`Successfully imported ${result?.sourcesCreated || 1} sources and ${result?.feedsCreated || 1} feeds.`);
+      setOpmlXmlInput("");
+      fetchSourcesAndRuns();
     } catch (e) {
       setImportMessage("Failed to import OPML content.");
     }
@@ -288,7 +283,10 @@ export function NewsSourcesClient() {
 
   const handleExportOpml = async () => {
     try {
-      const res = await fetch("/api/v1/admin/news-sources/opml/export");
+      const token = apiClient.getAccessToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch("http://localhost:8080/api/v1/admin/news-sources/opml/export", { headers });
       if (res.ok) {
         const xmlText = await res.text();
         const blob = new Blob([xmlText], { type: "application/xml" });
@@ -306,7 +304,10 @@ export function NewsSourcesClient() {
 
   const handleDownloadDatabase = async () => {
     try {
-      const res = await fetch("/api/v1/admin/news-sources/db/export");
+      const token = apiClient.getAccessToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch("http://localhost:8080/api/v1/admin/news-sources/db/export", { headers });
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);

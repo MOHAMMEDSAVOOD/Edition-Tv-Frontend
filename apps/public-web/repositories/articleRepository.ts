@@ -9,27 +9,36 @@ import { ArticleResponseDto } from "@/dtos/article.dto";
 
 export const articleRepository = {
   async getArticleBySlug(slug: string): Promise<ArticleResponseDto | null> {
-    // 1. Try canonical /articles/slug/${slug} FIRST for full contentBody & real-time updates
-    const article = await serverFetch<ArticleResponseDto>(
-      `/articles/slug/${slug}`,
-      { revalidate: 0, cache: "no-store" }
-    );
-
-    if (article && (article.slug || article.headline)) {
-      return article;
+    const res = await serverFetch<any>(`/articles/slug/${encodeURIComponent(slug)}`, { revalidate: 0, cache: "no-store" });
+    if (res) {
+      const item = Array.isArray(res) ? res[0] : (res.content && Array.isArray(res.content)) ? res.content[0] : res;
+      if (item && (item.slug || item.headline || item.title)) return item;
     }
 
-    // 2. Fallback to news feed endpoint if canonical endpoint returns null
-    return serverFetch<ArticleResponseDto>(`/news/feed/slug/${slug}`, {
-      revalidate: 0,
-      cache: "no-store",
-    });
+    const fallbackRes = await serverFetch<any>(`/news/feed/slug/${encodeURIComponent(slug)}`, { revalidate: 0, cache: "no-store" });
+    if (fallbackRes) {
+      const item = Array.isArray(fallbackRes) ? fallbackRes[0] : (fallbackRes.content && Array.isArray(fallbackRes.content)) ? fallbackRes.content[0] : fallbackRes;
+      if (item && (item.slug || item.headline || item.title)) return item;
+    }
+
+    // Fallback: Check wire items reader feed for matching wire item by id/slug/guid
+    const wireRes = await serverFetch<any>(`/newsroom/wire-items/reader?page=0&size=100`, { revalidate: 0, cache: "no-store" });
+    if (wireRes) {
+      const items = Array.isArray(wireRes) ? wireRes : (wireRes.content && Array.isArray(wireRes.content)) ? wireRes.content : [];
+      const matched = items.find((w: any) => w.id === slug || w.slug === slug || w.guid === slug);
+      if (matched) {
+        return matched;
+      }
+    }
+
+    return null;
   },
 
   async getArticleById(id: string): Promise<ArticleResponseDto | null> {
-    return serverFetch<ArticleResponseDto>(`/articles/${id}`, {
-      revalidate: 0,
-      cache: "no-store",
-    });
+    const res = await serverFetch<any>(`/articles/${id}`, { revalidate: 0, cache: "no-store" });
+    if (res) {
+      return Array.isArray(res) ? res[0] : (res.content && Array.isArray(res.content)) ? res.content[0] : res;
+    }
+    return null;
   },
 };

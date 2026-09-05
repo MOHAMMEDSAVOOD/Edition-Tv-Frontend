@@ -53,8 +53,8 @@ export const authService = {
   },
 
   async register(req: RegisterRequest): Promise<UserSession> {
-    const username = req.username || req.email.split("@")[0] || "user";
-    const passStr = req.password || req.passwordHash || "EditionPass2026!";
+    const username = req.username || req.email.split("@")[0] || "";
+    const passStr = req.password || req.passwordHash || "";
     const res: AuthResponseDto = await authRepository.register(username, req.email, passStr);
     if (res && res.token) {
       apiClient.setAccessToken(res.token);

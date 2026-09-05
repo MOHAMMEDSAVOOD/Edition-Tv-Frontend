@@ -7,8 +7,8 @@ import { authService } from "@edition/auth";
 
 export default function LiveLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("editor");
-  const [password, setPassword] = useState("EditionPass2026!");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,16 +60,20 @@ export default function LiveLoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div>
             <label className="text-xs font-semibold text-slate-400 block mb-1.5">User Handle</label>
             <div className="relative">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               <input
                 type="text"
+                name="edition_live_user"
+                id="edition_live_user"
+                autoComplete="off"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter handle or email"
                 className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 text-white rounded-xl pl-10 pr-4 py-3 text-sm outline-none"
               />
             </div>
@@ -81,9 +85,13 @@ export default function LiveLoginPage() {
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               <input
                 type={showPassword ? "text" : "password"}
+                name="edition_live_pass"
+                id="edition_live_pass"
+                autoComplete="new-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••••••"
                 className="w-full bg-slate-950 border border-slate-800 focus:border-red-500 text-white rounded-xl pl-10 pr-10 py-3 text-sm outline-none"
               />
               <button

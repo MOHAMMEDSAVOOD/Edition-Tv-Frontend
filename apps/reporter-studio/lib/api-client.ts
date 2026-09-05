@@ -20,7 +20,10 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.editiontv.com/api/v1';
+// Production Base URL (commented out for dev testing):
+// const PROD_API_URL = 'https://api.editiontv.com/api/v1';
+const DEV_API_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || DEV_API_URL;
 
 class ApiClient {
   private accessToken: string | null = null;

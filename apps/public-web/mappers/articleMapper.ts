@@ -2,9 +2,9 @@ import { ArticleResponseDto } from "@/dtos/article.dto";
 import { ArticleDetail } from "@/services/articleService";
 
 function getHighResImageUrl(url?: string): string | undefined {
-  if (!url) return undefined;
+  if (!url || url.trim() === "") return undefined;
   if (url.includes("ichef.bbci.co.uk")) {
-    return url.replace(/\/standard\/\d+\//, "/standard/1024/").replace(/\/cpsprodpb\/\d+\//, "/cpsprodpb/1024/");
+    return url.replace(/\/standard\/\d+\//, "/standard/800/");
   }
   if (url.includes("w=") || url.includes("width=")) {
     return url.replace(/([?&]w=)\d+/gi, "$11200").replace(/([?&]width=)\d+/gi, "$11200");

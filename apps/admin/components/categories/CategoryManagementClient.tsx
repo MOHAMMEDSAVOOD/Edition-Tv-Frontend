@@ -33,8 +33,8 @@ export function CategoryManagementClient() {
   // Auth State
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
-  const [loginUser, setLoginUser] = useState<string>("editor");
-  const [loginPass, setLoginPass] = useState<string>("EditionPass2026!");
+  const [loginUser, setLoginUser] = useState<string>("");
+  const [loginPass, setLoginPass] = useState<string>("");
   const [loginLoading, setLoginLoading] = useState<boolean>(false);
 
   useEffect(() => {

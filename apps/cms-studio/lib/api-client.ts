@@ -20,8 +20,10 @@ export class ApiError extends Error {
   }
 }
 
-const PROD_API_URL = 'https://api.editiontv.com/api/v1';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? PROD_API_URL;
+// Production Base URL (commented out for dev testing):
+// const PROD_API_URL = 'https://api.editiontv.com/api/v1';
+const DEV_API_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? DEV_API_URL;
 
 class ApiClient {
   private accessToken: string | null = null;
@@ -42,29 +44,6 @@ class ApiClient {
 
     if (!this.accessToken && typeof window !== "undefined") {
       this.accessToken = localStorage.getItem("edition_access_token");
-    }
-
-    if (!this.accessToken && typeof window !== "undefined" && !endpoint.includes("/auth/")) {
-      try {
-        const loginUrl = `${API_BASE_URL}/auth/login`;
-        const res = await fetch(loginUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            usernameOrEmail: "editor@editiontv.com",
-            password: "EditionPass2026!",
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.accessToken) {
-            this.accessToken = data.accessToken;
-            localStorage.setItem("edition_access_token", data.accessToken);
-          }
-        }
-      } catch (err) {
-        // Continue unauthenticated if auth service unreachable
-      }
     }
 
     if (this.accessToken) {

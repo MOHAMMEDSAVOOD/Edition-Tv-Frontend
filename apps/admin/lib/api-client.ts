@@ -20,7 +20,10 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.editiontv.com/api/v1';
+// Production Base URL (commented out for dev testing):
+// const PROD_API_URL = 'https://api.editiontv.com/api/v1';
+const DEV_API_URL = 'http://localhost:8080/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || DEV_API_URL;
 
 class ApiClient {
   private accessToken: string | null = null;
@@ -30,6 +33,9 @@ class ApiClient {
   }
 
   public getAccessToken(): string | null {
+    if (!this.accessToken && typeof window !== "undefined") {
+      this.accessToken = localStorage.getItem("edition_access_token");
+    }
     return this.accessToken;
   }
 
@@ -39,8 +45,9 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    const token = this.getAccessToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
