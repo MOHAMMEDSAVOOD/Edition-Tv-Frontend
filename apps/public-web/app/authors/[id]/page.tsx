@@ -56,7 +56,9 @@ export default async function AuthorPage({ params }: PageProps) {
         <div>
           <div className="bg-card border border-border p-6 rounded-xs sticky top-24">
             <div className="relative w-32 h-32 rounded-full overflow-hidden mb-6 mx-auto border-2 border-primary/20">
-              <Image src={author.avatarUrl} alt={author.name} fill className="object-cover" />
+              {author.avatarUrl ? (
+                <Image src={author.avatarUrl} alt={author.name} fill className="object-cover" />
+              ) : null}
             </div>
 
             <div className="text-center mb-6">

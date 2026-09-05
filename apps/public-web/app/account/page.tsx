@@ -129,14 +129,14 @@ export default function AccountPage() {
         <div className="bg-white  rounded-2xl border border-slate-200  p-8 shadow-sm">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-100  pb-6">
             <div className="flex items-center gap-4">
-              {activeUser.avatarUrl && (
+              {activeUser.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={activeUser.avatarUrl}
                   alt={activeUser.fullName}
                   className="w-16 h-16 rounded-full object-cover border border-slate-200 "
                 />
-              )}
+              ) : null}
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="inline-block px-3 py-0.5 bg-emerald-100  text-emerald-800  rounded-full text-xs font-semibold uppercase tracking-wider">

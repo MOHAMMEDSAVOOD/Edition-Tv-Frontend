@@ -491,7 +491,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
                     </div>
                   </div>
 
-                  {imageOption === "wire_image" && wireImageUrl && (
+                  {imageOption === "wire_image" && wireImageUrl ? (
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center gap-3">
                       <img
                         src={wireImageUrl}
@@ -503,7 +503,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
                         <p className="truncate">Credit: {item.author || "RSS Source"}</p>
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div>

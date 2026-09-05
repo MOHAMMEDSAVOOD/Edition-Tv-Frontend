@@ -284,7 +284,9 @@ export function MediaLibraryModal({
                             active ? "border-2 border-red-600 ring-2 ring-red-500/20" : "border-slate-200 hover:border-slate-300"
                           }`}
                         >
-                          <img src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
+                          {asset.url ? (
+                            <img src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
+                          ) : null}
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition p-2 flex flex-col justify-end">
                             <span className="text-[10px] font-bold text-white truncate font-mono">{asset.filename}</span>
                           </div>
@@ -305,9 +307,11 @@ export function MediaLibraryModal({
             <div className="md:col-span-4 p-4 bg-slate-50/50 flex flex-col justify-between min-h-0 space-y-4 text-xs font-mono">
               {selectedAsset ? (
                 <div className="space-y-3 overflow-y-auto">
-                  <div className="aspect-video rounded-xl overflow-hidden border border-slate-200 bg-white">
-                    <img src={selectedAsset.url} alt={selectedAsset.title} className="w-full h-full object-cover" />
-                  </div>
+                  {selectedAsset.url ? (
+                    <div className="aspect-video rounded-xl overflow-hidden border border-slate-200 bg-white">
+                      <img src={selectedAsset.url} alt={selectedAsset.title} className="w-full h-full object-cover" />
+                    </div>
+                  ) : null}
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-bold">Filename</span>
                     <div className="font-bold text-slate-900 break-all">{selectedAsset.filename}</div>

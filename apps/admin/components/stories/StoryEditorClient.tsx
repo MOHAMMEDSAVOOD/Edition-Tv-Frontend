@@ -510,9 +510,9 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
                   placeholder="https://…"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500 font-mono"
                 />
-                {featuredImageUrl && (
+                {featuredImageUrl ? (
                   <img src={featuredImageUrl} alt="Preview" className="mt-2 rounded-xl w-full h-36 object-cover border border-slate-200" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                )}
+                ) : null}
               </div>
 
               <div className="flex items-center gap-3 pt-1">

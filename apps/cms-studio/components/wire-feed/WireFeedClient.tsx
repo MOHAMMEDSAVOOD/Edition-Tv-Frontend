@@ -211,11 +211,11 @@ export function WireFeedClient() {
                 </div>
               </div>
 
-              {item.mediaThumbnailUrl && (
+              {item.mediaThumbnailUrl ? (
                 <div className="overflow-hidden rounded-md max-h-48 bg-black/40 border border-white/5">
                   <img src={item.mediaThumbnailUrl} alt={item.title} className="w-full object-cover max-h-48" />
                 </div>
-              )}
+              ) : null}
 
               {item.summary && (
                 <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">

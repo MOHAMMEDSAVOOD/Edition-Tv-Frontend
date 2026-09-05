@@ -248,11 +248,11 @@ export function StoryBlockComposer({
                       className="text-xs text-slate-900 bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:border-red-500 font-sans"
                     />
                   </div>
-                  {block.url && (
+                  {block.url ? (
                     <div className="aspect-video rounded-xl overflow-hidden border border-slate-200 bg-slate-100 max-h-48">
                       <img src={block.url} alt={block.caption || "Preview"} className="w-full h-full object-cover" />
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
 

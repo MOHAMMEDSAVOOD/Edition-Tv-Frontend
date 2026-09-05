@@ -204,7 +204,7 @@ export function ArticleReader({
         </div>
 
         {/* Media Thumbnail */}
-        {item.mediaThumbnailUrl && (
+        {item.mediaThumbnailUrl ? (
           <div className="rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100 max-h-96 shadow-2xs">
             <img
               src={item.mediaThumbnailUrl}
@@ -212,10 +212,10 @@ export function ArticleReader({
               className="w-full h-full object-cover"
             />
           </div>
-        )}
+        ) : null}
 
         {/* Media Enclosure Player */}
-        {item.enclosureUrl && (
+        {item.enclosureUrl ? (
           <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-700 font-mono">
               {item.enclosureType?.startsWith("audio") ? (
@@ -243,7 +243,7 @@ export function ArticleReader({
               </a>
             )}
           </div>
-        )}
+        ) : null}
 
         {/* Article Body Content / HTML */}
         <div className="prose prose-slate max-w-none text-slate-800 text-sm leading-relaxed space-y-4 font-serif">

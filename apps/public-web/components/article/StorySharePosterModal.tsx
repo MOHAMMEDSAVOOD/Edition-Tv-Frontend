@@ -613,20 +613,22 @@ export function StorySharePosterModal({
                       </div>
 
                       {/* LAYER 6: OFFICIAL TRANSPARENT PNG FRAME OVERLAY (z-30 - TOP LAYER) */}
-                      <img
-                        src={activePosterFrame}
-                        alt={`${activeFrameMode} Poster Frame`}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          width: "1024px",
-                          height: "1536px",
-                          objectFit: "cover",
-                          pointerEvents: "none",
-                          zIndex: 30,
-                          opacity: 1,
-                        }}
-                      />
+                      {activePosterFrame ? (
+                        <img
+                          src={activePosterFrame}
+                          alt={`${activeFrameMode} Poster Frame`}
+                          style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "1024px",
+                            height: "1536px",
+                            objectFit: "cover",
+                            pointerEvents: "none",
+                            zIndex: 30,
+                            opacity: 1,
+                          }}
+                        />
+                      ) : null}
                     </div>
                   </div>
                 </div>

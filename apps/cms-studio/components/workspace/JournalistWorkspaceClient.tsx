@@ -985,11 +985,11 @@ export function JournalistWorkspaceClient() {
                       >
                         <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase">{category || "GENERAL"}</span>
                         <h2 className="text-base font-bold text-foreground leading-snug">{headline}</h2>
-                        {featuredImageUrl && (
+                        {featuredImageUrl ? (
                           <div className="aspect-video rounded-lg overflow-hidden border border-border">
                             <img src={featuredImageUrl} alt={altText} className="w-full h-full object-cover" />
                           </div>
-                        )}
+                        ) : null}
                         <p className="text-xs text-muted-foreground italic leading-relaxed">{summary}</p>
                         <div className="text-xs text-foreground space-y-2 border-t border-border pt-2 font-serif">
                           {blocks.map((b) => (

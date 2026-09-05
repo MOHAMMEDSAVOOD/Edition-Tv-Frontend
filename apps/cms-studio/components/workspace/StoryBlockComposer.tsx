@@ -233,11 +233,11 @@ export function StoryBlockComposer({
                     )}
                   </div>
 
-                  {block.url && (
+                  {block.url ? (
                     <div className="relative aspect-video max-h-48 rounded-lg overflow-hidden border border-border bg-muted/20">
                       <img src={block.url} alt={block.altText || "Block image preview"} className="object-cover w-full h-full" />
                     </div>
-                  )}
+                  ) : null}
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
