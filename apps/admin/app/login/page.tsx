@@ -37,8 +37,10 @@ export default function AdminLoginPage() {
     try {
       await authService.login(username, password);
       setSuccess(true);
-      router.push("/stories");
-      router.refresh();
+      setTimeout(() => {
+        router.push("/");
+        router.refresh();
+      }, 300);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Authentication failed. Please check credentials.");
     } finally {

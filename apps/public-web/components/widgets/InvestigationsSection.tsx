@@ -27,18 +27,17 @@ export function InvestigationsSection({ articles }: { articles: ArticleFeedItem[
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8">
         {/* Lead Investigation Spotlight */}
         <div>
-          {lead.featuredImageUrl && (
-            <div className="aspect-[16/9] w-full bg-muted overflow-hidden relative mb-4 rounded-xs border border-border">
-              <SafeImage
-                src={lead.featuredImageUrl}
-                alt={lead.headline}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-3 left-3 bg-primary text-white text-[10px] font-mono font-extrabold px-2.5 py-1 uppercase tracking-widest rounded-xs flex items-center gap-1 shadow-md z-10">
-                <FileText className="h-3 w-3" /> Special Report
-              </div>
+          <div className="aspect-[16/9] w-full bg-muted overflow-hidden relative mb-4 rounded-xs border border-border">
+            <SafeImage
+              src={lead.featuredImageUrl}
+              alt={lead.headline}
+              category="Investigation"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute top-3 left-3 bg-primary text-white text-[10px] font-mono font-extrabold px-2.5 py-1 uppercase tracking-widest rounded-xs flex items-center gap-1 shadow-md z-10">
+              <FileText className="h-3 w-3" /> Special Report
             </div>
-          )}
+          </div>
           <h3 className="headline-xl text-xl md:text-2xl font-bold text-foreground mb-3 hover:text-primary transition-colors">
             <Link href={`/articles/${lead.slug}`}>{lead.title}</Link>
           </h3>

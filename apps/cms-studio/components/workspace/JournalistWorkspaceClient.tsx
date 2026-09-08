@@ -33,7 +33,7 @@ import { StoryBlockComposer, StoryBlock } from "./StoryBlockComposer";
 import { MediaLibraryModal, MediaAsset } from "./MediaLibraryModal";
 import { FactCheckPanel } from "./FactCheckPanel";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.editiontv.com/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.editiontv.com/api/v1";
 
 interface Article {
   id: string;

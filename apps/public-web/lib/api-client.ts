@@ -50,24 +50,20 @@ export class ApiError extends Error {
  * falls back to NEXT_PUBLIC_API_BASE_URL for local development.
  * Never exposed to the browser.
  */
-/**
- * For Server Components: prefers INTERNAL_API_URL (Docker / k8s internal routing),
- * falls back to NEXT_PUBLIC_API_BASE_URL for local development.
- * Never exposed to the browser.
- * Production fallback (commented out for dev testing): "https://api.editiontv.com/api/v1"
- */
+const DEFAULT_API_URL = "https://api.editiontv.com/api/v1";
+
 function getServerApiBaseUrl(): string {
   return (
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "https://api.editiontv.com/api/v1"
+    DEFAULT_API_URL
   );
 }
 
 const CLIENT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://api.editiontv.com/api/v1";
+  DEFAULT_API_URL;
 
 // ---------------------------------------------------------------------------
 // 1. serverFetch — use ONLY in Server Components

@@ -1,0 +1,488 @@
+{
+  "info": {
+    "_postman_id": "edition-tv-complete-collection-v1",
+    "name": "Edition-Tv Complete API Collection (CMS, Admin & Public Web)",
+    "description": "Exhaustive API Collection for Edition-Tv backend services including CMS Studio, Admin Platform, Public Web, AI Engine, and Security.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "aiBaseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication & Security",
+      "item": [
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"admin@editiontv.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"reporter1\",\n  \"email\": \"reporter1@editiontv.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Reporter\",\n  \"lastName\": \"One\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@editiontv.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@editiontv.com\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-otp"]
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@editiontv.com\",\n  \"resetToken\": \"TOKEN_HERE\",\n  \"newPassword\": \"NewAdminPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Platform APIs",
+      "item": [
+        {
+          "name": "Get All News Sources",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/news-sources?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "news-sources"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create News Source",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"BBC Tech News\",\n  \"url\": \"http://feeds.bbci.co.uk/news/technology/rss.xml\",\n  \"category\": \"Technology\",\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/news-sources",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "news-sources"]
+            }
+          }
+        },
+        {
+          "name": "Trigger Wire Source Fetch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/news-sources/1/fetch",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "news-sources", "1", "fetch"]
+            }
+          }
+        },
+        {
+          "name": "Get Newsroom Wire Reader",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/newsroom/wire-items/reader?page=0&size=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["newsroom", "wire-items", "reader"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "50" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Wire Items Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/newsroom/wire-items/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["newsroom", "wire-items", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get RBAC Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rbac/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["rbac", "roles"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CMS Studio APIs",
+      "item": [
+        {
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cms/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["cms", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"World News\",\n  \"slug\": \"world-news\",\n  \"description\": \"Global news and analysis\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cms/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["cms", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Create Article Draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Major Global Event Unfolds\",\n  \"slug\": \"major-global-event-unfolds\",\n  \"summary\": \"Summary of global event\",\n  \"content\": \"<p>Full story content...</p>\",\n  \"categoryId\": \"cat-world-1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/articles",
+              "host": ["{{baseUrl}}"],
+              "path": ["articles"]
+            }
+          }
+        },
+        {
+          "name": "Submit Article for Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/articles/1/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["articles", "1", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Publish Article",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/articles/1/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["articles", "1", "publish"]
+            }
+          }
+        },
+        {
+          "name": "Upload Media Asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "caption", "value": "Hero image banner", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/media/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "upload"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Web APIs",
+      "item": [
+        {
+          "name": "Get Trending News Feed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/news/feed/trending",
+              "host": ["{{baseUrl}}"],
+              "path": ["news", "feed", "trending"]
+            }
+          }
+        },
+        {
+          "name": "Get Editors Picks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/news/feed/editors-picks",
+              "host": ["{{baseUrl}}"],
+              "path": ["news", "feed", "editors-picks"]
+            }
+          }
+        },
+        {
+          "name": "Search Articles (Vector & Hybrid)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search?q=technology&type=HYBRID&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search"],
+              "query": [
+                { "key": "q", "value": "technology" },
+                { "key": "type", "value": "HYBRID" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Article Comments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/articles/1/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["articles", "1", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Post Public Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great analysis on this topic!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/articles/1/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["articles", "1", "comments"]
+            }
+          }
+        },
+        {
+          "name": "Get Current Weather",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/weather/current?city=London",
+              "host": ["{{baseUrl}}"],
+              "path": ["weather", "current"],
+              "query": [
+                { "key": "city", "value": "London" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Service APIs (Port 8000)",
+      "item": [
+        {
+          "name": "AI Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{aiBaseUrl}}/health",
+              "host": ["{{aiBaseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "AI Headline Generation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Full text of the news draft...\",\n  \"style\": \"engaging\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/headline",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "headline"]
+            }
+          }
+        },
+        {
+          "name": "AI Article Summary",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Full article text...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "summary"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

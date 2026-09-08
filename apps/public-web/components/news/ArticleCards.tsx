@@ -19,22 +19,20 @@ export function LeadStoryCard({ article, className }: { article: ArticleFeedItem
   return (
     <article className={cn("group", className)}>
       <Link href={`/articles/${article.slug}`}>
-        {article.featuredImageUrl && (
-          <div className="aspect-[16/9] w-full bg-muted overflow-hidden mb-4 relative rounded-xs border border-border/50">
-            <SafeImage
-              src={article.featuredImageUrl}
-              alt={article.headline}
-              category={article.category}
-              className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
-            />
-            {article.isBreaking && (
-              <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-extrabold px-2.5 py-1 uppercase tracking-widest rounded-xs flex items-center gap-1 shadow-sm font-mono z-10">
-                <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
-                Breaking Lead
-              </span>
-            )}
-          </div>
-        )}
+        <div className="aspect-[16/9] w-full bg-muted overflow-hidden mb-4 relative rounded-xs border border-border/50">
+          <SafeImage
+            src={article.featuredImageUrl}
+            alt={article.headline}
+            category={article.category}
+            className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300"
+          />
+          {article.isBreaking && (
+            <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-extrabold px-2.5 py-1 uppercase tracking-widest rounded-xs flex items-center gap-1 shadow-xs font-mono z-10">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+              Breaking Lead
+            </span>
+          )}
+        </div>
       </Link>
       <div>
         <div className="flex items-center gap-2 mb-2">
@@ -70,7 +68,7 @@ export function SecondaryStoryCard({ article, showImage = false }: { article: Ar
   return (
     <article className="article-card pb-4 mb-4 group border-b border-border last:border-0">
       <div className="flex gap-4">
-        {showImage && article.featuredImageUrl && (
+        {showImage && (
           <div className="flex-none w-28 h-20 bg-muted overflow-hidden relative rounded-xs border border-border/50">
             <SafeImage
               src={article.featuredImageUrl}
@@ -103,8 +101,8 @@ export function SecondaryStoryCard({ article, showImage = false }: { article: Ar
 export function GridStoryCard({ article }: { article: ArticleFeedItem }) {
   return (
     <article className="group flex flex-col h-full border border-border/40 p-3 rounded-xs bg-card/40 hover:border-primary/40 transition-colors">
-      {article.featuredImageUrl ? (
-        <div className="aspect-[4/3] w-full bg-muted overflow-hidden mb-3 relative rounded-xs border border-border/50">
+      <Link href={`/articles/${article.slug}`} className="mb-3 block">
+        <div className="aspect-[4/3] w-full bg-muted overflow-hidden relative rounded-xs border border-border/50">
           <SafeImage
             src={article.featuredImageUrl}
             alt={article.headline}
@@ -112,7 +110,7 @@ export function GridStoryCard({ article }: { article: ArticleFeedItem }) {
             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
           />
         </div>
-      ) : null}
+      </Link>
       <span className="section-label mb-1 block text-[10px]">{article.category}</span>
       <h3 className="headline-sm text-sm font-bold leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">
         <Link href={`/articles/${article.slug}`}>
@@ -161,7 +159,7 @@ export function OpinionStoryCard({ article }: { article: ArticleFeedItem }) {
         <div className="flex items-center gap-3 mb-3">
           {article.authorAvatar && (
             <div className="h-9 w-9 rounded-full overflow-hidden relative border border-border">
-              <SafeImage src={article.authorAvatar} alt={article.authorName} className="w-full h-full object-cover" />
+              <SafeImage src={article.authorAvatar} alt={article.authorName} category={article.category} className="w-full h-full object-cover" />
             </div>
           )}
           <div>
@@ -186,13 +184,12 @@ export function MediaStoryCard({ article, type }: { article: ArticleFeedItem; ty
   return (
     <article className="group border border-border bg-card rounded-xs overflow-hidden flex flex-col">
       <div className="aspect-video w-full bg-black relative overflow-hidden">
-        {article.featuredImageUrl && (
-          <SafeImage
-            src={article.featuredImageUrl}
-            alt={article.title}
-            className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
-          />
-        )}
+        <SafeImage
+          src={article.featuredImageUrl}
+          alt={article.title}
+          category={article.topic || type.toUpperCase()}
+          className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-center justify-center pointer-events-none">
           <div className="h-12 w-12 rounded-full bg-primary text-black flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
             {type === "video" ? <Play className="h-5 w-5 fill-current ml-0.5" /> : <Headphones className="h-5 w-5" />}

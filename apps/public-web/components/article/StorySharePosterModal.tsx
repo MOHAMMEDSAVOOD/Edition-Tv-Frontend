@@ -18,6 +18,13 @@ import {
   Briefcase,
   Cpu,
   Landmark,
+  Sliders,
+  RotateCcw,
+  Upload,
+  Sun,
+  Move,
+  ZoomIn,
+  Image as ImageIcon,
 } from "lucide-react";
 import { ArticleDetail } from "@/services/articleService";
 import { QRCodeSVG } from "./QRCodeSVG";
@@ -39,6 +46,39 @@ export function StorySharePosterModal({
   const [activeTab, setActiveTab] = useState<"poster" | "social">("poster");
   const [previewScale, setPreviewScale] = useState(0.35);
   const [wrapperHeight, setWrapperHeight] = useState(570);
+
+  // Background Image Customization Controls State
+  const [isEditingBg, setIsEditingBg] = useState(false);
+  const [customImageUrl, setCustomImageUrl] = useState("");
+  const [bgPosY, setBgPosY] = useState(20);
+  const [bgPosX, setBgPosX] = useState(50);
+  const [bgZoom, setBgZoom] = useState(100);
+  const [bgBrightness, setBgBrightness] = useState(92);
+  const [bgContrast, setBgContrast] = useState(108);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleResetBg = () => {
+    setCustomImageUrl("");
+    setBgPosY(20);
+    setBgPosX(50);
+    setBgZoom(100);
+    setBgBrightness(92);
+    setBgContrast(108);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setCustomImageUrl(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Automatic category detection
   const categoryName = (article.category || "").toLowerCase();
@@ -378,62 +418,76 @@ export function StorySharePosterModal({
           </div>
 
           {activeTab === "poster" && (
-            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={() => setSelectedCategoryFrame("sports")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  activeFrameMode === "sports"
-                    ? "bg-red-600/90 text-white"
-                    : "text-slate-400 hover:text-slate-200"
+                onClick={() => setIsEditingBg(!isEditingBg)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition-all border ${
+                  isEditingBg
+                    ? "bg-red-600/90 text-white border-red-500 shadow-sm"
+                    : "bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800"
                 }`}
               >
-                <Trophy className="h-3 w-3" />
-                <span>Sports</span>
+                <Sliders className="h-3.5 w-3.5" />
+                <span>{isEditingBg ? "Done Adjusting" : "Adjust Image"}</span>
               </button>
-              <button
-                onClick={() => setSelectedCategoryFrame("business")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  activeFrameMode === "business"
-                    ? "bg-blue-600/90 text-white"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Briefcase className="h-3 w-3" />
-                <span>Business</span>
-              </button>
-              <button
-                onClick={() => setSelectedCategoryFrame("world")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  activeFrameMode === "world"
-                    ? "bg-emerald-600/90 text-white"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Globe className="h-3 w-3" />
-                <span>World</span>
-              </button>
-              <button
-                onClick={() => setSelectedCategoryFrame("technology")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  activeFrameMode === "technology"
-                    ? "bg-purple-600/90 text-white"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Cpu className="h-3 w-3" />
-                <span>Tech</span>
-              </button>
-              <button
-                onClick={() => setSelectedCategoryFrame("politics")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  activeFrameMode === "politics"
-                    ? "bg-amber-600/90 text-white"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Landmark className="h-3 w-3" />
-                <span>Politics</span>
-              </button>
+
+              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+                <button
+                  onClick={() => setSelectedCategoryFrame("sports")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    activeFrameMode === "sports"
+                      ? "bg-red-600/90 text-white"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Trophy className="h-3 w-3" />
+                  <span>Sports</span>
+                </button>
+                <button
+                  onClick={() => setSelectedCategoryFrame("business")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    activeFrameMode === "business"
+                      ? "bg-blue-600/90 text-white"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Briefcase className="h-3 w-3" />
+                  <span>Business</span>
+                </button>
+                <button
+                  onClick={() => setSelectedCategoryFrame("world")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    activeFrameMode === "world"
+                      ? "bg-emerald-600/90 text-white"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Globe className="h-3 w-3" />
+                  <span>World</span>
+                </button>
+                <button
+                  onClick={() => setSelectedCategoryFrame("technology")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    activeFrameMode === "technology"
+                      ? "bg-purple-600/90 text-white"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Cpu className="h-3 w-3" />
+                  <span>Tech</span>
+                </button>
+                <button
+                  onClick={() => setSelectedCategoryFrame("politics")}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    activeFrameMode === "politics"
+                      ? "bg-amber-600/90 text-white"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <Landmark className="h-3 w-3" />
+                  <span>Politics</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -442,6 +496,204 @@ export function StorySharePosterModal({
         <div className="p-4 sm:p-6 space-y-6 max-h-[78vh] overflow-y-auto">
           {activeTab === "poster" ? (
             <div className="space-y-6">
+              {/* BACKGROUND IMAGE ADJUSTMENT CONTROL PANEL */}
+              {isEditingBg && (
+                <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Sliders className="h-4 w-4 text-red-500" />
+                      <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider font-sans">
+                        Background Image Controls
+                      </h4>
+                    </div>
+                    <button
+                      onClick={handleResetBg}
+                      className="flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-red-400 transition-colors bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700/60"
+                      title="Reset background settings to defaults"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      <span>Reset Defaults</span>
+                    </button>
+                  </div>
+
+                  {/* Presets & Custom Image controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Position Presets */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                        <Move className="h-3 w-3 text-slate-400" />
+                        <span>Quick Position Presets</span>
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setBgPosY(10);
+                            setBgPosX(50);
+                          }}
+                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${
+                            bgPosY === 10
+                              ? "bg-red-600 text-white border-red-500"
+                              : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                          }`}
+                        >
+                          Top Focus
+                        </button>
+                        <button
+                          onClick={() => {
+                            setBgPosY(50);
+                            setBgPosX(50);
+                          }}
+                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${
+                            bgPosY === 50
+                              ? "bg-red-600 text-white border-red-500"
+                              : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                          }`}
+                        >
+                          Center
+                        </button>
+                        <button
+                          onClick={() => {
+                            setBgPosY(80);
+                            setBgPosX(50);
+                          }}
+                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${
+                            bgPosY === 80
+                              ? "bg-red-600 text-white border-red-500"
+                              : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                          }`}
+                        >
+                          Bottom Focus
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Image Upload / Replacement */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                        <ImageIcon className="h-3 w-3 text-slate-400" />
+                        <span>Replace Background Image</span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileUpload}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1 px-3 bg-slate-950 hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-lg border border-slate-800 transition-colors"
+                        >
+                          <Upload className="h-3.5 w-3.5 text-red-500" />
+                          <span>
+                            {customImageUrl
+                              ? "Change Photo"
+                              : "Upload Custom Photo"}
+                          </span>
+                        </button>
+                        {customImageUrl && (
+                          <button
+                            onClick={() => setCustomImageUrl("")}
+                            className="py-1 px-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 text-xs font-bold rounded-lg border border-red-800 transition-colors"
+                            title="Restore original article image"
+                          >
+                            Restore Original
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sliders Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 pt-1 border-t border-slate-800/60">
+                    {/* Vertical Y Position Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-300 font-medium">
+                          Vertical Position (Y)
+                        </span>
+                        <span className="font-mono text-red-400 font-bold">
+                          {bgPosY}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={bgPosY}
+                        onChange={(e) => setBgPosY(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
+                      />
+                    </div>
+
+                    {/* Horizontal X Position Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-300 font-medium">
+                          Horizontal Position (X)
+                        </span>
+                        <span className="font-mono text-red-400 font-bold">
+                          {bgPosX}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={bgPosX}
+                        onChange={(e) => setBgPosX(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
+                      />
+                    </div>
+
+                    {/* Zoom / Scale Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-300 font-medium flex items-center gap-1">
+                          <ZoomIn className="h-3 w-3 text-slate-400" />
+                          <span>Image Zoom / Scale</span>
+                        </span>
+                        <span className="font-mono text-red-400 font-bold">
+                          {bgZoom}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="100"
+                        max="250"
+                        step="5"
+                        value={bgZoom}
+                        onChange={(e) => setBgZoom(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
+                      />
+                    </div>
+
+                    {/* Brightness Slider */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-300 font-medium flex items-center gap-1">
+                          <Sun className="h-3 w-3 text-slate-400" />
+                          <span>Brightness</span>
+                        </span>
+                        <span className="font-mono text-red-400 font-bold">
+                          {bgBrightness}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="50"
+                        max="150"
+                        step="2"
+                        value={bgBrightness}
+                        onChange={(e) => setBgBrightness(Number(e.target.value))}
+                        className="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* PREVIEW CONTAINER - VISUALLY SCALES THE SINGLE CANONICAL 1024x1536 POSTER */}
               <div className="flex justify-center bg-slate-950 p-2 sm:p-4 rounded-2xl border border-slate-900 overflow-hidden">
                 <div
@@ -473,19 +725,24 @@ export function StorySharePosterModal({
                         userSelect: "none",
                       }}
                     >
-                      {/* LAYER 1: Real CMS Article Image Background (z-0) */}
-                      {article.featuredImageUrl ? (
+                      {/* LAYER 1: Real CMS Article Image Background (or Custom Uploaded Photo) (z-0) */}
+                      {customImageUrl || article.featuredImageUrl ? (
                         <div
                           style={{
                             position: "absolute",
                             inset: 0,
                             width: "100%",
                             height: "100%",
-                            backgroundImage: `url("${article.featuredImageUrl}")`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center 20%",
+                            backgroundImage: `url("${
+                              customImageUrl || article.featuredImageUrl
+                            }")`,
+                            backgroundSize:
+                              bgZoom === 100 ? "cover" : `${bgZoom}%`,
+                            backgroundPosition: `${bgPosX}% ${bgPosY}%`,
                             backgroundRepeat: "no-repeat",
-                            filter: "brightness(0.92) contrast(1.08)",
+                            filter: `brightness(${
+                              bgBrightness / 100
+                            }) contrast(${bgContrast / 100})`,
                             zIndex: 0,
                           }}
                         />

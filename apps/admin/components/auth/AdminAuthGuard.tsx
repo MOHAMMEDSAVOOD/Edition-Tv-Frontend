@@ -11,15 +11,19 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
+
     if (pathname === "/login") {
-      setAuthenticated(false);
+      if (token) {
+        setAuthenticated(true);
+        router.replace("/");
+      } else {
+        setAuthenticated(false);
+      }
       return;
     }
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    const user = typeof window !== "undefined" ? localStorage.getItem("edition_username") : null;
-
-    if (!token || (user && user.toLowerCase() !== "admin")) {
+    if (!token) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("edition_access_token");
         localStorage.removeItem("edition_username");

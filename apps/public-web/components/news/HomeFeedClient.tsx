@@ -95,46 +95,67 @@ export function HomeFeedClient({
         }
       }
 
+      let mappedArticles: ArticleFeedItem[] = [];
+
       if (uniqueRawItems.length > 0) {
-        const mapped = uniqueRawItems.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0]));
-        setArticles(mapped);
+        mappedArticles = uniqueRawItems.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0]));
+        setArticles(mappedArticles);
 
         // Populate default fallbacks for sub-sections if their dedicated endpoints are empty
-        setTrending(mapped.slice(0, 5));
-        setEditorsPicks(mapped.slice(5, 9));
-        setOpinions(mapped.slice(9, 13));
-        setInvestigations(mapped.slice(13, 16));
-        setRecommended(mapped.slice(16, 20));
+        setTrending(mappedArticles.slice(0, 4));
+        setEditorsPicks(mappedArticles.slice(4, 7));
+        setOpinions(mappedArticles.slice(7, 10)); // 3 opinion items for a complete 3-column row
+        setInvestigations(mappedArticles.slice(10, 13));
+        setRecommended(mappedArticles.slice(13, 17));
       }
 
-      // 2. Fetch Dedicated Trending / Most Read
+      // 2. Fetch Dedicated Trending / Most Read (4 items for perfect sidebar height symmetry)
       try {
-        const resTrending = await apiClient.get<unknown>("/news/feed/trending?limit=5");
+        const resTrending = await apiClient.get<unknown>("/news/feed/trending?limit=4");
         const itemsTrending = unwrapArray(resTrending);
         if (itemsTrending.length > 0) {
-          setTrending(itemsTrending.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0])));
+          const list = itemsTrending.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0]));
+          if (list.length < 4) {
+            const extra = mappedArticles.filter((a) => !list.some((x) => x.id === a.id)).slice(0, 4 - list.length);
+            setTrending([...list, ...extra]);
+          } else {
+            setTrending(list.slice(0, 4));
+          }
         }
       } catch {
         // Fallback already set above
       }
 
-      // 3. Fetch Editors' Picks
+      // 3. Fetch Editors' Picks (3 items for perfect sidebar height symmetry)
       try {
-        const resPicks = await apiClient.get<unknown>("/news/feed/editors-picks?limit=4");
+        const resPicks = await apiClient.get<unknown>("/news/feed/editors-picks?limit=3");
         const itemsPicks = unwrapArray(resPicks);
         if (itemsPicks.length > 0) {
-          setEditorsPicks(itemsPicks.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0])));
+          const list = itemsPicks.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0]));
+          if (list.length < 3) {
+            const extra = mappedArticles.filter((a) => !list.some((x) => x.id === a.id)).slice(0, 3 - list.length);
+            setEditorsPicks([...list, ...extra]);
+          } else {
+            setEditorsPicks(list.slice(0, 3));
+          }
         }
       } catch {
         // Fallback already set above
       }
 
-      // 4. Fetch Opinions
+      // 4. Fetch Opinions (Limit to 3 items for a 100% filled 3-column row)
       try {
-        const resOps = await apiClient.get<unknown>("/news/feed/opinions?limit=4");
+        const resOps = await apiClient.get<unknown>("/news/feed/opinions?limit=3");
         const itemsOps = unwrapArray(resOps);
         if (itemsOps.length > 0) {
-          setOpinions(itemsOps.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0])));
+          let list = itemsOps.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0]));
+          if (list.length < 3) {
+            const extra = mappedArticles.filter((a) => !list.some((x) => x.id === a.id)).slice(0, 3 - list.length);
+            list = [...list, ...extra];
+          } else {
+            list = list.slice(0, 3);
+          }
+          setOpinions(list);
         }
       } catch {
         // Fallback already set above
@@ -145,7 +166,13 @@ export function HomeFeedClient({
         const resInv = await apiClient.get<unknown>("/news/feed/investigations?limit=3");
         const itemsInv = unwrapArray(resInv);
         if (itemsInv.length > 0) {
-          setInvestigations(itemsInv.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0])));
+          const list = itemsInv.map((i) => feedMapper.toArticleFeedItem(i as Parameters<typeof feedMapper.toArticleFeedItem>[0]));
+          if (list.length < 3) {
+            const extra = mappedArticles.filter((a) => !list.some((x) => x.id === a.id)).slice(0, 3 - list.length);
+            setInvestigations([...list, ...extra]);
+          } else {
+            setInvestigations(list.slice(0, 3));
+          }
         }
       } catch {
         // Fallback already set above
@@ -235,17 +262,16 @@ export function HomeFeedClient({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                       {secondary.map((article) => (
                         <div key={article.id} className="flex flex-col group">
-                          {article.featuredImageUrl && (
-                            <Link href={`/articles/${article.slug}`} className="mb-2.5 block">
-                              <div className="aspect-[16/9] w-full bg-muted overflow-hidden relative rounded-xs border border-border/50">
-                                <SafeImage
-                                  src={article.featuredImageUrl}
-                                  alt={article.headline}
-                                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                                />
-                              </div>
-                            </Link>
-                          )}
+                          <Link href={`/articles/${article.slug}`} className="mb-2.5 block">
+                            <div className="aspect-[16/9] w-full bg-muted overflow-hidden relative rounded-xs border border-border/50">
+                              <SafeImage
+                                src={article.featuredImageUrl}
+                                alt={article.headline}
+                                category={article.category}
+                                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                              />
+                            </div>
+                          </Link>
                           <span className="section-label mb-1.5 text-[9px]">{article.category}</span>
                           <h3 className="headline-sm text-base font-bold mb-2 line-clamp-3 leading-snug group-hover:text-primary transition-colors">
                             <Link href={`/articles/${article.slug}`}>
@@ -319,7 +345,15 @@ export function HomeFeedClient({
             {latestNews.length > 0 && (
               <section className="mb-16">
                 <SectionDivider label="Latest News Coverage" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-4">
+                <div
+                  className={`grid ${
+                    latestNews.length === 1
+                      ? "grid-cols-1"
+                      : latestNews.length === 2
+                      ? "grid-cols-1 sm:grid-cols-2"
+                      : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3"
+                  } gap-6 mt-4`}
+                >
                   {latestNews.map((article) => (
                     <GridStoryCard key={article.id} article={article} />
                   ))}
@@ -347,7 +381,17 @@ export function HomeFeedClient({
                     </Link>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                <div
+                  className={`grid ${
+                    videos.length + podcasts.length === 1
+                      ? "grid-cols-1"
+                      : videos.length + podcasts.length === 2
+                      ? "grid-cols-1 sm:grid-cols-2"
+                      : videos.length + podcasts.length === 3
+                      ? "grid-cols-1 sm:grid-cols-3"
+                      : "grid-cols-1 sm:grid-cols-2 md:grid-cols-4"
+                  } gap-6`}
+                >
                   {videos.map((art) => (
                     <MediaStoryCard key={art.id} article={art} type="video" />
                   ))}
@@ -364,11 +408,21 @@ export function HomeFeedClient({
                 (a) => a.category.toLowerCase() === section.toLowerCase()
               );
               if (sectionArticles.length === 0) return null;
+              const displayArticles = sectionArticles.slice(0, 4);
+              const gridColsClass =
+                displayArticles.length === 1
+                  ? "grid-cols-1"
+                  : displayArticles.length === 2
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : displayArticles.length === 3
+                  ? "grid-cols-1 sm:grid-cols-3"
+                  : "grid-cols-1 sm:grid-cols-2 md:grid-cols-4";
+
               return (
                 <section key={section} className="mb-16">
                   <SectionDivider label={section} href={`/categories/${section.toLowerCase()}`} />
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-4">
-                    {sectionArticles.slice(0, 4).map((article) => (
+                  <div className={`grid ${gridColsClass} gap-6 mt-4`}>
+                    {displayArticles.map((article) => (
                       <GridStoryCard key={article.id} article={article} />
                     ))}
                   </div>
@@ -380,7 +434,11 @@ export function HomeFeedClient({
             {recommended.length > 0 && (
               <section className="mb-16">
                 <SectionDivider label="Recommended For You" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div
+                  className={`grid ${
+                    recommended.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+                  } gap-6 mt-4`}
+                >
                   {recommended.map((article) => (
                     <SecondaryStoryCard key={article.id} article={article} showImage />
                   ))}

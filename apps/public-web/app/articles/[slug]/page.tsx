@@ -159,20 +159,19 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         </header>
 
         {/* Hero Cover Image */}
-        {article.featuredImageUrl && (
-          <figure className="mb-10 max-w-4xl overflow-hidden rounded-xs border border-border bg-muted">
-            <SafeImage
-              src={article.featuredImageUrl}
-              alt={article.title}
-              className="w-full max-h-[500px] object-cover"
-            />
-            {article.imageCaption && (
-              <figcaption className="p-3 text-xs text-muted-foreground font-sans border-t border-border/50 bg-muted/20 italic">
-                {article.imageCaption}
-              </figcaption>
-            )}
-          </figure>
-        )}
+        <figure className="mb-10 max-w-4xl overflow-hidden rounded-xs border border-border bg-muted">
+          <SafeImage
+            src={article.featuredImageUrl}
+            alt={article.title}
+            category={article.category}
+            className="w-full max-h-[500px] object-cover"
+          />
+          {article.imageCaption && (
+            <figcaption className="p-3 text-xs text-muted-foreground font-sans border-t border-border/50 bg-muted/20 italic">
+              {article.imageCaption}
+            </figcaption>
+          )}
+        </figure>
 
         {/* Main Layout: Grid with Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
