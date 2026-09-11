@@ -55,14 +55,15 @@ function getServerApiBaseUrl(): string {
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    ""
+    "https://api.editiontv.com/api/v1"
   );
 }
 
 const CLIENT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "";
+  "https://api.editiontv.com/api/v1";
+
 
 // ---------------------------------------------------------------------------
 // 1. serverFetch — use ONLY in Server Components

@@ -58,4 +58,5 @@ import type { ArticleFeedItem } from "@edition/types";
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript 5
 - **Styling**: Tailwind CSS 4 + shadcn/ui
-- **Backend**: Spring Boot 3 @ `http://localhost:8080/api/v1`
+- **Backend**: Spring Boot 3 @ `https://api.editiontv.com/api/v1`
+
