@@ -912,13 +912,13 @@ export function NewsSourcesClient() {
               </h3>
               <div className="space-y-2 text-xs">
                 {(statsData?.topFeeds as Array<Record<string, unknown>>)?.length > 0 ? (
-                  (statsData?.topFeeds as Array<Record<string, unknown>>).map((tf) => (
-                    <div key={String(tf.id)} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                  (statsData?.topFeeds as Array<Record<string, unknown>>).map((tf, idx) => (
+                    <div key={String(tf?.id || tf?.name || idx)} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
                       <div>
-                        <span className="font-bold text-slate-900">{String(tf.name)}</span>
-                        <p className="text-slate-500 font-mono text-[11px]">{String(tf.category)}</p>
+                        <span className="font-bold text-slate-900">{String(tf?.name || "Feed")}</span>
+                        <p className="text-slate-500 font-mono text-[11px]">{String(tf?.category || "General")}</p>
                       </div>
-                      <span className="font-mono text-red-600 font-bold">{String(tf.entryCount)} entries ({String(tf.percentageOfTotal)})</span>
+                      <span className="font-mono text-red-600 font-bold">{String(tf?.entryCount || 0)} entries ({String(tf?.percentageOfTotal || "0%")})</span>
                     </div>
                   ))
                 ) : (
@@ -933,15 +933,16 @@ export function NewsSourcesClient() {
               </h3>
               <div className="space-y-2 text-xs">
                 {(statsData?.idleFeeds as Array<Record<string, unknown>>)?.length > 0 ? (
-                  (statsData?.idleFeeds as Array<Record<string, unknown>>).map((idf) => (
-                    <div key={String(idf.id)} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                      <span className="text-slate-700 font-mono truncate max-w-xs">{String(idf.feedUrl)}</span>
-                      <span className="px-2 py-0.5 bg-rose-50 text-rose-700 rounded-full font-bold font-mono text-[10px] border border-rose-200">{String(idf.consecutiveFailures)} failures</span>
+                  (statsData?.idleFeeds as Array<Record<string, unknown>>).map((idf, idx) => (
+                    <div key={String(idf?.id || idf?.feedUrl || idx)} className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                      <span className="text-slate-700 font-mono truncate max-w-xs">{String(idf?.feedUrl || "N/A")}</span>
+                      <span className="px-2 py-0.5 bg-rose-50 text-rose-700 rounded-full font-bold font-mono text-[10px] border border-rose-200">{String(idf?.consecutiveFailures || 0)} failures</span>
                     </div>
                   ))
                 ) : (
                   <p className="text-slate-400 italic font-mono">All feeds are actively polling and healthy.</p>
                 )}
+
               </div>
             </div>
           </div>
@@ -1005,8 +1006,9 @@ export function NewsSourcesClient() {
                         <div className="pt-2 border-t border-emerald-200 space-y-1">
                           <p className="text-[10px] uppercase font-bold text-emerald-700">Preview Headlines:</p>
                           {testResult.sampleItems.slice(0, 3).map((item, idx: number) => (
-                            <p key={idx} className="text-[11px] truncate text-slate-700">• {item.title}</p>
+                            <p key={idx} className="text-[11px] truncate text-slate-700">• {item?.title || "Untitled"}</p>
                           ))}
+
                         </div>
                       )}
                     </div>
