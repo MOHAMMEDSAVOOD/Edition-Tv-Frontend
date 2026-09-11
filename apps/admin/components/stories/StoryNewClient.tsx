@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Plus, ArrowLeft, Loader2, AlertCircle, Star, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+
 
 interface CategoryItem { id: string; name: string; slug: string; }
 

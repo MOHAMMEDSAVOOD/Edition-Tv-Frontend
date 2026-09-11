@@ -52,7 +52,8 @@ function toAuditEntry(log: ApiAuditLog): AuditEntry {
   };
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+
 
 export function AuditLogsClient() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);

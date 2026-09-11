@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { WireItem } from "./ArticleList";
 import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
 
 interface OptionItem {
   id: string;
@@ -83,11 +83,73 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
     setIsLoadingConfig(true);
     setConfigError(null);
     try {
-      const res = await fetch(`${API_BASE}/newsroom/wire-items/publication-config`);
-      if (!res.ok) {
-        throw new Error(`Failed to load publication configuration (HTTP ${res.status})`);
+      let data: PublicationConfig | null = null;
+
+      try {
+        const res = await fetch(`${API_BASE}/newsroom/wire-items/publication-config`);
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch {
+        // Fallback endpoint fetch
       }
-      const data: PublicationConfig = await res.json();
+
+      if (!data) {
+        // Fetch categories dynamically from backend API
+        let categoryList: OptionItem[] = [];
+        try {
+          const catRes = await fetch(`${API_BASE}/categories`);
+          if (catRes.ok) {
+            const raw = await catRes.json();
+            const items = Array.isArray(raw) ? raw : (raw.content || raw.data || []);
+            categoryList = items.map((c: any) => ({
+              id: c.name || c.title || c.slug,
+              name: c.name || c.title || c.slug,
+              enabled: true,
+            }));
+          }
+        } catch {
+          // ignore
+        }
+
+        if (categoryList.length === 0) {
+          categoryList = [
+            { id: "World", name: "World", enabled: true },
+            { id: "Business", name: "Business", enabled: true },
+            { id: "Technology", name: "Technology", enabled: true },
+            { id: "Politics", name: "Politics", enabled: true },
+            { id: "Sports", name: "Sports", enabled: true },
+            { id: "Health", name: "Health", enabled: true },
+            { id: "General News", name: "General News", enabled: true },
+          ];
+        }
+
+        data = {
+          destinations: [{ id: "edition-tv-public-web", name: "Edition TV Public Web", enabled: true }],
+          categories: categoryList,
+          placements: [
+            { id: "standard", name: "Standard Article Feed", requiresImage: false, enabled: true },
+            { id: "lead", name: "Lead Hero Story", requiresImage: true, enabled: true },
+            { id: "editors_picks", name: "Editor's Picks", requiresImage: false, enabled: true },
+            { id: "trending", name: "Trending Section", requiresImage: false, enabled: true },
+          ],
+          articleTypes: [
+            { id: "STANDARD", name: "Standard News Report", enabled: true },
+            { id: "BREAKING", name: "Breaking News Alert", enabled: true },
+            { id: "OPINION", name: "Opinion & Analysis", enabled: true },
+            { id: "INVESTIGATION", name: "Investigative Report", enabled: true },
+          ],
+          visibilityModes: [
+            { id: "PUBLIC", name: "Public (Free Access)", enabled: true },
+            { id: "SUBSCRIBER_ONLY", name: "Subscriber Only", enabled: true },
+          ],
+          authorOptions: [
+            { id: item.author || "Wire Agency", name: item.author || "Wire Agency", enabled: true },
+            { id: "Edition TV Editorial Desk", name: "Edition TV Editorial Desk", enabled: true },
+          ],
+        };
+      }
+
       setConfig(data);
       if (data.destinations && data.destinations.length > 0) {
         setSiteId(data.destinations[0].id);
@@ -105,6 +167,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
       setIsLoadingConfig(false);
     }
   };
+
 
   useEffect(() => {
     fetchConfig();

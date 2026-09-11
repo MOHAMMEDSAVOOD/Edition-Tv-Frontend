@@ -21,7 +21,8 @@ interface MediaLibraryModalProps {
   onSelectMedia: (media: MediaAsset) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+
 
 export function MediaLibraryModal({
   isOpen,

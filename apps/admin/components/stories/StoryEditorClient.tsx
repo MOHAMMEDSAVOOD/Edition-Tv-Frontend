@@ -21,7 +21,8 @@ import { StoryBlockComposer, StoryBlock } from "@/components/workspace/StoryBloc
 import { MediaLibraryModal, MediaAsset } from "@/components/workspace/MediaLibraryModal";
 import { FactCheckPanel } from "@/components/workspace/FactCheckPanel";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+
 
 interface CategoryItem { id: string; name: string; slug: string; }
 interface TagItem { id: string; name: string; slug: string; }
