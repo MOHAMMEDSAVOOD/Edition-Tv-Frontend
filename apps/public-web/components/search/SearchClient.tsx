@@ -1,8 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { ArticleFeedItem } from "@/services/feedService";
 import { SecondaryStoryCard } from "@/components/news/ArticleCards";
-import { Search, Filter, SlidersHorizontal } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, Loader2 } from "lucide-react";
+import { searchRepository, SearchHitDto } from "@/repositories/searchRepository";
 
 interface SearchClientProps {
   initialQuery: string;
@@ -12,24 +13,97 @@ interface SearchClientProps {
 
 const CATEGORIES = ["All", "Business", "Technology", "World", "Science", "Politics"];
 
+// Helper to debounce function calls
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
 export function SearchClient({ initialQuery, initialCategory, initialArticles }: SearchClientProps) {
   const [query, setQuery] = useState(initialQuery);
+  const debouncedQuery = useDebounce(query, 400);
+  
   const [category, setCategory] = useState(initialCategory || "All");
   const [sortBy, setSortBy] = useState<"latest" | "relevant">("latest");
+  
+  const [searchResults, setSearchResults] = useState<ArticleFeedItem[]>(initialArticles);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(!!initialQuery);
 
-  const filteredArticles = useMemo(() => {
-    return initialArticles.filter((art) => {
-      const matchesQuery =
-        !query.trim() ||
-        art.headline.toLowerCase().includes(query.toLowerCase()) ||
-        art.summary.toLowerCase().includes(query.toLowerCase()) ||
-        art.authorName.toLowerCase().includes(query.toLowerCase());
+  const fetchSearchResults = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setSearchResults(initialArticles);
+      setHasSearched(false);
+      return;
+    }
 
-      const matchesCat = category === "All" || art.category.toLowerCase() === category.toLowerCase();
+    setIsLoading(true);
+    setHasSearched(true);
+    try {
+      const res = await searchRepository.search(searchQuery, 0, 50);
+      
+      // Map SearchHitDto back to ArticleFeedItem for UI components
+      const mappedArticles: ArticleFeedItem[] = (res.items || []).map((hit: SearchHitDto) => ({
+        id: hit.articleId,
+        slug: hit.articleId, // fallback to articleId if slug is unavailable
+        title: hit.highlightedTitle || hit.title,
+        headline: hit.highlightedTitle || hit.title,
+        subtitle: hit.summary,
+        summary: hit.highlightedContent || hit.summary,
+        bodyHtml: "",
+        category: hit.category || "Uncategorized",
+        topic: "",
+        tags: [],
+        authorId: "",
+        authorName: hit.author || "Edition Staff",
+        authorTitle: "Staff",
+        publishedAt: new Date().toISOString(), // Fallback
+        readingTime: "3 min read",
+        readingTimeMinutes: 3,
+        featuredImageUrl: "", // SafeImage fallback will handle this
+        viewsCount: 0,
+        commentsCount: 0,
+        summaryPoints: []
+      } as unknown as ArticleFeedItem));
 
-      return matchesQuery && matchesCat;
-    });
-  }, [initialArticles, query, category]);
+      setSearchResults(mappedArticles);
+    } catch (error) {
+      console.error("Failed to fetch search results:", error);
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [initialArticles]);
+
+  // Trigger search when debounced query changes
+  useEffect(() => {
+    fetchSearchResults(debouncedQuery);
+  }, [debouncedQuery, fetchSearchResults]);
+
+  // Apply client-side filtering and sorting on the fetched results
+  const displayedArticles = useMemo(() => {
+    let filtered = searchResults;
+
+    if (category !== "All") {
+      filtered = filtered.filter((art) => art.category.toLowerCase() === category.toLowerCase());
+    }
+
+    // Basic sorting logic (mock implementation for demonstration)
+    if (sortBy === "relevant" && hasSearched) {
+      // If we had a score from backend, we could sort by it here
+      // But assuming backend already returns sorted by relevance if it's a search
+      return filtered; 
+    }
+
+    // Default to 'latest' (mocking by reversing just to show change if needed, but usually we just return as is)
+    return filtered;
+  }, [searchResults, category, sortBy, hasSearched]);
 
   return (
     <div className="space-y-8" suppressHydrationWarning>
@@ -44,6 +118,11 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
             placeholder="Search keywords, headlines, authors..."
             className="w-full pl-10 pr-4 py-2.5 text-sm border border-border bg-background rounded-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
+          {isLoading && (
+            <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+              <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+            </div>
+          )}
         </div>
 
         {/* Category Pill Filters & Sort */}
@@ -85,18 +164,23 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
       {/* Results Header */}
       <div className="flex items-center justify-between text-xs text-muted-foreground border-b border-border pb-2">
         <span>
-          Found <strong>{filteredArticles.length}</strong> {filteredArticles.length === 1 ? "result" : "results"}
-          {query && (
+          Found <strong>{displayedArticles.length}</strong> {displayedArticles.length === 1 ? "result" : "results"}
+          {debouncedQuery && (
             <>
               {" "}
-              for &ldquo;<strong>{query}</strong>&rdquo;
+              for &ldquo;<strong>{debouncedQuery}</strong>&rdquo;
             </>
           )}
         </span>
       </div>
 
       {/* Results List */}
-      {filteredArticles.length === 0 ? (
+      {isLoading ? (
+        <div className="text-center py-16 border border-dashed border-border rounded-sm space-y-4">
+          <Loader2 className="h-8 w-8 text-primary/60 animate-spin mx-auto" />
+          <h3 className="font-bold text-base text-muted-foreground">Searching archives...</h3>
+        </div>
+      ) : displayedArticles.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-border rounded-sm space-y-2">
           <Search className="h-8 w-8 text-muted-foreground/40 mx-auto" />
           <h3 className="font-bold text-base">No articles found</h3>
@@ -104,7 +188,7 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredArticles.map((article) => (
+          {displayedArticles.map((article) => (
             <SecondaryStoryCard key={article.id} article={article} showImage />
           ))}
         </div>
@@ -112,3 +196,4 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
     </div>
   );
 }
+
