@@ -293,13 +293,9 @@ export function NewsSourcesClient() {
 
   const handleExportOpml = async () => {
     try {
-      const token = apiClient.getAccessToken();
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      const res = await fetch(`${baseUrl}/admin/news-sources/opml/export`, { headers });
-      if (res.ok) {
-        const xmlText = await res.text();
+      const res = await apiClient.get<string>(`/admin/news-sources/opml/export`, { responseType: "text" });
+      if (res) {
+        const xmlText = res;
         const blob = new Blob([xmlText], { type: "application/xml" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -315,13 +311,9 @@ export function NewsSourcesClient() {
 
   const handleDownloadDatabase = async () => {
     try {
-      const token = apiClient.getAccessToken();
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
-      const res = await fetch(`${baseUrl}/admin/news-sources/db/export`, { headers });
-      if (res.ok) {
-        const blob = await res.blob();
+      const res = await apiClient.get<Blob>(`/admin/news-sources/db/export`, { responseType: "blob" });
+      if (res) {
+        const blob = res;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;

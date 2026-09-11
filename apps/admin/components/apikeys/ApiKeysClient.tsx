@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { KeyRound, RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface KeyRecord {
   id: string;
@@ -22,9 +23,8 @@ export function ApiKeysClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/v1/admin/api-keys");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<any>("/admin/api-keys");
+      if (data) {
         setKeys(data);
       } else {
         setError("Failed to fetch API keys from backend");
@@ -42,9 +42,8 @@ export function ApiKeysClient() {
 
   const revokeKey = async (id: string) => {
     try {
-      const res = await fetch(`/api/v1/admin/api-keys/${id}/revoke`, { method: "POST" });
-      if (res.ok) {
-        const updated = await res.json();
+      const updated = await apiClient.post<any>(`/admin/api-keys/${id}/revoke`);
+      if (updated) {
         setKeys((prev) => prev.map((k) => (k.id === id ? updated : k)));
       }
     } catch (e) {

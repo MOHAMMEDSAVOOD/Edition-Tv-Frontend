@@ -21,9 +21,7 @@ import { StoryBlockComposer, StoryBlock } from "@/components/workspace/StoryBloc
 import { MediaLibraryModal, MediaAsset } from "@/components/workspace/MediaLibraryModal";
 import { FactCheckPanel } from "@/components/workspace/FactCheckPanel";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
-
-
+import { apiClient } from "@/lib/api-client";
 interface CategoryItem { id: string; name: string; slug: string; }
 interface TagItem { id: string; name: string; slug: string; }
 interface DeskItem { id: string; name: string; slug: string; }
@@ -111,8 +109,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   // Load story
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_BASE}/articles/${storyId}`)
-      .then((r) => { if (!r.ok) throw new Error(`Story not found (${r.status})`); return r.json(); })
+    apiClient.get<StoryDetail>(`/articles/${storyId}`)
       .then((data: StoryDetail) => {
         setStory(data);
         setHeadline(data.headline ?? "");
@@ -143,9 +140,9 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   // Load taxonomy
   useEffect(() => {
     Promise.all([
-      fetch(`${API_BASE}/cms/categories`).then((r) => r.json()).catch(() => []),
-      fetch(`${API_BASE}/cms/tags`).then((r) => r.json()).catch(() => []),
-      fetch(`${API_BASE}/cms/desks`).then((r) => r.json()).catch(() => []),
+      apiClient.get<any>(`/cms/categories`).catch(() => []),
+      apiClient.get<any>(`/cms/tags`).catch(() => []),
+      apiClient.get<any>(`/cms/desks`).catch(() => []),
     ]).then(([cats, tgs, dks]) => {
       setCategories(Array.isArray(cats) ? cats : []);
       setTags(Array.isArray(tgs) ? tgs : []);
@@ -205,16 +202,9 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
     setSaving(true);
     setError(null);
     try {
-      const r = await fetch(`${API_BASE}/articles/${storyId}`, {
-        method: "PUT",
-        headers: authHeaders(),
-        body: JSON.stringify({ headline, summary, contentBody, category, featuredImageUrl, isFeatured }),
+      const updated = await apiClient.put<StoryDetail>(`/articles/${storyId}`, {
+        headline, summary, contentBody, category, featuredImageUrl, isFeatured
       });
-      if (!r.ok) {
-        const errData = await r.json().catch(() => ({}));
-        throw new Error((errData as { message?: string }).message || `Save failed: ${r.status}`);
-      }
-      const updated: StoryDetail = await r.json();
       setStory(updated);
       showSuccess("Story saved successfully");
     } catch (err: unknown) {
@@ -232,12 +222,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
     try {
       const chain = PUBLISH_TRANSITIONS[story.status] ?? [];
       for (const targetStatus of chain) {
-        const r = await fetch(`${API_BASE}/articles/${storyId}/status?targetStatus=${targetStatus}`, {
-          method: "POST",
-          headers: authHeaders(),
-        });
-        if (!r.ok) throw new Error(`Transition to ${targetStatus} failed`);
-        const updated: StoryDetail = await r.json();
+        const updated = await apiClient.post<StoryDetail>(`/articles/${storyId}/status?targetStatus=${targetStatus}`);
         setStory(updated);
       }
       showSuccess("Story published to Public Web");
@@ -255,12 +240,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
     setSaving(true);
     setError(null);
     try {
-      const r = await fetch(`${API_BASE}/articles/${storyId}/status?targetStatus=ARCHIVED`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      if (!r.ok) throw new Error(`Archive failed: ${r.status}`);
-      const updated: StoryDetail = await r.json();
+      const updated = await apiClient.post<StoryDetail>(`/articles/${storyId}/status?targetStatus=ARCHIVED`);
       setStory(updated);
       showSuccess("Story archived");
     } catch (err: unknown) {
@@ -275,12 +255,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
     setSaving(true);
     setError(null);
     try {
-      const r = await fetch(`${API_BASE}/articles/${storyId}/status?targetStatus=${targetStatus}`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      if (!r.ok) throw new Error(`Transition to ${targetStatus} failed: ${r.status}`);
-      const updated: StoryDetail = await r.json();
+      const updated = await apiClient.post<StoryDetail>(`/articles/${storyId}/status?targetStatus=${targetStatus}`);
       setStory(updated);
       showSuccess(`Status updated to ${targetStatus.replace(/_/g, " ")}`);
     } catch (err: unknown) {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Search, UserPlus, RefreshCw, AlertCircle, CheckCircle2, Trash2, Shield, UserCheck, UserX, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface UserRecord {
   id: string;
@@ -53,12 +54,11 @@ export function UserManagementClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/v1/admin/users");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<any>("/admin/users");
+      if (data) {
         setUsers(data);
       } else {
-        setError(`API returned status ${res.status}`);
+        setError(`Failed to fetch users`);
       }
     } catch {
       setError("Failed to connect to backend user API");
@@ -77,14 +77,9 @@ export function UserManagementClient() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/v1/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+      const created = await apiClient.post<any>("/admin/users", formData);
 
-      if (res.ok) {
-        const created = await res.json();
+      if (created) {
         setUsers((prev) => [created, ...prev]);
         setIsModalOpen(false);
         setFormData({
@@ -108,13 +103,8 @@ export function UserManagementClient() {
 
   const updateRole = async (id: string, newRole: string) => {
     try {
-      const res = await fetch(`/api/v1/admin/users/${id}/role`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role: newRole }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
+      const updated = await apiClient.put<any>(`/admin/users/${id}/role`, { role: newRole });
+      if (updated) {
         setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
         showToast(`Updated role for ${updated.name} to ${newRole}`);
       }
@@ -125,13 +115,8 @@ export function UserManagementClient() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`/api/v1/admin/users/${id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        const updated = await res.json();
+      const updated = await apiClient.put<any>(`/admin/users/${id}/status`, { status: newStatus });
+      if (updated) {
         setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
         showToast(`Account ${updated.name} is now ${newStatus}`);
       }
@@ -144,11 +129,9 @@ export function UserManagementClient() {
     if (!confirm(`Are you sure you want to delete user account "${name}"?`)) return;
 
     try {
-      const res = await fetch(`/api/v1/admin/users/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setUsers((prev) => prev.filter((u) => u.id !== id));
-        showToast(`Deleted user account "${name}"`);
-      }
+      await apiClient.delete<any>(`/admin/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      showToast(`Deleted user account "${name}"`);
     } catch (e) {
       console.error("Failed to delete user", e);
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Clock, RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface JobRecord {
   id: string;
@@ -22,9 +23,8 @@ export function ScheduledJobsClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/v1/admin/jobs");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<any>("/admin/jobs");
+      if (data) {
         setJobs(data);
       } else {
         setError("Failed to fetch scheduled jobs from backend");

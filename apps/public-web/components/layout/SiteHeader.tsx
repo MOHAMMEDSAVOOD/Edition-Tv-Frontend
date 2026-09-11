@@ -7,6 +7,7 @@ import { savedArticlesService } from "@/services/savedArticlesService";
 import { CategoryNav } from "./CategoryNav";
 import { NotificationPopover } from "./NotificationPopover";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { apiClient } from "@/lib/api-client";
 
 interface ApiCategory {
   id: string;
@@ -28,15 +29,9 @@ export function SiteHeader() {
     setMounted(true);
     savedArticlesService.getSavedArticles().then((items) => setBookmarkCount(items.length)).catch(() => {});
 
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-    const endpoint = apiBaseUrl ? (apiBaseUrl.endsWith("/api/v1") ? `${apiBaseUrl}/cms/categories` : `${apiBaseUrl}/api/v1/cms/categories`) : "/api/v1/cms/categories";
-
-    fetch(endpoint)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch categories");
-        return res.json();
-      })
-      .then((data: ApiCategory[]) => {
+    const fetchCategories = async () => {
+      try {
+        const data = await apiClient.get<ApiCategory[]>("/cms/categories");
         if (Array.isArray(data)) {
           const items = data
             .filter((cat) => cat.showInNav !== false)
@@ -47,10 +42,12 @@ export function SiteHeader() {
             }));
           setNavItems(items);
         }
-      })
-      .catch(() => {
+      } catch (error) {
         // Pure API mode: no fallback mock data
-      });
+      }
+    };
+    
+    fetchCategories();
   }, []);
 
   // Prevent scroll when drawer is open

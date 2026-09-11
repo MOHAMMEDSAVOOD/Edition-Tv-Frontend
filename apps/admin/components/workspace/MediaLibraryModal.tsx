@@ -21,8 +21,7 @@ interface MediaLibraryModalProps {
   onSelectMedia: (media: MediaAsset) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
-
+import { apiClient } from "@/lib/api-client";
 
 export function MediaLibraryModal({
   isOpen,
@@ -48,9 +47,7 @@ export function MediaLibraryModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/media`);
-      if (!res.ok) throw new Error(`Failed to load media (${res.status})`);
-      const data = await res.json();
+      const data = await apiClient.get<any>(`/media`);
       const list: MediaAsset[] = (Array.isArray(data) ? data : []).map((m: { id: string; url?: string; storageUrl?: string; filename?: string; storageKey?: string; caption?: string; credit?: string; altText?: string; mediaType?: string; mimeType?: string; contentType?: string; filesize?: string; createdAt?: string }) => ({
         id: m.id,
         url: m.url || m.storageUrl || "",
@@ -82,24 +79,14 @@ export function MediaLibraryModal({
 
     setUploading(true);
     try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-      const res = await fetch(`${API_BASE}/media`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          url: uploadUrl,
-          filename: uploadFilename || "uploaded_asset.jpg",
-          caption: uploadCaption,
-          credit: uploadCredit,
-          altText: uploadAltText,
-          contentType: "image/jpeg",
-        }),
+      await apiClient.post<any>(`/media`, {
+        url: uploadUrl,
+        filename: uploadFilename || "uploaded_asset.jpg",
+        caption: uploadCaption,
+        credit: uploadCredit,
+        altText: uploadAltText,
+        contentType: "image/jpeg",
       });
-
-      if (!res.ok) throw new Error(`Upload failed (${res.status})`);
       setShowUploadForm(false);
       setUploadUrl("");
       setUploadFilename("");

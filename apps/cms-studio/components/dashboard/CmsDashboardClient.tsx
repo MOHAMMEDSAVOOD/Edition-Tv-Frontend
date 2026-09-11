@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { apiClient } from "@/lib/api-client";
 import { 
   FileText, 
   Layers, 
@@ -43,9 +44,8 @@ export function CmsDashboardClient() {
   const fetchCmsData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/articles?size=6`);
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<any>("/articles?size=6");
+      if (data) {
         const content = Array.isArray(data.content) ? data.content : [];
         setStories(content.map((art: any) => ({
           id: art.id,

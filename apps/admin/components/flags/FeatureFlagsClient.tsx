@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Flag, RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface FlagRecord {
   id: string;
@@ -21,9 +22,8 @@ export function FeatureFlagsClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/v1/admin/feature-flags");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<any>("/admin/feature-flags");
+      if (data) {
         setFlags(data);
       } else {
         setError("Failed to fetch feature flags from backend API");
@@ -41,9 +41,8 @@ export function FeatureFlagsClient() {
 
   const toggleFlag = async (key: string) => {
     try {
-      const res = await fetch(`/api/v1/admin/feature-flags/${key}/toggle`, { method: "POST" });
-      if (res.ok) {
-        const updated = await res.json();
+      const updated = await apiClient.post<any>(`/admin/feature-flags/${key}/toggle`);
+      if (updated) {
         setFlags((prev) => prev.map((f) => (f.key === key ? updated : f)));
       }
     } catch (e) {

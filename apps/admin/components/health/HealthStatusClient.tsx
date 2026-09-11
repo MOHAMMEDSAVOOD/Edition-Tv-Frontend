@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Activity, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface HealthComponent {
   name: string;
@@ -21,9 +22,8 @@ export function HealthStatusClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/v1/admin/health");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<any>("/admin/health");
+      if (data) {
         setStatus(data.status || "UP");
         setComponents(data.components || []);
       } else {

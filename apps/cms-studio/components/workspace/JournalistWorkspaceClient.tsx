@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { apiClient } from "@/lib/api-client";
 import {
   FolderKanban,
   Save,
@@ -118,6 +120,7 @@ export function JournalistWorkspaceClient() {
   const [apiDesks, setApiDesks] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [apiUsers, setApiUsers] = useState<UserItem[]>([]);
   const [currentUser, setCurrentUser] = useState<UserItem | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Tab Data (Revisions, Notes, Locks)
   const [revisions, setRevisions] = useState<RevisionItem[]>([]);
@@ -146,15 +149,17 @@ export function JournalistWorkspaceClient() {
 
   // 1. Fetch Taxonomy & Users
   useEffect(() => {
-    fetch(`${API_BASE}/cms/categories`).then((r) => r.json()).then((d) => setApiCategories(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch(`${API_BASE}/cms/desks`).then((r) => r.json()).then((d) => setApiDesks(Array.isArray(d) ? d : [])).catch(() => {});
-    fetch(`${API_BASE}/users`).then((r) => r.json()).then((d) => setApiUsers(Array.isArray(d) ? d : [])).catch(() => {});
+    apiClient.get<any[]>('/cms/categories').then((d) => setApiCategories(Array.isArray(d) ? d : [])).catch(() => {});
+    apiClient.get<any[]>('/cms/desks').then((d) => setApiDesks(Array.isArray(d) ? d : [])).catch(() => {});
+    apiClient.get<any[]>('/users').then((d) => setApiUsers(Array.isArray(d) ? d : [])).catch(() => {});
 
-    const token = getAuthToken();
+    const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
     if (token) {
-      fetch(`${API_BASE}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-        .then((r) => r.json())
-        .then((u) => { if (u && u.username) setCurrentUser(u); })
+      apiClient.get<any>('/users/me')
+        .then((user) => {
+          if (user?.id) setCurrentUserId(user.id);
+          if (user && user.username) setCurrentUser(user);
+        })
         .catch(() => {});
     }
   }, []);
@@ -164,10 +169,8 @@ export function JournalistWorkspaceClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/articles?page=0&size=50`);
-      if (!res.ok) throw new Error(`API error ${res.status}`);
-      const data = await res.json();
-      const list: Article[] = Array.isArray(data.content) ? data.content : Array.isArray(data) ? data : [];
+      const data = await apiClient.get<any>('/articles?page=0&size=50');
+      const list: Article[] = data ? (Array.isArray(data.content) ? data.content : Array.isArray(data) ? data : []) : [];
       setArticles(list);
       if (list.length > 0 && !selectedArticle) {
         loadArticleIntoEditor(list[0]);
@@ -221,20 +224,17 @@ export function JournalistWorkspaceClient() {
 
   const fetchTabDetails = async (articleId: string) => {
     // Revisions
-    fetch(`${API_BASE}/admin/editorial/articles/${articleId}/revisions`)
-      .then((r) => r.json())
+    apiClient.get<any[]>(`/admin/editorial/articles/${articleId}/revisions`)
       .then((d) => setRevisions(Array.isArray(d) ? d : []))
       .catch(() => setRevisions([]));
 
     // Lock
-    fetch(`${API_BASE}/admin/editorial/articles/${articleId}/lock`)
-      .then((r) => r.json())
+    apiClient.get<any>(`/admin/editorial/articles/${articleId}/lock`)
       .then((d) => setActiveLock(d && d.lockedByUserId ? d : null))
       .catch(() => setActiveLock(null));
 
     // Comments / Notes
-    fetch(`${API_BASE}/admin/editorial/comments?targetType=ARTICLE&targetId=${articleId}`)
-      .then((r) => r.json())
+    apiClient.get<any[]>(`/admin/editorial/comments?targetType=ARTICLE&targetId=${articleId}`)
       .then((d) => setNotes(Array.isArray(d) ? d : []))
       .catch(() => setNotes([]));
   };
@@ -246,18 +246,12 @@ export function JournalistWorkspaceClient() {
     setSubmittingAction(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/articles`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          headline: "Untitled Story Draft",
-          summary: "",
-          contentBody: JSON.stringify([{ id: "b-1", type: "PARAGRAPH", content: "" }]),
-          category: apiCategories[0]?.name || null,
-        }),
+      const created = await apiClient.post<any>('/articles', {
+        headline: "Untitled Story Draft",
+        summary: "",
+        contentBody: JSON.stringify([{ id: "b-1", type: "PARAGRAPH", content: "" }]),
+        category: apiCategories[0]?.name || null,
       });
-      if (!res.ok) throw new Error(`Create failed: ${res.status}`);
-      const created: Article = await res.json();
       await fetchArticles();
       loadArticleIntoEditor(created);
     } catch (err: unknown) {
@@ -290,26 +284,15 @@ export function JournalistWorkspaceClient() {
         altText,
       };
 
-      const res = await fetch(`${API_BASE}/articles/${selectedArticle.id}`, {
-        method: "PUT",
-        headers: authHeaders(),
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-      const updated: Article = await res.json();
+      const updated = await apiClient.put<any>(`/articles/${selectedArticle.id}`, payload);
       setSelectedArticle(updated);
 
       // Create Revision Snapshot via API
-      fetch(`${API_BASE}/admin/editorial/articles/${selectedArticle.id}/revisions`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          headline,
-          summary,
-          contentBody: JSON.stringify(blocks),
-          changeSummary: "Updated story content in CMS Studio",
-        }),
+      apiClient.post<any>(`/admin/editorial/articles/${selectedArticle.id}/revisions`, {
+        headline,
+        summary,
+        contentBody: JSON.stringify(blocks),
+        changeSummary: "Updated story content in CMS Studio",
       }).then(() => fetchTabDetails(selectedArticle.id)).catch(() => {});
 
       setSaveStatus("saved");
@@ -327,15 +310,10 @@ export function JournalistWorkspaceClient() {
     if (!token) return alert("Login required to transition workflow status.");
 
     try {
-      const res = await fetch(
-        `${API_BASE}/articles/${selectedArticle.id}/status?targetStatus=${newStatus}`,
-        {
-          method: "POST",
-          headers: authHeaders(),
-        }
+      const updated = await apiClient.post<any>(
+        `/articles/${selectedArticle.id}/status?targetStatus=${newStatus}`,
+        {}
       );
-      if (!res.ok) throw new Error(`Transition to ${newStatus} failed (${res.status})`);
-      const updated: Article = await res.json();
       setSelectedArticle(updated);
       await fetchArticles();
     } catch (err: unknown) {
@@ -349,12 +327,7 @@ export function JournalistWorkspaceClient() {
     const token = getAuthToken();
     if (!token) return alert("Login required.");
     try {
-      const res = await fetch(`${API_BASE}/admin/editorial/articles/${selectedArticle.id}/lock`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      if (!res.ok) throw new Error(`Lock acquisition failed: ${res.status}`);
-      const lockData = await res.json();
+      const lockData = await apiClient.post<any>(`/admin/editorial/articles/${selectedArticle.id}/lock`, {});
       setActiveLock(lockData);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Lock failed");
@@ -372,20 +345,13 @@ export function JournalistWorkspaceClient() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/articles/${targetId}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
-      if (res.ok || res.status === 204 || res.status === 404) {
-        setArticles((prev) => prev.filter((a) => a.id !== targetId));
-        if (selectedArticle?.id === targetId) {
-          setSelectedArticle(null);
-        }
-        await fetchArticles();
-        alert(`Story "${targetTitle}" was permanently deleted.`);
-      } else {
-        alert(`Failed to delete story (HTTP ${res.status})`);
+      await apiClient.delete<any>(`/articles/${targetId}`);
+      setArticles((prev) => prev.filter((a) => a.id !== targetId));
+      if (selectedArticle?.id === targetId) {
+        setSelectedArticle(null);
       }
+      await fetchArticles();
+      alert(`Story "${targetTitle}" was permanently deleted.`);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to delete story");
     }
@@ -399,16 +365,12 @@ export function JournalistWorkspaceClient() {
     if (!token) return alert("Login required.");
 
     try {
-      const res = await fetch(`${API_BASE}/admin/editorial/comments`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          targetType: "ARTICLE",
-          targetId: selectedArticle.id,
-          commentText: newNoteText.trim(),
-        }),
+      await apiClient.post<any>(`/admin/editorial/comments`, {
+        targetType: "ARTICLE",
+        targetId: selectedArticle.id,
+        commentText: newNoteText.trim(),
+        authorId: currentUserId || currentUser?.id || "Anonymous"
       });
-      if (!res.ok) throw new Error("Failed to add note");
       setNewNoteText("");
       fetchTabDetails(selectedArticle.id);
     } catch (err: unknown) {

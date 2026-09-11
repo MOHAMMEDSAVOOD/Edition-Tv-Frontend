@@ -15,9 +15,9 @@ import {
   Tag,
   Music,
   Video,
-  FileText,
   Shield,
 } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 
 interface WireItem {
   id: string;
@@ -54,11 +54,10 @@ export function WireFeedClient() {
     setLoading(true);
     try {
       const url = selectedState
-        ? `/api/v1/newsroom/wire-items?state=${selectedState}&page=0&size=50`
-        : `/api/v1/newsroom/wire-items?page=0&size=50`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
+        ? `/newsroom/wire-items?state=${selectedState}&page=0&size=50`
+        : `/newsroom/wire-items?page=0&size=50`;
+      const data = await apiClient.get<any>(url);
+      if (data) {
         setItems(data.content || []);
       }
     } catch (e) {
@@ -74,9 +73,7 @@ export function WireFeedClient() {
 
   const handleUpdateState = async (itemId: string, newState: string) => {
     try {
-      await fetch(`/api/v1/newsroom/wire-items/${itemId}/state?state=${newState}`, {
-        method: "PUT",
-      });
+      await apiClient.put(`/newsroom/wire-items/${itemId}/state?state=${newState}`);
       fetchWireItems();
     } catch (e) {
       console.error("Failed to update wire item state:", e);

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { WireItem } from "./ArticleList";
 import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw } from "lucide-react";
 
+import { apiClient } from "@/lib/api-client";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
 
 interface OptionItem {
@@ -86,9 +88,9 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
       let data: PublicationConfig | null = null;
 
       try {
-        const res = await fetch(`${API_BASE}/newsroom/wire-items/publication-config`);
-        if (res.ok) {
-          data = await res.json();
+        const resData = await apiClient.get<PublicationConfig>('/newsroom/wire-items/publication-config');
+        if (resData) {
+          data = resData;
         }
       } catch {
         // Fallback endpoint fetch
@@ -98,9 +100,8 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
         // Fetch categories dynamically from backend API
         let categoryList: OptionItem[] = [];
         try {
-          const catRes = await fetch(`${API_BASE}/categories`);
-          if (catRes.ok) {
-            const raw = await catRes.json();
+          const raw = await apiClient.get<any>('/categories');
+          if (raw) {
             const items = Array.isArray(raw) ? raw : (raw.content || raw.data || []);
             categoryList = items.map((c: any) => ({
               id: c.name || c.title || c.slug,
@@ -267,20 +268,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
         idempotencyKey,
       };
 
-      const response = await fetch(`${API_BASE}/newsroom/wire-items/${item.id}/publish-direct`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || errorData?.detail || `Publication failed with status ${response.status}`);
-      }
-
-      const result = await response.json();
+      const result = await apiClient.post<any>(`/newsroom/wire-items/${item.id}/publish-direct`, payload);
       onSuccess(result);
     } catch (err) {
       console.error("Direct publish error:", err);

@@ -15,6 +15,7 @@ import {
   Building,
   Sparkles,
 } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 
 interface Candidate {
   id: string;
@@ -151,9 +152,8 @@ export function NewsroomControlCenterClient() {
   const fetchCandidates = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/admin/ingestion/candidates");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<any>("/admin/ingestion/candidates");
+      if (data) {
         const items = Array.isArray(data.content) ? data.content : Array.isArray(data) ? data : [];
         setCandidates(items);
         if (items.length > 0) {
@@ -175,9 +175,8 @@ export function NewsroomControlCenterClient() {
 
   const fetchDesks = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/admin/ingestion/desks");
-      if (res.ok) {
-        const data = await res.json();
+      const data = await apiClient.get<Desk[]>("/admin/ingestion/desks");
+      if (data) {
         setDesks(data);
       } else {
         setDesks(DEFAULT_DESKS);
@@ -196,21 +195,19 @@ export function NewsroomControlCenterClient() {
     if (!selectedCandidate) return;
     setActionLoading(true);
     try {
-      const endpoint = `/api/v1/admin/ingestion/candidates/${selectedCandidate.id}/${targetState.toLowerCase()}`;
-      const res = await fetch(endpoint, { method: "POST" });
-      if (res.ok) {
-        const updated = await res.json();
+      const updated = await apiClient.post<Candidate>(`/admin/ingestion/candidates/${selectedCandidate.id}/${targetState.toLowerCase()}`);
+      if (updated) {
         setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
         setSelectedCandidate(updated);
       } else {
         // Fallback optimistic state update for local testing
-        const updated = {
+        const fallbackUpdated = {
           ...selectedCandidate,
           candidateState: targetState,
           processingStatus: targetState === "REJECTED" ? "REJECTED" : selectedCandidate.processingStatus,
         };
-        setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-        setSelectedCandidate(updated);
+        setCandidates((prev) => prev.map((c) => (c.id === fallbackUpdated.id ? fallbackUpdated : c)));
+        setSelectedCandidate(fallbackUpdated);
       }
     } catch {
       // Local fallback
@@ -227,25 +224,22 @@ export function NewsroomControlCenterClient() {
     if (!selectedCandidate) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/v1/admin/ingestion/candidates/${selectedCandidate.id}/assign`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assignedUserId: assignUser, deskId: assignDesk, triageNotes }),
+      const updated = await apiClient.post<Candidate>(`/admin/ingestion/candidates/${selectedCandidate.id}/assign`, {
+        assignedUserId: assignUser, deskId: assignDesk, triageNotes
       });
-      if (res.ok) {
-        const updated = await res.json();
+      if (updated) {
         setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
         setSelectedCandidate(updated);
       } else {
-        const updated = {
+        const fallbackUpdated = {
           ...selectedCandidate,
           candidateState: "ASSIGNED",
           assignedUserId: assignUser,
           deskId: assignDesk,
           triageNotes,
         };
-        setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-        setSelectedCandidate(updated);
+        setCandidates((prev) => prev.map((c) => (c.id === fallbackUpdated.id ? fallbackUpdated : c)));
+        setSelectedCandidate(fallbackUpdated);
       }
     } catch {
       const updated = {
@@ -268,29 +262,24 @@ export function NewsroomControlCenterClient() {
     if (!selectedCandidate) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/v1/admin/ingestion/candidates/${selectedCandidate.id}/convert`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const updated = await apiClient.post<Candidate>(`/admin/ingestion/candidates/${selectedCandidate.id}/convert`, {
           headline: convertHeadline || selectedCandidate.headline,
           summary: convertSummary || selectedCandidate.summary,
           contentBody: convertBody || selectedCandidate.contentBody,
           deskId: convertDeskId,
           assignedReporterId: convertReporterId,
-        }),
       });
-      if (res.ok) {
-        const updated = await res.json();
+      if (updated) {
         setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
         setSelectedCandidate(updated);
       } else {
-        const updated = {
+        const fallbackUpdated = {
           ...selectedCandidate,
           candidateState: "CONVERTED",
           processingStatus: "CONVERTED",
         };
-        setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-        setSelectedCandidate(updated);
+        setCandidates((prev) => prev.map((c) => (c.id === fallbackUpdated.id ? fallbackUpdated : c)));
+        setSelectedCandidate(fallbackUpdated);
       }
     } catch {
       const updated = {

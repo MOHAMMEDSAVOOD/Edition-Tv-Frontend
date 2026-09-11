@@ -19,7 +19,7 @@ interface CmsEditorClientProps {
 
 type EntryStatus = "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "SCHEDULED" | "PUBLISHED";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
+import { apiClient } from "@/lib/api-client";
 
 export function CmsEditorClient({ isNew = false, entryId = "" }: CmsEditorClientProps) {
   const [articleId, setArticleId] = useState(entryId);
@@ -64,20 +64,6 @@ export function CmsEditorClient({ isNew = false, entryId = "" }: CmsEditorClient
     }
   };
 
-  const getAuthToken = (): string | null => {
-    if (typeof window === "undefined") return null;
-    try {
-      const sessionRaw = localStorage.getItem("edition_auth_session");
-      if (sessionRaw) {
-        const session = JSON.parse(sessionRaw);
-        if (session?.token) return session.token;
-      }
-      return localStorage.getItem("accessToken");
-    } catch {
-      return null;
-    }
-  };
-
   const saveArticleToBackend = async (targetStatus?: EntryStatus) => {
     setIsSaving(true);
     setErrorMsg("");
@@ -90,40 +76,21 @@ export function CmsEditorClient({ isNew = false, entryId = "" }: CmsEditorClient
     }
 
     try {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
       const payload = {
         headline: title.trim(),
         summary: summary.trim() || title.trim(),
         contentBody: bodyText.trim(),
       };
 
-      let url = `${API_BASE_URL}/articles`;
-      let method = "POST";
-
+      let endpoint = `/articles`;
       if (articleId) {
-        url = `${API_BASE_URL}/articles/${articleId}`;
-        method = "PUT";
+        endpoint = `/articles/${articleId}`;
       }
 
-      const res = await fetch(url, {
-        method,
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const savedData = articleId 
+        ? await apiClient.put<any>(endpoint, payload)
+        : await apiClient.post<any>(endpoint, payload);
 
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({ detail: "API Error" }));
-        throw new Error(errJson.detail || `Server returned ${res.status}`);
-      }
-
-      const savedData = await res.json();
       if (savedData.id) {
         setArticleId(savedData.id);
         if (savedData.slug) setSlug(savedData.slug);
@@ -131,17 +98,8 @@ export function CmsEditorClient({ isNew = false, entryId = "" }: CmsEditorClient
 
       const newStatus = targetStatus || status;
       if (savedData.id && newStatus && newStatus !== "DRAFT") {
-        const statusRes = await fetch(
-          `${API_BASE_URL}/articles/${savedData.id}/status?targetStatus=${newStatus}`,
-          {
-            method: "POST",
-            headers,
-          }
-        );
-        if (statusRes.ok) {
-          const statusData = await statusRes.json();
-          if (statusData.status) setStatus(statusData.status);
-        }
+        const statusData = await apiClient.post<any>(`/articles/${savedData.id}/status?targetStatus=${newStatus}`);
+        if (statusData && statusData.status) setStatus(statusData.status);
       }
 
       setSaveSuccess(true);

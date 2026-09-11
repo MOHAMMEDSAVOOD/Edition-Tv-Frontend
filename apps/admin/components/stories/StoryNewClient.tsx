@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, ArrowLeft, Loader2, AlertCircle, Star, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
-
-
+import { apiClient } from "@/lib/api-client";
 interface CategoryItem { id: string; name: string; slug: string; }
 
 export function StoryNewClient() {
@@ -31,16 +29,10 @@ export function StoryNewClient() {
   }, []);
 
   useEffect(() => {
-    fetch(`${API_BASE}/cms/categories`)
-      .then((r) => r.json())
+    apiClient.get<any>(`/cms/categories`)
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
-
-  const authHeaders = useCallback(() => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  }), [authToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,22 +42,13 @@ export function StoryNewClient() {
     setSubmitting(true);
     setError(null);
     try {
-      const r = await fetch(`${API_BASE}/articles`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({
-          headline: headline.trim(),
-          summary: summary.trim() || null,
-          contentBody: contentBody.trim(),
-          category: category || null,
-          featuredImageUrl: featuredImageUrl.trim() || null,
-        }),
+      const created = await apiClient.post<any>(`/articles`, {
+        headline: headline.trim(),
+        summary: summary.trim() || null,
+        contentBody: contentBody.trim(),
+        category: category || null,
+        featuredImageUrl: featuredImageUrl.trim() || null,
       });
-      if (!r.ok) {
-        const errData = await r.json().catch(() => ({}));
-        throw new Error((errData as { message?: string }).message || `Create failed: ${r.status}`);
-      }
-      const created = await r.json();
       router.push(`/stories/${created.id}/edit`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create story");

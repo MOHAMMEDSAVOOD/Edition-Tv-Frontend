@@ -21,7 +21,7 @@ interface MediaLibraryModalProps {
   onSelectMedia: (media: MediaAsset) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+import { apiClient } from "@/lib/api-client";
 
 export function MediaLibraryModal({
   isOpen,
@@ -47,9 +47,7 @@ export function MediaLibraryModal({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/media`);
-      if (!res.ok) throw new Error(`Failed to load media (${res.status})`);
-      const data = await res.json();
+      const data = await apiClient.get<any>(`/media`);
       const list: MediaAsset[] = (Array.isArray(data) ? data : []).map((m: any) => ({
         id: m.id,
         url: m.url || m.storageUrl || "",
@@ -85,12 +83,7 @@ export function MediaLibraryModal({
       a.filename.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("edition_access_token");
-    }
-    return null;
-  };
+
 
   const handleRegisterMedia = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,25 +91,14 @@ export function MediaLibraryModal({
     setUploading(true);
     setError(null);
     try {
-      const token = getAuthToken();
-      const res = await fetch(`${API_BASE}/media`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          filename: uploadFilename.trim() || "editorial-image.jpg",
-          url: uploadUrl.trim(),
-          mediaType: "IMAGE",
-          altText: uploadAltText.trim() || null,
-          caption: uploadCaption.trim() || null,
-          credit: uploadCredit.trim() || null,
-        }),
+      const created = await apiClient.post<any>(`/media`, {
+        filename: uploadFilename.trim() || "editorial-image.jpg",
+        url: uploadUrl.trim(),
+        mediaType: "IMAGE",
+        altText: uploadAltText.trim() || null,
+        caption: uploadCaption.trim() || null,
+        credit: uploadCredit.trim() || null,
       });
-
-      if (!res.ok) throw new Error(`Media upload failed (${res.status})`);
-      const created = await res.json();
       const newAsset: MediaAsset = {
         id: created.id,
         url: created.url || created.storageUrl,

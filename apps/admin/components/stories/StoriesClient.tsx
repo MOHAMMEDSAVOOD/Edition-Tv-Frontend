@@ -19,8 +19,7 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+import { apiClient } from "@/lib/api-client";
 
 interface ArticleStats {
   total: number;
@@ -105,6 +104,7 @@ export function StoriesClient() {
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
     setAuthToken(stored);
+    apiClient.setAccessToken(stored);
   }, []);
 
   // Debounce search input
@@ -113,10 +113,8 @@ export function StoriesClient() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Fetch categories for filter dropdown
   useEffect(() => {
-    fetch(`${API_BASE}/cms/categories`)
-      .then((r) => r.json())
+    apiClient.get<CategoryItem[]>('/cms/categories')
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
@@ -124,8 +122,8 @@ export function StoriesClient() {
   // Fetch article stats
   const fetchStats = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/articles/stats`);
-      if (res.ok) setStats(await res.json());
+      const statsData = await apiClient.get<ArticleStats>('/articles/stats');
+      if (statsData) setStats(statsData);
     } catch {}
   }, []);
 
@@ -139,12 +137,12 @@ export function StoriesClient() {
       if (categoryFilter) params.set("category", categoryFilter);
       if (debouncedSearch) params.set("search", debouncedSearch);
 
-      const res = await fetch(`${API_BASE}/articles?${params.toString()}`);
-      if (!res.ok) throw new Error(`API error ${res.status}`);
-      const data: PageData = await res.json();
-      setStories(Array.isArray(data.content) ? data.content : []);
-      setTotalPages(data.totalPages ?? 0);
-      setTotalElements(data.totalElements ?? 0);
+      const data = await apiClient.get<PageData>(`/articles?${params.toString()}`);
+      if (data) {
+        setStories(Array.isArray(data.content) ? data.content : []);
+        setTotalPages(data.totalPages ?? 0);
+        setTotalElements(data.totalElements ?? 0);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load stories");
     } finally {
@@ -164,10 +162,7 @@ export function StoriesClient() {
     fetchStories();
   }, [fetchStories]);
 
-  const authHeaders = () => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  });
+  // Authorization headers are automatically handled by apiClient
 
   const handlePublish = async (story: StoryItem) => {
     if (!authToken) return alert("Login required to publish.");
@@ -183,18 +178,11 @@ export function StoriesClient() {
       else if (currentStatus === "SCHEDULED") publishChain.push("PUBLISHED");
 
       for (const targetStatus of publishChain) {
-        const r = await fetch(`${API_BASE}/articles/${story.id}/status?targetStatus=${targetStatus}`, {
-          method: "POST",
-          headers: authHeaders(),
-        });
-        if (!r.ok) throw new Error(`Status transition to ${targetStatus} failed`);
+        await apiClient.post(`/articles/${story.id}/status?targetStatus=${targetStatus}`);
       }
 
       // Mark as published to web
-      await fetch(`${API_BASE}/newsroom/wire-items`, {
-        method: "GET",
-        headers: authHeaders(),
-      });
+      await apiClient.get(`/newsroom/wire-items`);
 
       await fetchStories();
       await fetchStats();
@@ -210,11 +198,7 @@ export function StoriesClient() {
     if (!confirm(`Unpublish "${story.headline}" and revert to DRAFT?`)) return;
     setActionLoading(story.id);
     try {
-      const r = await fetch(`${API_BASE}/articles/${story.id}/status?targetStatus=DRAFT`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      if (!r.ok) throw new Error(`Unpublish failed: ${r.status}`);
+      await apiClient.post(`/articles/${story.id}/status?targetStatus=DRAFT`);
       setStories((prev) => prev.map((s) => (s.id === story.id ? { ...s, status: "DRAFT", isPublishedToWeb: false } : s)));
       await fetchStories();
       await fetchStats();
@@ -230,11 +214,7 @@ export function StoriesClient() {
     if (!confirm(`Archive "${story.headline}"?`)) return;
     setActionLoading(story.id);
     try {
-      const r = await fetch(`${API_BASE}/articles/${story.id}/status?targetStatus=ARCHIVED`, {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      if (!r.ok) throw new Error(`Archive failed: ${r.status}`);
+      await apiClient.post(`/articles/${story.id}/status?targetStatus=ARCHIVED`);
       await fetchStories();
       await fetchStats();
     } catch (err: unknown) {
@@ -249,11 +229,7 @@ export function StoriesClient() {
     if (!confirm(`Permanently delete "${story.headline}"? This cannot be undone.`)) return;
     setActionLoading(story.id);
     try {
-      const r = await fetch(`${API_BASE}/articles/${story.id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
-      if (!r.ok && r.status !== 404) throw new Error(`Delete failed: ${r.status}`);
+      await apiClient.delete(`/articles/${story.id}`);
       setStories((prev) => prev.filter((s) => s.id !== story.id));
       setTotalElements((prev) => Math.max(0, prev - 1));
       await fetchStories();

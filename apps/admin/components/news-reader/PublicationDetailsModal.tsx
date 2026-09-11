@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { WireItem } from "./ArticleList";
 import { ExternalLink, CheckCircle } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 
 interface PublicationDetailsModalProps {
   item: WireItem;
@@ -37,9 +38,8 @@ export function PublicationDetailsModal({ item, onClose }: PublicationDetailsMod
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const res = await fetch(`/api/v1/newsroom/wire-items/${item.id}/publication-details`);
-        if (res.ok) {
-          const data = await res.json();
+        const data = await apiClient.get<PublicationDetails>(`/newsroom/wire-items/${item.id}/publication-details`);
+        if (data) {
           setDetails(data);
         }
       } catch (e) {

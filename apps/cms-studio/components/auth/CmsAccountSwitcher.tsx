@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { authService } from "@/services/authService";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+import { apiClient } from "@/lib/api-client";
 
 interface UserSummary {
   id: string;
@@ -45,12 +45,9 @@ export function CmsAccountSwitcher() {
 
   const fetchCmsUsers = async () => {
     try {
-      const res = await fetch(`${API_BASE}/users`);
-      if (res.ok) {
-        const data: UserSummary[] = await res.json();
-        const cmsOnly = data.filter((u) => u.role !== "ROLE_ADMIN");
-        setUserList(cmsOnly);
-      }
+      const data = await apiClient.get<UserSummary[]>(`/users`);
+      const cmsOnly = data.filter((u) => u.role !== "ROLE_ADMIN");
+      setUserList(cmsOnly);
     } catch {
       // Keep empty if unreachable
     }
@@ -79,23 +76,14 @@ export function CmsAccountSwitcher() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: newUsername,
-          email: newEmail || `${newUsername}@editiontv.com`,
-          password: newPassword,
-          role: newRole,
-          firstName: newUsername,
-          lastName: "Journalist",
-        }),
+      await apiClient.post<any>(`/users`, {
+        username: newUsername,
+        email: newEmail || `${newUsername}@editiontv.com`,
+        password: newPassword,
+        role: newRole,
+        firstName: newUsername,
+        lastName: "Journalist",
       });
-
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || `Failed to create user ${res.status}`);
-      }
 
       await fetchCmsUsers();
       setIsAddModalOpen(false);

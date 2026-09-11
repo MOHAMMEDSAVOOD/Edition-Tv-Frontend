@@ -14,8 +14,7 @@ interface Category {
   parentId?: string | null;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
-
+import { apiClient } from "@/lib/api-client";
 export function CategoryManagementClient() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -48,9 +47,7 @@ export function CategoryManagementClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/cms/categories`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch categories`);
-      const data = await res.json();
+      const data = await apiClient.get<any>(`/cms/categories`);
       const list = Array.isArray(data) ? data : [];
       setCategories(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
     } catch (err: unknown) {
@@ -70,15 +67,7 @@ export function CategoryManagementClient() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usernameOrEmail: loginUser, password: loginPass }),
-      });
-
-      if (!res.ok) throw new Error("Invalid username or password");
-
-      const data = await res.json();
+      const data = await apiClient.post<any>(`/auth/login`, { usernameOrEmail: loginUser, password: loginPass });
       const token = data.accessToken || data.token;
 
       if (token) {
@@ -150,25 +139,20 @@ export function CategoryManagementClient() {
     };
 
     try {
-      const url = editingId
-        ? `${API_BASE_URL}/cms/categories/${editingId}`
-        : `${API_BASE_URL}/cms/categories`;
-      const method = editingId ? "PUT" : "POST";
+      const url = editingId ? `/cms/categories/${editingId}` : `/cms/categories`;
 
-      const res = await fetch(url, {
-        method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(payload),
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        setShowLoginModal(true);
-        throw new Error("Admin authentication required. Please log in.");
-      }
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.detail || errJson.message || "Failed to save category");
+      try {
+        if (editingId) {
+          await apiClient.put<any>(url, payload);
+        } else {
+          await apiClient.post<any>(url, payload);
+        }
+      } catch (err: any) {
+        if (err.status === 401 || err.status === 403) {
+          setShowLoginModal(true);
+          throw new Error("Admin authentication required. Please log in.");
+        }
+        throw new Error(err.message || "Failed to save category");
       }
 
       setIsModalOpen(false);
@@ -190,17 +174,15 @@ export function CategoryManagementClient() {
     if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/cms/categories/${id}`, {
-        method: "DELETE",
-        headers: getAuthHeaders(),
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        setShowLoginModal(true);
-        throw new Error("Admin authentication required. Please log in.");
+      try {
+        await apiClient.delete<any>(`/cms/categories/${id}`);
+      } catch (err: any) {
+        if (err.status === 401 || err.status === 403) {
+          setShowLoginModal(true);
+          throw new Error("Admin authentication required. Please log in.");
+        }
+        throw new Error("Failed to delete category");
       }
-
-      if (!res.ok) throw new Error("Failed to delete category");
       await fetchCategories();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to delete category");

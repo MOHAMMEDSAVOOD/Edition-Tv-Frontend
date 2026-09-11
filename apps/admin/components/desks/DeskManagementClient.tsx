@@ -4,9 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, RefreshCw, LayoutGrid, AlertCircle, CheckCircle, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
-
-
+import { apiClient } from "@/lib/api-client";
 interface DeskItem {
   id: string;
   name: string;
@@ -46,9 +44,7 @@ export function DeskManagementClient() {
     setLoading(true);
     setError(null);
     try {
-      const r = await fetch(`${API_BASE}/cms/desks`);
-      if (!r.ok) throw new Error(`API ${r.status}`);
-      const data = await r.json();
+      const data = await apiClient.get<any>(`/cms/desks`);
       setDesks(
         (Array.isArray(data) ? data : []).sort(
           (a: DeskItem, b: DeskItem) => a.priority - b.priority
@@ -110,12 +106,11 @@ export function DeskManagementClient() {
     };
 
     try {
-      const url = editingId ? `${API_BASE}/cms/desks/${editingId}` : `${API_BASE}/cms/desks`;
-      const method = editingId ? "PUT" : "POST";
-      const r = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(body) });
-      if (!r.ok) {
-        const txt = await r.text();
-        throw new Error(txt || `HTTP ${r.status}`);
+      const url = editingId ? `/cms/desks/${editingId}` : `/cms/desks`;
+      if (editingId) {
+        await apiClient.put<any>(url, body);
+      } else {
+        await apiClient.post<any>(url, body);
       }
       showSuccess(editingId ? "Desk updated successfully" : "Desk created successfully");
       setIsModalOpen(false);
@@ -129,11 +124,7 @@ export function DeskManagementClient() {
 
   const handleToggle = async (desk: DeskItem) => {
     try {
-      const r = await fetch(`${API_BASE}/cms/desks/${desk.id}/toggle`, {
-        method: "PATCH",
-        headers: authHeaders(),
-      });
-      if (!r.ok) throw new Error("Toggle failed");
+      await apiClient.patch<any>(`/cms/desks/${desk.id}/toggle`, {});
       showSuccess(`Desk '${desk.name}' ${!desk.enabled ? "enabled" : "disabled"}`);
       fetchDesks();
     } catch (err: unknown) {
@@ -144,11 +135,7 @@ export function DeskManagementClient() {
   const handleDelete = async (desk: DeskItem) => {
     if (!confirm(`Delete desk "${desk.name}"?`)) return;
     try {
-      const r = await fetch(`${API_BASE}/cms/desks/${desk.id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
-      if (!r.ok) throw new Error("Delete failed");
+      await apiClient.delete<any>(`/cms/desks/${desk.id}`);
       showSuccess(`Desk '${desk.name}' deleted`);
       fetchDesks();
     } catch (err: unknown) {

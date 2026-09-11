@@ -20,7 +20,7 @@ interface FactCheckPanelProps {
   onClaimsUpdated?: (claimsCount: number) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+import { apiClient } from "@/lib/api-client";
 
 export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelProps) {
   const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>([]);
@@ -44,9 +44,7 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/admin/verification/evidence?storyId=${articleId}`);
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
+      const data = await apiClient.get<any>(`/admin/verification/evidence?storyId=${articleId}`);
       const list: EvidenceItem[] = Array.isArray(data) ? data : [];
       setEvidenceList(list);
       if (onClaimsUpdated) onClaimsUpdated(list.length);
@@ -68,7 +66,6 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
     setSubmitting(true);
     setError(null);
     try {
-      const token = getAuthToken();
       const query = new URLSearchParams({
         storyId: articleId,
         evidenceType,
@@ -77,14 +74,8 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
         ...(sourceName ? { sourceName: sourceName.trim() } : {}),
       });
 
-      const res = await fetch(`${API_BASE}/admin/verification/evidence?${query.toString()}`, {
-        method: "POST",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
+      await apiClient.post<any>(`/admin/verification/evidence?${query.toString()}`);
 
-      if (!res.ok) throw new Error(`Failed to attach evidence (${res.status})`);
       setTitle("");
       setSourceName("");
       setUrlOrFilepath("");
@@ -98,17 +89,9 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
-      const token = getAuthToken();
-      const res = await fetch(
-        `${API_BASE}/admin/verification/evidence/${id}/status?status=${newStatus}`,
-        {
-          method: "POST",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
+      await apiClient.post<any>(
+        `/admin/verification/evidence/${id}/status?status=${newStatus}`
       );
-      if (!res.ok) throw new Error(`Status update failed (${res.status})`);
       await fetchEvidence();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Update failed");

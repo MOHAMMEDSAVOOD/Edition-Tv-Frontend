@@ -1,6 +1,7 @@
 "use client";
 import { FileCode2, RefreshCw, AlertCircle } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
+import { apiClient } from "@/lib/api-client";
 
 interface AuditEntry {
   id: string;
@@ -52,9 +53,6 @@ function toAuditEntry(log: ApiAuditLog): AuditEntry {
   };
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
-
-
 export function AuditLogsClient() {
   const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,15 +64,14 @@ export function AuditLogsClient() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/audit?page=${p}&size=20`, {
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-      const data: PaginatedResponse = await res.json();
-      setLogs(data.content.map(toAuditEntry));
-      setTotalPages(data.totalPages);
-      setPage(data.number);
+      const data = await apiClient.get<PaginatedResponse>(`/audit?page=${p}&size=20`);
+      if (data) {
+        setLogs(data.content.map(toAuditEntry));
+        setTotalPages(data.totalPages);
+        setPage(data.number);
+      } else {
+        throw new Error("Failed to load audit logs");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load audit logs");
     } finally {

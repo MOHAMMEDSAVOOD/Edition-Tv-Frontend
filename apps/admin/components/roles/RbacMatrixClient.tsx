@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api-client";
 
 interface PermissionRow {
   key: string;
@@ -28,14 +29,12 @@ export function RbacMatrixClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const [rolesRes, permRes] = await Promise.all([
-        fetch("/api/v1/admin/roles"),
-        fetch("/api/v1/admin/permissions"),
+      const [rolesData, permData] = await Promise.all([
+        apiClient.get<any>("/admin/roles"),
+        apiClient.get<any>("/admin/permissions"),
       ]);
 
-      if (rolesRes.ok && permRes.ok) {
-        const rolesData = await rolesRes.json();
-        const permData = await permRes.json();
+      if (rolesData && permData) {
         setRoles(rolesData);
         setPermissions(permData);
       } else {

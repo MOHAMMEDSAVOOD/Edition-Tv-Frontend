@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Article } from "@/types/models";
+import { apiClient } from "@/lib/api-client";
 
 export function ContinueReadingWidget() {
   const [recentArticle, setRecentArticle] = useState<Article | null>(null);
@@ -14,9 +15,9 @@ export function ContinueReadingWidget() {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed?.slug) {
-          fetch(`/api/v1/public/articles/${parsed.slug}`)
-            .then((res) => {
-              if (res.ok) {
+          apiClient.get<any>(`/public/articles/${parsed.slug}`)
+            .then((data) => {
+              if (data) {
                 setRecentArticle(parsed);
               } else {
                 localStorage.removeItem("edition_last_read_article");

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { authService } from "@edition/auth";
-import { Table, Search, Database, ChevronRight, ChevronLeft, Trash2, Edit2, AlertCircle } from "lucide-react";
+import { Table, Search, Database, ChevronRight, ChevronLeft, Trash2, AlertCircle } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 
 interface DBTable {
   tableName: string;
@@ -56,12 +57,8 @@ export default function DatabaseStudioClient() {
     try {
       setLoading(true);
       setError(null);
-      const token = typeof window !== 'undefined' ? localStorage.getItem("edition_access_token") : null;
-      const res = await fetch(`/api/db-studio/tables`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = (await res.json()) as { table_name: string }[];
+      const data = await apiClient.get<{ table_name: string }[]>("/db-studio/tables");
+      if (!data) throw new Error("Failed to fetch tables");
       // map { table_name: 'xyz' } to DBTable format used in UI
       setTables(data.map((t) => ({ tableName: t.table_name, tableType: 'BASE TABLE' })));
     } catch (err: unknown) {
@@ -92,15 +89,12 @@ export default function DatabaseStudioClient() {
 
   const fetchMetadata = async (tableName: string) => {
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem("edition_access_token") : null;
-      const res = await fetch(`/api/db-studio/tables/${tableName}/schema`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = (await res.json()) as {
+      const data = await apiClient.get<{
         columns: { column_name: string; data_type: string; is_nullable: string }[];
         primaryKeys: { column_name: string }[];
-      };
+      }>(`/db-studio/tables/${tableName}/schema`);
+      
+      if (!data) throw new Error("Failed to fetch metadata");
       
       // format to match expected UI metadata structure
       const formattedMetadata: TableMetadata = {
@@ -122,12 +116,8 @@ export default function DatabaseStudioClient() {
   const fetchRecords = async (tableName: string, pageNum: number) => {
     try {
       setLoading(true);
-      const token = typeof window !== 'undefined' ? localStorage.getItem("edition_access_token") : null;
-      const res = await fetch(`/api/db-studio/tables/${tableName}/records?page=${pageNum + 1}&size=${pageSize}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const data = (await res.json()) as { records: Record<string, unknown>[] };
+      const data = await apiClient.get<{ records: Record<string, unknown>[] }>(`/db-studio/tables/${tableName}/records?page=${pageNum + 1}&size=${pageSize}`);
+      if (!data) throw new Error("Failed to fetch records");
       setRecords(data.records);
       setPage(pageNum);
     } catch (err: unknown) {
@@ -142,12 +132,7 @@ export default function DatabaseStudioClient() {
     if (!confirm(`Are you sure you want to delete record with ${pkColumn} = ${pkValue}?`)) return;
     
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem("edition_access_token") : null;
-      const res = await fetch(`/api/db-studio/tables/${selectedTable}/records?pkColumn=${pkColumn}&pkValue=${pkValue}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error(await res.text());
+      await apiClient.delete<any>(`/db-studio/tables/${selectedTable}/records?pkColumn=${pkColumn}&pkValue=${pkValue}`);
       // Refresh
       fetchRecords(selectedTable, page);
     } catch (err: unknown) {
