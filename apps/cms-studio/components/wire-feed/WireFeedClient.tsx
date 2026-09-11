@@ -16,6 +16,7 @@ import {
   Music,
   Video,
   Shield,
+  FileText,
 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 

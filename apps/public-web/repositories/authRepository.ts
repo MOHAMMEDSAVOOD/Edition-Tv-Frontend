@@ -78,7 +78,7 @@ export const authRepository = {
 
   async refreshToken(refreshToken: string): Promise<AuthResponseDto> {
     try {
-      const raw = await apiClient.post<BackendAuthResponse>("/auth/refresh-token", { refreshToken });
+      const raw = await apiClient.post<BackendAuthResponse>("/auth/refresh", { refreshToken });
       return {
         token: raw.accessToken,
         refreshToken: raw.refreshToken,
