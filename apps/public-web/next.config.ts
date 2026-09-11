@@ -6,6 +6,10 @@ const backendOrigin =
     .replace(/\/api\/v1\/?$/, "");
 
 const nextConfig: NextConfig = {
+  // The Dockerfile's `runner` stage copies .next/standalone; without this the
+  // image build fails ("/app/apps/public-web/.next/standalone: not found").
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   typescript: {
     ignoreBuildErrors: false,
   },
