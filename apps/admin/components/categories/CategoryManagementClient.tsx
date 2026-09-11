@@ -11,9 +11,10 @@ interface Category {
   description?: string;
   displayOrder: number;
   showInNav?: boolean;
+  parentId?: string | null;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "https://api.editiontv.com/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export function CategoryManagementClient() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -28,6 +29,7 @@ export function CategoryManagementClient() {
   const [formDescription, setFormDescription] = useState<string>("");
   const [formDisplayOrder, setFormDisplayOrder] = useState<number>(0);
   const [formShowInNav, setFormShowInNav] = useState<boolean>(true);
+  const [formParentId, setFormParentId] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   // Auth State
@@ -113,6 +115,7 @@ export function CategoryManagementClient() {
     setFormDescription("");
     setFormDisplayOrder(categories.length + 1);
     setFormShowInNav(true);
+    setFormParentId("");
     setIsModalOpen(true);
   };
 
@@ -128,6 +131,7 @@ export function CategoryManagementClient() {
     setFormDescription(category.description || "");
     setFormDisplayOrder(category.displayOrder || 0);
     setFormShowInNav(category.showInNav !== false);
+    setFormParentId(category.parentId || "");
     setIsModalOpen(true);
   };
 
@@ -142,6 +146,7 @@ export function CategoryManagementClient() {
       description: formDescription,
       displayOrder: Number(formDisplayOrder),
       showInNav: formShowInNav,
+      parentId: formParentId || null,
     };
 
     try {
@@ -274,7 +279,19 @@ export function CategoryManagementClient() {
                       #{cat.displayOrder}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-bold text-slate-900">{cat.name}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                        {cat.parentId && <span className="text-red-500 font-mono text-[10px]">↳</span>}
+                        {cat.name}
+                      </span>
+                      {cat.parentId && (
+                        <span className="text-[10px] font-mono text-slate-400">
+                          Sub-category of: {categories.find((parent) => parent.id === cat.parentId)?.name || cat.parentId}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 font-mono text-[11px] text-slate-500">/categories/{cat.slug}</td>
                   <td className="px-4 py-3 text-slate-600 truncate max-w-xs">{cat.description || "—"}</td>
                   <td className="px-4 py-3 text-center">
@@ -349,6 +366,23 @@ export function CategoryManagementClient() {
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-red-500 resize-none"
                   placeholder="Optional brief category description"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Parent Category (Optional Sub-Category)</label>
+                <select
+                  value={formParentId}
+                  onChange={(e) => setFormParentId(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-red-500"
+                >
+                  <option value="">None (Top-Level Main Category)</option>
+                  {categories
+                    .filter((c) => c.id !== editingId)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({`/categories/${c.slug}`})
+                      </option>
+                    ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

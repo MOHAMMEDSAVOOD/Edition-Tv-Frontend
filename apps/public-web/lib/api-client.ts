@@ -50,20 +50,19 @@ export class ApiError extends Error {
  * falls back to NEXT_PUBLIC_API_BASE_URL for local development.
  * Never exposed to the browser.
  */
-const DEFAULT_API_URL = "https://api.editiontv.com/api/v1";
-
 function getServerApiBaseUrl(): string {
   return (
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    DEFAULT_API_URL
+    process.env.NEXT_PUBLIC_API_URL ||
+    ""
   );
 }
 
 const CLIENT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  DEFAULT_API_URL;
+  "";
 
 // ---------------------------------------------------------------------------
 // 1. serverFetch — use ONLY in Server Components

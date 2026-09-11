@@ -32,7 +32,7 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
   }, [initialArticles, query, category]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" suppressHydrationWarning>
       {/* Search Input & Controls */}
       <div className="bg-muted/30 border border-border p-4 rounded-sm space-y-4">
         <div className="relative">

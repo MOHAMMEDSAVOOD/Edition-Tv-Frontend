@@ -20,8 +20,7 @@ export class ApiError extends Error {
   }
 }
 
-const DEFAULT_API_URL = 'https://api.editiontv.com/api/v1';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 class ApiClient {
   private accessToken: string | null = null;

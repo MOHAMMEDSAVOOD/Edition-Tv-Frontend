@@ -52,7 +52,7 @@ export function PublicationDetailsModal({ item, onClose }: PublicationDetailsMod
   }, [item.id]);
 
   const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const publicUrl = details?.publicUrl || `http://localhost:5002/articles/${slug}`;
+  const publicUrl = details?.publicUrl || `https://editiontv.com/articles/${slug}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">

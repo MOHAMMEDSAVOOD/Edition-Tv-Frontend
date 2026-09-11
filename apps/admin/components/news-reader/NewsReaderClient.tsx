@@ -37,8 +37,8 @@ export function NewsReaderClient() {
         setStarredCount(data.totalStarred || 0);
         setTotalCount(data.totalItems || 0);
       }
-    } catch (e: any) {
-      if (e?.status === 429) {
+    } catch (e: unknown) {
+      if ((e as { status?: number })?.status === 429) {
         console.warn("Rate limited (429) fetching reader stats. Will retry on next interval.");
       } else {
         console.error("Failed to fetch reader stats", e);
@@ -72,8 +72,8 @@ export function NewsReaderClient() {
 
         setCategories(Object.values(catMap));
       }
-    } catch (e: any) {
-      if (e?.status === 429) {
+    } catch (e: unknown) {
+      if ((e as { status?: number })?.status === 429) {
         console.warn("Rate limited (429) fetching news sources.");
       } else {
         console.error("Failed to fetch categories", e);
@@ -106,8 +106,8 @@ export function NewsReaderClient() {
           setSelectedItem(content[0]);
         }
       }
-    } catch (e: any) {
-      if (e?.status === 429) {
+    } catch (e: unknown) {
+      if ((e as { status?: number })?.status === 429) {
         console.warn("Rate limited (429) fetching wire items.");
       } else {
         console.error("Failed to fetch wire stream", e);

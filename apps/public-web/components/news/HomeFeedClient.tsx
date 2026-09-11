@@ -65,10 +65,9 @@ export function HomeFeedClient({
       const combinedRawItems: Record<string, unknown>[] = [];
 
       const mainEndpoints = [
-        "/articles?page=0&size=50",
+        "/articles?status=PUBLISHED&page=0&size=50",
         "/news/feed?page=0&size=50",
-        "/newsroom/wire-items/reader?page=0&size=50",
-        "/public/articles",
+        "/public/articles?status=PUBLISHED",
       ];
 
       const fetchedResults = await Promise.allSettled(
@@ -84,10 +83,14 @@ export function HomeFeedClient({
         }
       }
 
-      // Deduplicate items by title/headline
+      // Deduplicate and filter items to ONLY include published articles (exclude raw ingested wire items and drafts)
       const seenTitles = new Set<string>();
       const uniqueRawItems: Record<string, unknown>[] = [];
       for (const item of combinedRawItems) {
+        if (item.wireItemId || item.wireSource || item.isWireItem) continue;
+        const status = String(item.status || "").toUpperCase();
+        if (status && status !== "PUBLISHED") continue;
+
         const titleKey = String(item.headline || item.title || item.name || "").trim().toLowerCase();
         if (titleKey && !seenTitles.has(titleKey)) {
           seenTitles.add(titleKey);

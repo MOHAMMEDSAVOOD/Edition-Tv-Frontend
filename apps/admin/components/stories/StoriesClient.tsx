@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://api.editiontv.com/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 interface ArticleStats {
   total: number;
@@ -205,6 +205,26 @@ export function StoriesClient() {
     }
   };
 
+  const handleUnpublish = async (story: StoryItem) => {
+    if (!authToken) return alert("Login required to unpublish.");
+    if (!confirm(`Unpublish "${story.headline}" and revert to DRAFT?`)) return;
+    setActionLoading(story.id);
+    try {
+      const r = await fetch(`${API_BASE}/articles/${story.id}/status?targetStatus=DRAFT`, {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      if (!r.ok) throw new Error(`Unpublish failed: ${r.status}`);
+      setStories((prev) => prev.map((s) => (s.id === story.id ? { ...s, status: "DRAFT", isPublishedToWeb: false } : s)));
+      await fetchStories();
+      await fetchStats();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Unpublish failed");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleArchive = async (story: StoryItem) => {
     if (!authToken) return alert("Login required.");
     if (!confirm(`Archive "${story.headline}"?`)) return;
@@ -234,6 +254,8 @@ export function StoriesClient() {
         headers: authHeaders(),
       });
       if (!r.ok && r.status !== 404) throw new Error(`Delete failed: ${r.status}`);
+      setStories((prev) => prev.filter((s) => s.id !== story.id));
+      setTotalElements((prev) => Math.max(0, prev - 1));
       await fetchStories();
       await fetchStats();
     } catch (err: unknown) {
@@ -436,6 +458,18 @@ export function StoriesClient() {
                         >
                           <Edit2 className="h-3.5 w-3.5" />
                         </Button>
+                        {story.status === "PUBLISHED" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleUnpublish(story)}
+                            disabled={actionLoading === story.id}
+                            className="h-7 w-7 p-0 text-slate-400 hover:text-amber-600 hover:bg-slate-100 rounded-xl"
+                            title="Unpublish (Revert to Draft)"
+                          >
+                            <FileText className="h-3.5 w-3.5 text-amber-600" />
+                          </Button>
+                        )}
                         {story.status !== "PUBLISHED" && story.status !== "ARCHIVED" && (
                           <Button
                             variant="ghost"

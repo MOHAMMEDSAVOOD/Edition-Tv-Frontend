@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { authService } from "@/services/authService";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.editiontv.com/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 interface UserSummary {
   id: string;

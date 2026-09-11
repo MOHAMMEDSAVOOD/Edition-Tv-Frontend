@@ -21,16 +21,6 @@ export const articleRepository = {
       if (item && (item.slug || item.headline || item.title)) return item;
     }
 
-    // Fallback: Check wire items reader feed for matching wire item by id/slug/guid
-    const wireRes = await serverFetch<any>(`/newsroom/wire-items/reader?page=0&size=100`, { revalidate: 0, cache: "no-store" });
-    if (wireRes) {
-      const items = Array.isArray(wireRes) ? wireRes : (wireRes.content && Array.isArray(wireRes.content)) ? wireRes.content : [];
-      const matched = items.find((w: any) => w.id === slug || w.slug === slug || w.guid === slug);
-      if (matched) {
-        return matched;
-      }
-    }
-
     return null;
   },
 

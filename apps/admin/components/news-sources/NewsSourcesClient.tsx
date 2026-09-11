@@ -114,30 +114,33 @@ export function NewsSourcesClient() {
     setLoading(true);
     try {
       const [dataSources, dataRuns, dataCats, dataLabels, dataOpml, dataStats] = await Promise.all([
-        apiClient.get<any>("/admin/news-sources").catch(() => []),
-        apiClient.get<any>("/admin/news-sources/runs/recent").catch(() => []),
-        apiClient.get<any>("/admin/news-sources/categories").catch(() => []),
-        apiClient.get<any>("/admin/news-sources/labels").catch(() => []),
-        apiClient.get<any>("/admin/news-sources/opml/dynamic").catch(() => []),
-        apiClient.get<any>("/admin/news-sources/statistics").catch(() => null),
+        apiClient.get<unknown>("/admin/news-sources").catch(() => []),
+        apiClient.get<unknown>("/admin/news-sources/runs/recent").catch(() => []),
+        apiClient.get<unknown>("/admin/news-sources/categories").catch(() => []),
+        apiClient.get<unknown>("/admin/news-sources/labels").catch(() => []),
+        apiClient.get<unknown>("/admin/news-sources/opml/dynamic").catch(() => []),
+        apiClient.get<unknown>("/admin/news-sources/statistics").catch(() => null),
       ]);
 
-      const toArray = (val: any) => {
+      const toArray = (val: unknown): unknown[] => {
         if (Array.isArray(val)) return val;
-        if (val && Array.isArray(val.content)) return val.content;
-        if (val && Array.isArray(val.data)) return val.data;
-        if (val && Array.isArray(val.sources)) return val.sources;
-        if (val && Array.isArray(val.items)) return val.items;
+        if (val && typeof val === "object") {
+          const obj = val as Record<string, unknown>;
+          if (Array.isArray(obj.content)) return obj.content;
+          if (Array.isArray(obj.data)) return obj.data;
+          if (Array.isArray(obj.sources)) return obj.sources;
+          if (Array.isArray(obj.items)) return obj.items;
+        }
         return [];
       };
 
-      setSources(toArray(dataSources));
-      setRuns(toArray(dataRuns));
-      setCategories(toArray(dataCats));
-      setLabels(toArray(dataLabels));
-      setDynamicOpmlList(toArray(dataOpml));
+      setSources(toArray(dataSources) as NewsSource[]);
+      setRuns(toArray(dataRuns) as IngestionRun[]);
+      setCategories(toArray(dataCats) as Array<{ id: string; name: string; description: string }>);
+      setLabels(toArray(dataLabels) as Array<{ id: string; name: string; color: string; count: number }>);
+      setDynamicOpmlList(toArray(dataOpml) as Array<{ id: string; categoryName: string; opmlUrl: string; lastSyncedAt: string; status: string }>);
       if (dataStats) setStatsData(dataStats);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Failed to fetch news sources data", e);
     } finally {
       setLoading(false);
@@ -172,18 +175,24 @@ export function NewsSourcesClient() {
         setSources((prev) => [created, ...prev]);
       }
       await fetchSourcesAndRuns();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Failed to create source:", e);
-      alert(`Failed to add news source: ${e?.message || "Unknown error"}`);
+      const err = e as { message?: string };
+      alert(`Failed to add news source: ${err?.message || "Unknown error"}`);
     }
   };
 
-  const handleTogglePause = async (sourceId: string, currentPaused: boolean) => {
+  const handleToggleSourceActive = async (source: NewsSource) => {
     try {
-      await apiClient.put(`/admin/news-sources/${sourceId}/pause?pause=${!currentPaused}`);
-      fetchSourcesAndRuns();
-    } catch (e) {
-      console.error("Failed to toggle pause:", e);
+      const updated = await apiClient.put<NewsSource>(`/admin/news-sources/${source.id}`, {
+        ...source,
+        active: !source.active,
+      });
+      if (updated) {
+        setSources((prev) => prev.map((s) => (s.id === source.id ? updated : s)));
+      }
+    } catch (e: unknown) {
+      console.error("Failed to toggle source state:", e);
     }
   };
 
@@ -191,7 +200,7 @@ export function NewsSourcesClient() {
     try {
       await apiClient.post(`/admin/news-sources/${sourceId}/trigger-fetch`);
       fetchSourcesAndRuns();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to trigger fetch:", e);
     }
   };
@@ -201,7 +210,7 @@ export function NewsSourcesClient() {
     try {
       await apiClient.delete(`/admin/news-sources/${sourceId}`);
       fetchSourcesAndRuns();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to delete source:", e);
     }
   };
@@ -213,8 +222,9 @@ export function NewsSourcesClient() {
     try {
       const res = await apiClient.post<TestFeedResult>(`/admin/news-sources/test-feed?feedUrl=${encodeURIComponent(testFeedUrl)}`);
       setTestResult(res);
-    } catch (e: any) {
-      setTestResult({ valid: false, errorMessage: e?.message || "Failed to connect to backend test-feed endpoint" });
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setTestResult({ valid: false, errorMessage: err?.message || "Failed to connect to backend test-feed endpoint" });
     } finally {
       setTesting(false);
     }
@@ -228,7 +238,7 @@ export function NewsSourcesClient() {
       setNewCatName("");
       setNewCatDesc("");
       fetchSourcesAndRuns();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to add category:", e);
     }
   };
@@ -241,7 +251,7 @@ export function NewsSourcesClient() {
       setNewOpmlCategory("");
       setNewOpmlUrl("");
       fetchSourcesAndRuns();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to add dynamic OPML:", e);
     }
   };
@@ -253,7 +263,7 @@ export function NewsSourcesClient() {
       await apiClient.post("/admin/news-sources/labels", { name: newLabelName });
       setNewLabelName("");
       fetchSourcesAndRuns();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to add label:", e);
     }
   };
@@ -262,7 +272,7 @@ export function NewsSourcesClient() {
     try {
       await apiClient.delete(`/admin/news-sources/labels/${id}`);
       fetchSourcesAndRuns();
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Failed to delete label:", e);
     }
   };
@@ -270,7 +280,7 @@ export function NewsSourcesClient() {
   const handleImportOpml = async () => {
     if (!opmlXmlInput) return;
     try {
-      const result = await apiClient.post<any>("/admin/news-sources/opml/import", opmlXmlInput, {
+      const result = await apiClient.post<{ sourcesCreated?: number; feedsCreated?: number }>("/admin/news-sources/opml/import", opmlXmlInput, {
         headers: { "Content-Type": "application/xml" },
       });
       setImportMessage(`Successfully imported ${result?.sourcesCreated || 1} sources and ${result?.feedsCreated || 1} feeds.`);
@@ -286,7 +296,7 @@ export function NewsSourcesClient() {
       const token = apiClient.getAccessToken();
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.editiontv.com/api/v1";
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
       const res = await fetch(`${baseUrl}/admin/news-sources/opml/export`, { headers });
       if (res.ok) {
         const xmlText = await res.text();
@@ -308,7 +318,7 @@ export function NewsSourcesClient() {
       const token = apiClient.getAccessToken();
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.editiontv.com/api/v1";
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
       const res = await fetch(`${baseUrl}/admin/news-sources/db/export`, { headers });
       if (res.ok) {
         const blob = await res.blob();
@@ -567,7 +577,7 @@ export function NewsSourcesClient() {
                             <RefreshCw className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleTogglePause(source.id, source.paused)}
+                            onClick={() => handleToggleSourceActive(source)}
                             title={source.paused ? "Resume Ingestion" : "Pause Ingestion"}
                             className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-slate-100 rounded-xl transition"
                           >
@@ -715,7 +725,7 @@ export function NewsSourcesClient() {
                   Drag this button to your browser bookmarks bar or right-click to bookmark. Click it on any web page to immediately subscribe in Edition TV News Reader.
                 </p>
                 <a
-                  href="javascript:(function(){var u=encodeURIComponent(window.location.href);window.open('http://localhost:5006/news-reader?add_url='+u);})();"
+                  href="javascript:(function(){var u=encodeURIComponent(window.location.href);window.open('https://admin.editiontv.com/news-reader?add_url='+u);})();"
                   onClick={(e) => e.preventDefault()}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-2xs cursor-grab transition font-sans"
                 >
@@ -732,7 +742,7 @@ export function NewsSourcesClient() {
                   Use this REST endpoint URL within external newsroom tools to trigger instant feed registration.
                 </p>
                 <code className="block p-3 bg-white rounded-xl text-xs font-mono text-red-600 border border-slate-200 break-all font-bold">
-                  http://localhost:5006/api/v1/newsroom/wire-items/bookmarklet?url=%s
+                  https://api.editiontv.com/api/v1/newsroom/wire-items/bookmarklet?url=%s
                 </code>
               </div>
             </div>

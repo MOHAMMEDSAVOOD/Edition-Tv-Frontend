@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { WireItem } from "./ArticleList";
 import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.editiontv.com/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 interface OptionItem {
   id: string;
@@ -140,7 +140,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
   const [slug, setSlug] = useState<string>(generateSlug(item.title));
   const [seoTitle, setSeoTitle] = useState<string>(item.title);
   const [seoDescription, setSeoDescription] = useState<string>(item.summary || item.title);
-  const [canonicalUrl, setCanonicalUrl] = useState<string>(`http://localhost:5002/articles/${slug}`);
+  const [canonicalUrl, setCanonicalUrl] = useState<string>(`https://editiontv.com/articles/${slug}`);
 
   // Section N: Breaking News
   const [isBreaking, setIsBreaking] = useState<boolean>(false);
@@ -151,7 +151,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
 
   // Update canonical URL if slug changes
   useEffect(() => {
-    setCanonicalUrl(`http://localhost:5002/articles/${slug}`);
+    setCanonicalUrl(`https://editiontv.com/articles/${slug}`);
   }, [slug]);
 
   const handleAddTag = () => {

@@ -19,7 +19,7 @@ interface CmsEditorClientProps {
 
 type EntryStatus = "DRAFT" | "UNDER_REVIEW" | "APPROVED" | "SCHEDULED" | "PUBLISHED";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 export function CmsEditorClient({ isNew = false, entryId = "" }: CmsEditorClientProps) {
   const [articleId, setArticleId] = useState(entryId);

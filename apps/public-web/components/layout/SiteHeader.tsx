@@ -28,8 +28,8 @@ export function SiteHeader() {
     setMounted(true);
     savedArticlesService.getSavedArticles().then((items) => setBookmarkCount(items.length)).catch(() => {});
 
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.editiontv.com/api/v1";
-    const endpoint = apiBaseUrl.endsWith("/api/v1") ? `${apiBaseUrl}/cms/categories` : `${apiBaseUrl}/api/v1/cms/categories`;
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+    const endpoint = apiBaseUrl ? (apiBaseUrl.endsWith("/api/v1") ? `${apiBaseUrl}/cms/categories` : `${apiBaseUrl}/api/v1/cms/categories`) : "/api/v1/cms/categories";
 
     fetch(endpoint)
       .then((res) => {

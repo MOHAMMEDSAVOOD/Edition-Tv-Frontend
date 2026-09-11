@@ -27,9 +27,9 @@ export const feedRepository = {
     size = 10
   ): Promise<FeedItemResponseDto[]> {
     const candidateEndpoints = [
-      `/articles?page=${page}&size=${size}`,
+      `/articles?status=PUBLISHED&page=${page}&size=${size}`,
       `/news/feed?page=${page}&size=${size}`,
-      `/newsroom/wire-items/reader?page=${page}&size=${size}`,
+      `/public/articles?status=PUBLISHED`,
     ];
 
     const results = await Promise.allSettled(
@@ -46,9 +46,15 @@ export const feedRepository = {
       }
     }
 
+    const publishedOnly = allItems.filter((item: any) => {
+      if (item.wireItemId || item.wireSource || item.isWireItem) return false;
+      if (item.status && String(item.status).toUpperCase() !== "PUBLISHED") return false;
+      return true;
+    });
+
     const seen = new Set<string>();
     const uniqueItems: any[] = [];
-    for (const item of allItems) {
+    for (const item of publishedOnly) {
       const key = (item.headline || item.title || item.name || "").trim().toLowerCase();
       if (key && !seen.has(key)) {
         seen.add(key);

@@ -14,10 +14,6 @@ import {
   Send,
   Mail,
   MessageSquare,
-  Trophy,
-  Briefcase,
-  Cpu,
-  Landmark,
   Sliders,
   RotateCcw,
   Upload,
@@ -25,9 +21,12 @@ import {
   Move,
   ZoomIn,
   Image as ImageIcon,
+  Trophy,
 } from "lucide-react";
 import { ArticleDetail } from "@/services/articleService";
 import { QRCodeSVG } from "./QRCodeSVG";
+import { getPosterTheme } from "./CategoryPosterTheme";
+import { SHARE_POSTER_TEMPLATE_BASE64 } from "./sharePosterTemplateBase64";
 
 interface StorySharePosterModalProps {
   article: ArticleDetail;
@@ -80,59 +79,17 @@ export function StorySharePosterModal({
     }
   };
 
-  // Automatic category detection
-  const categoryName = (article.category || "").toLowerCase();
-
-  const isPoliticsCategory =
-    categoryName.includes("politic") ||
-    categoryName.includes("gov") ||
-    categoryName.includes("election") ||
-    categoryName.includes("policy") ||
-    categoryName.includes("state");
-
-  const isTechnologyCategory =
-    categoryName.includes("tech") ||
-    categoryName.includes("technology") ||
-    categoryName.includes("ai") ||
-    categoryName.includes("science") ||
-    categoryName.includes("digital") ||
-    categoryName.includes("cyber") ||
-    categoryName.includes("gadget");
-
-  const isWorldCategory =
-    categoryName.includes("world") ||
-    categoryName.includes("global") ||
-    categoryName.includes("international") ||
-    categoryName.includes("foreign");
-
-  const isBusinessCategory =
-    categoryName.includes("business") ||
-    categoryName.includes("biz") ||
-    categoryName.includes("finance") ||
-    categoryName.includes("market") ||
-    categoryName.includes("economy");
-
-  const defaultFrameMode:
-    | "sports"
-    | "business"
-    | "world"
-    | "technology"
-    | "politics" = isPoliticsCategory
-    ? "politics"
-    : isTechnologyCategory
-    ? "technology"
-    : isWorldCategory
-    ? "world"
-    : isBusinessCategory
-    ? "business"
-    : "sports";
-
-  const [selectedCategoryFrame, setSelectedCategoryFrame] = useState<
-    "auto" | "sports" | "business" | "world" | "technology" | "politics"
-  >("auto");
-
   const canonicalPosterRef = useRef<HTMLDivElement>(null);
   const previewWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Get dynamic category poster theme (colors, badge styling, label)
+  const posterTheme = getPosterTheme(article.category);
+  const categoryDisplayName = (
+    article.category || posterTheme.categoryLabel || "NEWS"
+  ).toUpperCase();
+
+  // Single unified poster template frame
+  const activePosterFrame = SHARE_POSTER_TEMPLATE_BASE64;
 
   // Dynamically compute preview scale while keeping canonical poster 1024x1536
   useEffect(() => {
@@ -158,49 +115,15 @@ export function StorySharePosterModal({
     };
   }, [isOpen, activeTab]);
 
-  const [activePosterFrame, setActivePosterFrame] = useState<string>("");
-
-  const activeFrameMode =
-    selectedCategoryFrame === "auto"
-      ? defaultFrameMode
-      : selectedCategoryFrame;
-
-  useEffect(() => {
-    if (!isOpen) return;
-    let isMounted = true;
-    const loadTemplate = async () => {
-      let base64 = "";
-      switch (activeFrameMode) {
-        case "politics":
-          base64 = (await import("./politicsPosterTemplateBase64")).POLITICS_POSTER_TEMPLATE_BASE64;
-          break;
-        case "technology":
-          base64 = (await import("./technologyPosterTemplateBase64")).TECHNOLOGY_POSTER_TEMPLATE_BASE64;
-          break;
-        case "world":
-          base64 = (await import("./worldPosterTemplateBase64")).WORLD_POSTER_TEMPLATE_BASE64;
-          break;
-        case "business":
-          base64 = (await import("./businessPosterTemplateBase64")).BUSINESS_POSTER_TEMPLATE_BASE64;
-          break;
-        default:
-          base64 = (await import("./sportsPosterTemplateBase64")).SPORTS_POSTER_TEMPLATE_BASE64;
-          break;
-      }
-      if (isMounted) setActivePosterFrame(base64);
-    };
-    loadTemplate();
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, activeFrameMode]);
-
   if (!isOpen) return null;
 
-  const currentUrl =
-    typeof window !== "undefined"
-      ? window.location.href
-      : `https://editiontv.com/articles/${article.slug}`;
+  const articlePath = article.slug
+    ? `/articles/${article.slug}`
+    : typeof window !== "undefined" && window.location.pathname !== "/"
+      ? window.location.pathname
+      : `/articles/${article.id || ""}`;
+
+  const currentUrl = `https://editiontv.com${articlePath}`;
 
   const shareTitle = article.headline || article.title;
   const shareText = `${shareTitle}\n\nRead full story on Edition TV:`;
@@ -268,7 +191,7 @@ export function StorySharePosterModal({
 
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
-      link.download = `${article.slug || "edition-tv"}-${activeFrameMode}-poster.png`;
+      link.download = `${article.slug || "edition-tv"}-poster.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -390,27 +313,25 @@ export function StorySharePosterModal({
           </button>
         </div>
 
-        {/* Tab & Frame Selection */}
+        {/* Tab & Adjust Bar */}
         <div className="flex border-b border-slate-800 bg-slate-900/50 p-2 px-5 justify-between items-center flex-wrap gap-2">
           <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
             <button
               onClick={() => setActiveTab("poster")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-1.5 px-5 rounded-lg text-xs font-bold font-sans transition-all ${
-                activeTab === "poster"
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-1.5 px-5 rounded-lg text-xs font-bold font-sans transition-all ${activeTab === "poster"
+                ? "bg-red-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+                }`}
             >
               <Trophy className="h-3.5 w-3.5" />
               <span>Poster Template</span>
             </button>
             <button
               onClick={() => setActiveTab("social")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-1.5 px-5 rounded-lg text-xs font-bold font-sans transition-all ${
-                activeTab === "social"
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 py-1.5 px-5 rounded-lg text-xs font-bold font-sans transition-all ${activeTab === "social"
+                ? "bg-red-600 text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+                }`}
             >
               <Globe className="h-3.5 w-3.5" />
               <span>Social Share Links</span>
@@ -418,77 +339,16 @@ export function StorySharePosterModal({
           </div>
 
           {activeTab === "poster" && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                onClick={() => setIsEditingBg(!isEditingBg)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition-all border ${
-                  isEditingBg
-                    ? "bg-red-600/90 text-white border-red-500 shadow-sm"
-                    : "bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800"
+            <button
+              onClick={() => setIsEditingBg(!isEditingBg)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition-all border ${isEditingBg
+                ? "bg-red-600/90 text-white border-red-500 shadow-sm"
+                : "bg-slate-900 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800"
                 }`}
-              >
-                <Sliders className="h-3.5 w-3.5" />
-                <span>{isEditingBg ? "Done Adjusting" : "Adjust Image"}</span>
-              </button>
-
-              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
-                <button
-                  onClick={() => setSelectedCategoryFrame("sports")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                    activeFrameMode === "sports"
-                      ? "bg-red-600/90 text-white"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <Trophy className="h-3 w-3" />
-                  <span>Sports</span>
-                </button>
-                <button
-                  onClick={() => setSelectedCategoryFrame("business")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                    activeFrameMode === "business"
-                      ? "bg-blue-600/90 text-white"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <Briefcase className="h-3 w-3" />
-                  <span>Business</span>
-                </button>
-                <button
-                  onClick={() => setSelectedCategoryFrame("world")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                    activeFrameMode === "world"
-                      ? "bg-emerald-600/90 text-white"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <Globe className="h-3 w-3" />
-                  <span>World</span>
-                </button>
-                <button
-                  onClick={() => setSelectedCategoryFrame("technology")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                    activeFrameMode === "technology"
-                      ? "bg-purple-600/90 text-white"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <Cpu className="h-3 w-3" />
-                  <span>Tech</span>
-                </button>
-                <button
-                  onClick={() => setSelectedCategoryFrame("politics")}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold transition-all ${
-                    activeFrameMode === "politics"
-                      ? "bg-amber-600/90 text-white"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  <Landmark className="h-3 w-3" />
-                  <span>Politics</span>
-                </button>
-              </div>
-            </div>
+            >
+              <Sliders className="h-3.5 w-3.5" />
+              <span>{isEditingBg ? "Done Adjusting" : "Adjust Image"}</span>
+            </button>
           )}
         </div>
 
@@ -530,11 +390,10 @@ export function StorySharePosterModal({
                             setBgPosY(10);
                             setBgPosX(50);
                           }}
-                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${
-                            bgPosY === 10
-                              ? "bg-red-600 text-white border-red-500"
-                              : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-                          }`}
+                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${bgPosY === 10
+                            ? "bg-red-600 text-white border-red-500"
+                            : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                            }`}
                         >
                           Top Focus
                         </button>
@@ -543,11 +402,10 @@ export function StorySharePosterModal({
                             setBgPosY(50);
                             setBgPosX(50);
                           }}
-                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${
-                            bgPosY === 50
-                              ? "bg-red-600 text-white border-red-500"
-                              : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-                          }`}
+                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${bgPosY === 50
+                            ? "bg-red-600 text-white border-red-500"
+                            : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                            }`}
                         >
                           Center
                         </button>
@@ -556,11 +414,10 @@ export function StorySharePosterModal({
                             setBgPosY(80);
                             setBgPosX(50);
                           }}
-                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${
-                            bgPosY === 80
-                              ? "bg-red-600 text-white border-red-500"
-                              : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-                          }`}
+                          className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all ${bgPosY === 80
+                            ? "bg-red-600 text-white border-red-500"
+                            : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
+                            }`}
                         >
                           Bottom Focus
                         </button>
@@ -733,16 +590,14 @@ export function StorySharePosterModal({
                             inset: 0,
                             width: "100%",
                             height: "100%",
-                            backgroundImage: `url("${
-                              customImageUrl || article.featuredImageUrl
-                            }")`,
+                            backgroundImage: `url("${customImageUrl || article.featuredImageUrl
+                              }")`,
                             backgroundSize:
                               bgZoom === 100 ? "cover" : `${bgZoom}%`,
                             backgroundPosition: `${bgPosX}% ${bgPosY}%`,
                             backgroundRepeat: "no-repeat",
-                            filter: `brightness(${
-                              bgBrightness / 100
-                            }) contrast(${bgContrast / 100})`,
+                            filter: `brightness(${bgBrightness / 100
+                              }) contrast(${bgContrast / 100})`,
                             zIndex: 0,
                           }}
                         />
@@ -789,13 +644,41 @@ export function StorySharePosterModal({
                         }}
                       />
 
+                      {/* LAYER 2C: DYNAMIC CATEGORY NAME IN TOP RIGHT RED BANNER VIA CSS (z-40 — ON TOP OF FRAME OVERLAY) */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "40px",
+                          right: "60px",
+                          width: "320px",
+                          height: "64px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#FFFFFF",
+                          fontSize: "38px",
+                          fontWeight: 800,
+                          fontStyle: "italic",
+                          fontFamily:
+                            "'Playfair Display', 'Georgia', 'Merriweather', 'Brush Script MT', cursive, serif",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                          textAlign: "center",
+                          textShadow: "0 2px 10px rgba(0,0,0,0.9)",
+                          filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.85))",
+                          zIndex: 40,
+                        }}
+                      >
+                        <span className="whitespace-nowrap px-1">{categoryDisplayName}</span>
+                      </div>
+
                       {/* LAYER 3 & 4: Dynamic Headline & Description Container */}
                       <div
                         style={{
                           position: "absolute",
-                          bottom: "360px",
-                          left: "67px",
-                          right: "120px",
+                          bottom: "245px",
+                          left: "155px",
+                          right: "155px",
                           textAlign: "left",
                           zIndex: 20,
                         }}
@@ -824,15 +707,15 @@ export function StorySharePosterModal({
                         {descriptionText && (
                           <p
                             style={{
-                              marginTop: "16px",
-                              fontSize: "28px",
+                              marginTop: "14px",
+                              fontSize: "25px",
                               lineHeight: 1.35,
                               color: "#F8FAFC",
                               fontFamily:
                                 "'Inter', 'Helvetica Neue', 'Arial', sans-serif",
                               fontWeight: 600,
                               fontStyle: "normal",
-                              margin: "16px 0 0 0",
+                              margin: "14px 0 0 0",
                               padding: 0,
                               display: "block",
                               wordBreak: "break-word",
@@ -844,36 +727,37 @@ export function StorySharePosterModal({
                         )}
                       </div>
 
-                      {/* LAYER 5: Dynamic Camera-Scannable QR Code Scanner (Placed EXACTLY inside white QR placeholder box: left=640px, top=1324px, width=135px, height=136px) */}
+                      {/* LAYER 5: Dynamic Camera-Scannable QR Code Scanner (Larger Size & Placed Further Right in Corner) */}
                       <div
                         style={{
                           position: "absolute",
-                          left: "640px",
-                          top: "1324px",
-                          width: "135px",
-                          height: "136px",
+                          right: "80px",
+                          bottom: "65px",
+                          width: "148px",
+                          height: "148px",
                           backgroundColor: "#FFFFFF",
-                          borderRadius: "2px",
+                          borderRadius: "3px",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          padding: "4px",
+                          padding: "5px",
+                          boxShadow: "0 6px 18px rgba(0,0,0,0.75)",
                           zIndex: 20,
                         }}
                       >
                         <QRCodeSVG
                           value={currentUrl}
-                          size={127}
+                          size={138}
                           bgColor="#FFFFFF"
                           fgColor="#000000"
                         />
                       </div>
 
-                      {/* LAYER 6: OFFICIAL TRANSPARENT PNG FRAME OVERLAY (z-30 - TOP LAYER) */}
+                      {/* LAYER 6: OFFICIAL UNIFIED TRANSPARENT PNG FRAME OVERLAY (/posters/share-poster.png) (z-30) */}
                       {activePosterFrame ? (
                         <img
                           src={activePosterFrame}
-                          alt={`${activeFrameMode} Poster Frame`}
+                          alt="Edition TV Share Poster Frame"
                           style={{
                             position: "absolute",
                             inset: 0,
