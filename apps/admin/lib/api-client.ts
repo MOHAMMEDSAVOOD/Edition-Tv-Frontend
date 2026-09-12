@@ -21,9 +21,6 @@ export class ApiError extends Error {
 }
 
 function getApiBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    return "/api/v1";
-  }
   const envUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||

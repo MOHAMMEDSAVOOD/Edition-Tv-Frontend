@@ -23,9 +23,6 @@ export class ApiError extends Error {
 declare const process: { env: Record<string, string | undefined> };
 
 function getApiBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    return "/api/v1";
-  }
   const env = typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>);
 
   const envUrl =

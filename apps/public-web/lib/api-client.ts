@@ -51,9 +51,6 @@ export class ApiError extends Error {
  * Never exposed to the browser.
  */
 function getClientApiBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    return "/api/v1";
-  }
   const envUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -66,9 +63,6 @@ function getClientApiBaseUrl(): string {
 }
 
 function getServerApiBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    return "/api/v1";
-  }
   const envUrl =
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
