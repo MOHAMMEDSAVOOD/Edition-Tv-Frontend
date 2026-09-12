@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { liveBlogService, LiveBlogItem } from "@/services/liveBlogService";
+import { TimeAgo } from "@/components/common/TimeAgo";
 
 export function LiveBlogRail() {
   const [liveBlog, setLiveBlog] = useState<LiveBlogItem | null>(null);
@@ -20,7 +21,7 @@ export function LiveBlogRail() {
 
   if (loading) {
     return (
-      <div className="bg-muted/30 border border-border p-4 rounded-sm animate-pulse">
+      <div className="bg-muted/30 border border-border p-4 rounded-sm animate-pulse" suppressHydrationWarning>
         <div className="flex items-center justify-between mb-3">
           <div className="h-3 bg-slate-200 w-24 rounded" />
           <div className="h-3 bg-slate-200 w-16 rounded" />
@@ -36,7 +37,7 @@ export function LiveBlogRail() {
 
   if (!liveBlog || !liveBlog.updates || liveBlog.updates.length === 0) {
     return (
-      <div className="bg-muted/30 border border-border p-4 rounded-sm">
+      <div className="bg-muted/30 border border-border p-4 rounded-sm" suppressHydrationWarning>
         <div className="flex items-center gap-2 mb-2">
           <span className="h-2 w-2 rounded-full bg-slate-400" />
           <span className="section-label text-xs">Live Coverage</span>
@@ -49,7 +50,7 @@ export function LiveBlogRail() {
   }
 
   return (
-    <div className="bg-muted/30 border border-border p-4 rounded-sm">
+    <div className="bg-muted/30 border border-border p-4 rounded-sm" suppressHydrationWarning>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="live-dot h-2 w-2 rounded-full bg-primary" />
@@ -70,7 +71,7 @@ export function LiveBlogRail() {
         {liveBlog.updates.slice(0, 5).map((update) => (
           <div key={update.id} className="flex items-start gap-2.5 text-xs">
             <span className="font-mono text-muted-foreground text-[11px] whitespace-nowrap pt-0.5">
-              {update.timestamp}
+              <TimeAgo date={update.timestamp} />
             </span>
             <p className="font-medium text-foreground/90 line-clamp-2 hover:text-primary transition-colors cursor-pointer">
               {update.headline || update.content}
@@ -81,3 +82,4 @@ export function LiveBlogRail() {
     </div>
   );
 }
+

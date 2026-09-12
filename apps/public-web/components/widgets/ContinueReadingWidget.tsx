@@ -15,7 +15,7 @@ export function ContinueReadingWidget() {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed?.slug) {
-          apiClient.get<any>(`/public/articles?slug=${encodeURIComponent(parsed.slug)}`)
+          apiClient.get<unknown>(`/public/articles?slug=${encodeURIComponent(parsed.slug)}`)
             .then((data) => {
               if (data) {
                 setRecentArticle(parsed);
@@ -55,3 +55,4 @@ export function ContinueReadingWidget() {
     </div>
   );
 }
+

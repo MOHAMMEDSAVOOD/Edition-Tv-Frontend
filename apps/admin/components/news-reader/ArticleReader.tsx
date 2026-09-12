@@ -206,6 +206,7 @@ export function ArticleReader({
         {/* Media Thumbnail */}
         {item.mediaThumbnailUrl ? (
           <div className="rounded-2xl overflow-hidden border border-slate-200/80 bg-slate-100 max-h-96 shadow-2xs">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={item.mediaThumbnailUrl}
               alt={item.title}

@@ -30,12 +30,12 @@ export default function VerificationWorkspaceClient() {
     setLoading(true);
     setError(null);
     try {
-      const claims = await apiClient.get<any[]>("/admin/verification/claims").catch(() => []);
-      const evidence = await apiClient.get<any[]>("/admin/verification/evidence").catch(() => []);
+      const claims = await apiClient.get<EvidenceItem[]>("/admin/verification/claims").catch(() => []);
+      const evidence = await apiClient.get<EvidenceItem[]>("/admin/verification/evidence").catch(() => []);
       const list = Array.isArray(evidence) && evidence.length > 0 ? evidence : Array.isArray(claims) ? claims : [];
       setEvidenceList(list);
-    } catch (err: any) {
-      setError(err.message || "Failed to load verification evidence");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load verification evidence");
     } finally {
       setLoading(false);
     }
@@ -55,8 +55,8 @@ export default function VerificationWorkspaceClient() {
       setTitle("");
       setSourceName("");
       setUrl("");
-    } catch (err: any) {
-      alert("Failed to attach evidence: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to attach evidence: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -64,8 +64,8 @@ export default function VerificationWorkspaceClient() {
     try {
       await apiClient.post(`/admin/verification/evidence/${id}/verify?status=${newStatus}`).catch(() => null);
       setEvidenceList((prev) => prev.map((item) => (item.id === id ? { ...item, verificationStatus: newStatus } : item)));
-    } catch (err: any) {
-      alert("Failed to update status: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to update status: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 

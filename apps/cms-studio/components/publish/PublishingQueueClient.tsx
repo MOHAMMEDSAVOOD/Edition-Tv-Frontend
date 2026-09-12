@@ -26,11 +26,11 @@ export function PublishingQueueClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>("/admin/publishing/jobs").catch(() => []);
+      const data = await apiClient.get<PublishingJob[]>("/admin/publishing/jobs").catch(() => []);
       const list = Array.isArray(data) ? data : [];
       setJobs(list);
-    } catch (err: any) {
-      setError(err.message || "Failed to load publishing queue jobs");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load publishing queue jobs");
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,8 @@ export function PublishingQueueClient() {
     try {
       await apiClient.post(`/admin/publishing/jobs/${id}/retry`).catch(() => null);
       fetchJobs();
-    } catch (err: any) {
-      alert("Failed to retry publishing job: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to retry publishing job: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 

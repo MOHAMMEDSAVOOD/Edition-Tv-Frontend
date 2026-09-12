@@ -8,9 +8,7 @@ import {
   CheckCircle2,
   XCircle,
   FolderKanban,
-  ShieldCheck,
-  ArrowUpRight,
-  UserPlus
+  ArrowUpRight
 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -54,10 +52,10 @@ export default function EditorialIntelligenceClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>("/admin/intelligence/candidates");
+      const data = await apiClient.get<Candidate[]>("/admin/intelligence/candidates");
       setCandidates(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load candidate intelligence inbox");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load candidate intelligence inbox");
     } finally {
       setLoading(false);
     }
@@ -74,8 +72,8 @@ export default function EditorialIntelligenceClient() {
       if (selectedCandidate?.id === candidateId) {
         setSelectedCandidate((prev) => (prev ? { ...prev, triageStatus: status } : null));
       }
-    } catch (err: any) {
-      alert("Failed to update candidate triage status: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to update candidate triage status: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 

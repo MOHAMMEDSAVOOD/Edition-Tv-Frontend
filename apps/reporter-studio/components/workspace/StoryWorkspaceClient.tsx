@@ -4,12 +4,8 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Save,
-  Check,
   BookOpen,
   UserCheck,
-  FileAudio,
-  Plus,
-  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +27,7 @@ export function StoryWorkspaceClient({ storyId }: StoryWorkspaceClientProps) {
   const [activeRightTab, setActiveRightTab] = useState<"sources" | "notes">("sources");
 
   // Research / Sources state
-  const [sources, setSources] = useState([
+  const [sources] = useState([
     { name: "Dr. Anna Lindqvist", affiliation: "Zurich Quantum Center", verified: true, quote: "Decoherence is no longer an insurmountable barrier." },
     { name: "Dr. Aris Thorne", affiliation: "MIT Lincoln Laboratory", verified: true, quote: "The 500us benchmark exceeds our 2026 roadmap expectations." },
   ]);

@@ -1,25 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import {
   FolderKanban,
   Save,
   CheckCircle2,
-  Clock,
   Send,
   ShieldCheck,
   Search,
   Plus,
-  AlertCircle,
   ImageIcon,
   History,
   Eye,
   FileText,
-  Tag,
   MessageSquare,
-  Globe,
   Monitor,
   Tablet,
   Smartphone,
@@ -34,8 +29,6 @@ import { authService } from "@/services/authService";
 import { StoryBlockComposer, StoryBlock } from "./StoryBlockComposer";
 import { MediaLibraryModal, MediaAsset } from "./MediaLibraryModal";
 import { FactCheckPanel } from "./FactCheckPanel";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 interface Article {
   id: string;
@@ -92,8 +85,6 @@ interface UserItem {
 export function JournalistWorkspaceClient() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved" | "error">("saved");
   const [activeTab, setActiveTab] = useState<
@@ -133,61 +124,68 @@ export function JournalistWorkspaceClient() {
   const [targetBlockIdForMedia, setTargetBlockIdForMedia] = useState<string | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"DESKTOP" | "TABLET" | "MOBILE">("DESKTOP");
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const getAuthToken = () => {
     if (typeof window !== "undefined") return localStorage.getItem("edition_access_token");
     return null;
   };
 
-  const authHeaders = useCallback(() => {
-    const token = getAuthToken();
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  }, []);
-
   // 1. Fetch Taxonomy & Users
   useEffect(() => {
-    apiClient.get<any[]>('/cms/categories').then((d) => setApiCategories(Array.isArray(d) ? d : [])).catch(() => {});
-    apiClient.get<any[]>('/cms/desks').then((d) => setApiDesks(Array.isArray(d) ? d : [])).catch(() => {});
-    apiClient.get<any[]>('/users').then((d) => setApiUsers(Array.isArray(d) ? d : [])).catch(() => {});
+    apiClient.get<{ id: string; name: string; slug: string }[]>('/cms/categories').then((d) => setApiCategories(Array.isArray(d) ? d : [])).catch(() => {});
+    apiClient.get<{ id: string; name: string; slug: string }[]>('/cms/desks').then((d) => setApiDesks(Array.isArray(d) ? d : [])).catch(() => {});
+    apiClient.get<{ id: string; username: string; fullName: string }[]>('/users').then((d) => setApiUsers(Array.isArray(d) ? d : [])).catch(() => {});
 
     const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
     if (token) {
-      apiClient.get<any>('/users/me')
+      apiClient.get<{ id?: string; username?: string }>('/users/me')
         .then((user) => {
           if (user?.id) setCurrentUserId(user.id);
-          if (user && user.username) setCurrentUser(user);
+          if (user && user.username) setCurrentUser(user as UserItem);
         })
         .catch(() => {});
     }
   }, []);
 
-  // 2. Fetch Articles list
   const fetchArticles = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
-      const data = await apiClient.get<any>('/articles?page=0&size=50');
-      const list: Article[] = data ? (Array.isArray(data.content) ? data.content : Array.isArray(data) ? data : []) : [];
-      setArticles(list);
-      if (list.length > 0 && !selectedArticle) {
-        loadArticleIntoEditor(list[0]);
+      const data = await apiClient.get<Record<string, unknown>>('/articles?size=50');
+      if (data) {
+        const content = Array.isArray(data.content) ? data.content : Array.isArray(data) ? data : [];
+        setArticles(content as Article[]);
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load articles");
+    } catch {
+      setArticles([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedArticle]);
+  }, []);
 
   useEffect(() => {
     fetchArticles();
+  }, [fetchArticles]);
+
+  const fetchTabDetails = useCallback(async (articleId: string) => {
+    // Revisions
+    apiClient.get<RevisionItem[]>(`/admin/editorial/articles/${articleId}/revisions`)
+      .then((d) => setRevisions(Array.isArray(d) ? d : []))
+      .catch(() => setRevisions([]));
+
+    // Lock
+    apiClient.get<LockInfo>(`/admin/editorial/articles/${articleId}/lock`)
+      .then((d) => setActiveLock(d && d.lockedByUserId ? d : null))
+      .catch(() => setActiveLock(null));
+
+    // Comments / Notes
+    apiClient.get<NoteItem[]>(`/admin/editorial/comments?targetType=ARTICLE&targetId=${articleId}`)
+      .then((d) => setNotes(Array.isArray(d) ? d : []))
+      .catch(() => setNotes([]));
   }, []);
 
-  // 3. Load Article into Editor
-  const loadArticleIntoEditor = async (art: Article) => {
+  // 2. Load Article into Editor
+  const loadArticleIntoEditor = useCallback(async (art: Article) => {
     setSelectedArticle(art);
     const artHeadline = art.headline || art.title || "";
     setHeadline(artHeadline);
@@ -220,33 +218,15 @@ export function JournalistWorkspaceClient() {
 
     // Fetch Revisions, Lock, Comments for this article
     fetchTabDetails(art.id);
-  };
-
-  const fetchTabDetails = async (articleId: string) => {
-    // Revisions
-    apiClient.get<any[]>(`/admin/editorial/articles/${articleId}/revisions`)
-      .then((d) => setRevisions(Array.isArray(d) ? d : []))
-      .catch(() => setRevisions([]));
-
-    // Lock
-    apiClient.get<any>(`/admin/editorial/articles/${articleId}/lock`)
-      .then((d) => setActiveLock(d && d.lockedByUserId ? d : null))
-      .catch(() => setActiveLock(null));
-
-    // Comments / Notes
-    apiClient.get<any[]>(`/admin/editorial/comments?targetType=ARTICLE&targetId=${articleId}`)
-      .then((d) => setNotes(Array.isArray(d) ? d : []))
-      .catch(() => setNotes([]));
-  };
+  }, [currentUser, fetchTabDetails]);
 
   // 4. Create New Story via API
   const handleCreateNewStory = async () => {
     const token = getAuthToken();
     if (!token) return alert("Login required to create story drafts.");
     setSubmittingAction(true);
-    setError(null);
     try {
-      const created = await apiClient.post<any>('/articles', {
+      const created = await apiClient.post<Article>('/articles', {
         headline: "Untitled Story Draft",
         summary: "",
         contentBody: JSON.stringify([{ id: "b-1", type: "PARAGRAPH", content: "" }]),
@@ -284,11 +264,11 @@ export function JournalistWorkspaceClient() {
         altText,
       };
 
-      const updated = await apiClient.put<any>(`/articles/${selectedArticle.id}`, payload);
+      const updated = await apiClient.put<Article>(`/articles/${selectedArticle.id}`, payload);
       setSelectedArticle(updated);
 
       // Create Revision Snapshot via API
-      apiClient.post<any>(`/admin/editorial/articles/${selectedArticle.id}/revisions`, {
+      apiClient.post<RevisionItem>(`/admin/editorial/articles/${selectedArticle.id}/revisions`, {
         headline,
         summary,
         contentBody: JSON.stringify(blocks),
@@ -310,7 +290,7 @@ export function JournalistWorkspaceClient() {
     if (!token) return alert("Login required to transition workflow status.");
 
     try {
-      const updated = await apiClient.post<any>(
+      const updated = await apiClient.post<Article>(
         `/articles/${selectedArticle.id}/status?targetStatus=${newStatus}`,
         {}
       );
@@ -327,7 +307,7 @@ export function JournalistWorkspaceClient() {
     const token = getAuthToken();
     if (!token) return alert("Login required.");
     try {
-      const lockData = await apiClient.post<any>(`/admin/editorial/articles/${selectedArticle.id}/lock`, {});
+      const lockData = await apiClient.post<LockInfo>(`/admin/editorial/articles/${selectedArticle.id}/lock`, {});
       setActiveLock(lockData);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Lock failed");
@@ -345,7 +325,7 @@ export function JournalistWorkspaceClient() {
     }
 
     try {
-      await apiClient.delete<any>(`/articles/${targetId}`);
+      await apiClient.delete<unknown>(`/articles/${targetId}`);
       setArticles((prev) => prev.filter((a) => a.id !== targetId));
       if (selectedArticle?.id === targetId) {
         setSelectedArticle(null);
@@ -365,7 +345,7 @@ export function JournalistWorkspaceClient() {
     if (!token) return alert("Login required.");
 
     try {
-      await apiClient.post<any>(`/admin/editorial/comments`, {
+      await apiClient.post<NoteItem>(`/admin/editorial/comments`, {
         targetType: "ARTICLE",
         targetId: selectedArticle.id,
         commentText: newNoteText.trim(),
@@ -662,7 +642,7 @@ export function JournalistWorkspaceClient() {
                   return (
                     <button
                       key={t.id}
-                      onClick={() => setActiveTab(t.id as any)}
+                      onClick={() => setActiveTab(t.id as typeof activeTab)}
                       className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap ${
                         active ? "bg-red-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                       }`}
@@ -787,6 +767,7 @@ export function JournalistWorkspaceClient() {
                     {featuredImageUrl ? (
                       <div className="space-y-2">
                         <div className="aspect-video rounded-xl overflow-hidden border border-border bg-black">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={featuredImageUrl} alt={altText || "Featured image"} className="w-full h-full object-cover" />
                         </div>
                         <input
@@ -950,6 +931,7 @@ export function JournalistWorkspaceClient() {
                         <h2 className="text-base font-bold text-foreground leading-snug">{headline}</h2>
                         {featuredImageUrl ? (
                           <div className="aspect-video rounded-lg overflow-hidden border border-border">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={featuredImageUrl} alt={altText} className="w-full h-full object-cover" />
                           </div>
                         ) : null}

@@ -43,7 +43,7 @@ export interface DataTableProps<T> {
   keyExtractor?: (item: T, index: number) => string;
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends object>({
   columns,
   data,
   loading = false,
@@ -58,7 +58,12 @@ export function DataTable<T extends Record<string, any>>({
   onRowClick,
   actions,
   pageSize = 10,
-  keyExtractor = (item, idx) => item.id || String(idx),
+  keyExtractor = (item, idx) => {
+    if ("id" in item && (typeof item.id === "string" || typeof item.id === "number")) {
+      return String(item.id);
+    }
+    return String(idx);
+  },
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [sortColumn, setSortColumn] = React.useState<string | null>(null);
@@ -96,8 +101,10 @@ export function DataTable<T extends Record<string, any>>({
   const sortedData = React.useMemo(() => {
     if (!sortColumn) return filteredData;
     return [...filteredData].sort((a, b) => {
-      const valA = a[sortColumn];
-      const valB = b[sortColumn];
+      const recordA = a as Record<string, unknown>;
+      const recordB = b as Record<string, unknown>;
+      const valA = recordA[sortColumn];
+      const valB = recordB[sortColumn];
       if (valA === valB) return 0;
       if (valA === null || valA === undefined) return 1;
       if (valB === null || valB === undefined) return -1;
@@ -235,7 +242,7 @@ export function DataTable<T extends Record<string, any>>({
                         {col.cell
                           ? col.cell(item)
                           : col.accessorKey
-                          ? String(item[col.accessorKey] ?? "")
+                          ? String((item as Record<string, unknown>)[col.accessorKey as string] ?? "")
                           : null}
                       </td>
                     ))}

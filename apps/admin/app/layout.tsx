@@ -9,10 +9,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="h-full bg-background text-foreground flex overflow-hidden font-sans">
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className="h-full bg-background text-foreground flex overflow-hidden font-sans" suppressHydrationWarning>
         <AdminAuthGuard>{children}</AdminAuthGuard>
       </body>
     </html>
   );
 }
+

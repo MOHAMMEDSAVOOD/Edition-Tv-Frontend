@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Inbox, Star, Circle, Folder, ChevronDown, ChevronRight, Rss, Globe, Sparkles, ShieldCheck, Radio } from "lucide-react";
+import { Star, Circle, Folder, ChevronDown, ChevronRight, Rss, Globe, Sparkles, ShieldCheck, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface FeedCategoryItem {

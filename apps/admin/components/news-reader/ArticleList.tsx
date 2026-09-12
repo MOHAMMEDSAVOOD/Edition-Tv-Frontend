@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, RefreshCw, CheckCheck, Star, Circle, Clock, Tag, Inbox } from "lucide-react";
+import { Search, RefreshCw, CheckCheck, Star, Circle, Clock, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface WireItem {

@@ -12,7 +12,12 @@ export interface LoginResponse {
 export const authService = {
   async login(usernameOrEmail: string, password: string): Promise<LoginResponse> {
     try {
-      const data = await apiClient.post<LoginResponse>("/auth/login", { usernameOrEmail, email: usernameOrEmail, password });
+      const data = await apiClient.post<LoginResponse>("/auth/login", {
+        usernameOrEmail,
+        username: usernameOrEmail,
+        email: usernameOrEmail,
+        password,
+      });
       if (data.accessToken) {
         if (typeof window !== "undefined") {
           localStorage.setItem("edition_access_token", data.accessToken);
@@ -23,12 +28,16 @@ export const authService = {
       }
       return data;
     } catch (err: any) {
+      if (err.status === 403 || err.status === 401) {
+        throw new Error("Invalid admin username or password. Please verify your credentials.");
+      }
       const errData = err.details || {};
       throw new Error(
-        errData.detail || errData.message || errData.title || "Invalid credentials. Please check your username and password."
+        errData.detail || errData.message || errData.title || "Authentication failed. Please check your admin credentials."
       );
     }
   },
+
 
   async refreshToken(refreshToken: string): Promise<LoginResponse> {
     try {

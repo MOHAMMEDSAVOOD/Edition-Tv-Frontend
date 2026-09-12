@@ -1,18 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Rss,
   RefreshCw,
   FilePlus,
-  UserCheck,
   CheckCircle,
   Archive,
   Search,
   ExternalLink,
   Clock,
   User,
-  Tag,
   Music,
   Video,
   Shield,
@@ -51,13 +49,13 @@ export function WireFeedClient() {
   const [selectedState, setSelectedState] = useState("WIRE_RAW");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fetchWireItems = async () => {
+  const fetchWireItems = useCallback(async () => {
     setLoading(true);
     try {
       const url = selectedState
         ? `/newsroom/wire-items?state=${selectedState}&page=0&size=50`
         : `/newsroom/wire-items?page=0&size=50`;
-      const data = await apiClient.get<any>(url);
+      const data = await apiClient.get<{ content?: WireItem[] }>(url);
       if (data) {
         setItems(data.content || []);
       }
@@ -66,11 +64,11 @@ export function WireFeedClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedState]);
 
   useEffect(() => {
     fetchWireItems();
-  }, [selectedState]);
+  }, [fetchWireItems]);
 
   const handleUpdateState = async (itemId: string, newState: string) => {
     try {
@@ -211,6 +209,7 @@ export function WireFeedClient() {
 
               {item.mediaThumbnailUrl ? (
                 <div className="overflow-hidden rounded-md max-h-48 bg-black/40 border border-white/5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={item.mediaThumbnailUrl} alt={item.title} className="w-full object-cover max-h-48" />
                 </div>
               ) : null}

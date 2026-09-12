@@ -1148,7 +1148,11 @@ importers:
 
   packages/api: {}
 
-  packages/auth: {}
+  packages/auth:
+    dependencies:
+      '@edition/api':
+        specifier: workspace:*
+        version: link:../api
 
   packages/config: {}
 

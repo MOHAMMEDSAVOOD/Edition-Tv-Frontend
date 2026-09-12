@@ -755,6 +755,7 @@ export function StorySharePosterModal({
 
                       {/* LAYER 6: OFFICIAL UNIFIED TRANSPARENT PNG FRAME OVERLAY (/posters/share-poster.png) (z-30) */}
                       {activePosterFrame ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img
                           src={activePosterFrame}
                           alt="Edition TV Share Poster Frame"

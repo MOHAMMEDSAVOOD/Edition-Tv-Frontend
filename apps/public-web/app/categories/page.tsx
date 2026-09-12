@@ -8,11 +8,24 @@ export const metadata = {
   description: "Browse news categories on Edition TV.",
 };
 
-function unwrapArray(val: any): any[] {
+interface RawCategoryItem {
+  id?: string;
+  slug?: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  content?: RawCategoryItem[];
+  data?: RawCategoryItem[];
+}
+
+function unwrapArray(val: unknown): RawCategoryItem[] {
   if (!val) return [];
-  if (Array.isArray(val)) return val;
-  if (Array.isArray(val.content)) return val.content;
-  if (Array.isArray(val.data)) return val.data;
+  if (Array.isArray(val)) return val as RawCategoryItem[];
+  if (typeof val === "object" && val !== null) {
+    const obj = val as Record<string, unknown>;
+    if (Array.isArray(obj.content)) return obj.content as RawCategoryItem[];
+    if (Array.isArray(obj.data)) return obj.data as RawCategoryItem[];
+  }
   return [];
 }
 
@@ -23,9 +36,9 @@ export default async function CategoriesOverviewPage() {
     "/news/categories",
   ];
 
-  let rawCategories: any[] = [];
+  let rawCategories: RawCategoryItem[] = [];
   for (const ep of candidateEndpoints) {
-    const res = await serverFetch<any>(ep, { revalidate: 60 });
+    const res = await serverFetch<unknown>(ep, { revalidate: 60 });
     const items = unwrapArray(res);
     if (items.length > 0) {
       rawCategories = items;
@@ -33,7 +46,7 @@ export default async function CategoriesOverviewPage() {
     }
   }
 
-  const categoriesList = rawCategories.map((c: any) => ({
+  const categoriesList = rawCategories.map((c: RawCategoryItem) => ({
     id: c.id || c.slug,
     name: c.name || c.title || "Category",
     slug: c.slug || (c.name ? String(c.name).toLowerCase().replace(/\s+/g, "-") : "general"),

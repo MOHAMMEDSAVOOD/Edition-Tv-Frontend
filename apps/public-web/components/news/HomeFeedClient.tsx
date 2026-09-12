@@ -15,6 +15,7 @@ import { ContinueReadingWidget } from "../widgets/ContinueReadingWidget";
 import { RecentlyViewedWidget } from "../widgets/RecentlyViewedWidget";
 import { InvestigationsSection } from "../widgets/InvestigationsSection";
 import { SafeImage } from "../common/SafeImage";
+import { ClientOnly } from "../common/ClientOnly";
 
 interface HomeFeedClientProps {
   initialArticles?: ArticleFeedItem[];
@@ -233,18 +234,20 @@ export function HomeFeedClient({
   ] as const;
 
   return (
-    <div>
+    <div suppressHydrationWarning>
       <h1 className="sr-only">Edition TV — Global Digital Journalism & Live Newsroom</h1>
       
       {/* ── FINANCIAL MARKET SNAPSHOT TICKER ── */}
       <MarketSnapshotTicker />
 
-      <div className="container mx-auto max-w-[1200px] px-4 md:px-6 py-6 font-sans">
+      <div className="container mx-auto max-w-[1200px] px-4 md:px-6 py-6 font-sans" suppressHydrationWarning>
         {/* ── CONTINUE READING WIDGET ── */}
-        <ContinueReadingWidget />
+        <ClientOnly>
+          <ContinueReadingWidget />
+        </ClientOnly>
 
         {articles.length === 0 && !isLoading ? (
-          <div className="py-20 text-center border border-dashed border-border rounded-xs my-8 space-y-3">
+          <div className="py-20 text-center border border-dashed border-border rounded-xs my-8 space-y-3" suppressHydrationWarning>
             <Newspaper className="h-10 w-10 text-muted-foreground/40 mx-auto" />
             <h2 className="headline-lg text-xl font-bold text-foreground">No Published News Articles Available</h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto font-sans">
@@ -254,7 +257,7 @@ export function HomeFeedClient({
         ) : (
           <>
             {/* ── TOP HERO ZONE ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 mb-16">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 mb-16" suppressHydrationWarning>
               {/* Left Column: Lead + Secondary Grid */}
               <div className="lg:border-r lg:border-border lg:pr-8">
                 {leadStory && <LeadStoryCard article={leadStory} />}
@@ -455,7 +458,9 @@ export function HomeFeedClient({
         <TopicExplorerWidget />
 
         {/* ── RECENTLY VIEWED (Client History) ── */}
-        <RecentlyViewedWidget />
+        <ClientOnly>
+          <RecentlyViewedWidget />
+        </ClientOnly>
 
         {/* ── NEWSLETTER SUBSCRIPTION BOX ── */}
         <section className="bg-card border border-border rounded-xs p-8 text-center my-16">

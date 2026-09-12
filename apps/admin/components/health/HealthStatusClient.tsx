@@ -22,14 +22,14 @@ export function HealthStatusClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>("/admin/health");
+      const data = await apiClient.get<{ status?: string; components?: HealthComponent[] }>("/admin/health");
       if (data) {
         setStatus(data.status || "UP");
         setComponents(data.components || []);
       } else {
         setError("Failed to fetch health metrics from backend");
       }
-    } catch (e) {
+    } catch {
       setError("Failed to connect to backend health service");
     } finally {
       setIsLoading(false);
@@ -45,7 +45,7 @@ export function HealthStatusClient() {
       <div className="bg-card border border-border p-4 rounded-md flex items-center justify-between shadow-xs">
         <div>
           <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
-            <Activity className="h-4 w-4 text-emerald-500" /> Infrastructure Component Health
+            <Activity className="h-4 w-4 text-emerald-500" /> Infrastructure Health: <span className="font-mono text-emerald-600">{status}</span>
           </h3>
           <p className="text-muted-foreground text-[11px]">
             Real-time latency and operational health status across database, search, and ingestion workers.

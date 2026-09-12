@@ -132,7 +132,7 @@ export default function DatabaseStudioClient() {
     if (!confirm(`Are you sure you want to delete record with ${pkColumn} = ${pkValue}?`)) return;
     
     try {
-      await apiClient.delete<any>(`/db-studio/tables/${selectedTable}/records?pkColumn=${pkColumn}&pkValue=${pkValue}`);
+      await apiClient.delete<unknown>(`/db-studio/tables/${selectedTable}/records?pkColumn=${pkColumn}&pkValue=${pkValue}`);
       // Refresh
       fetchRecords(selectedTable, page);
     } catch (err: unknown) {

@@ -16,8 +16,8 @@ export function MarketSnapshotTicker() {
 
   if (loading) {
     return (
-      <div className="bg-background border-y border-border py-2 text-xs font-mono">
-        <div className="container mx-auto max-w-[1200px] px-4 md:px-6 flex items-center gap-4 animate-pulse">
+      <div className="bg-background border-y border-border py-2 text-xs font-mono" suppressHydrationWarning>
+        <div className="container mx-auto max-w-[1200px] px-4 md:px-6 flex items-center gap-4 animate-pulse" suppressHydrationWarning>
           <span className="text-muted-foreground">Loading Financial Markets...</span>
         </div>
       </div>
@@ -25,8 +25,8 @@ export function MarketSnapshotTicker() {
   }
 
   return (
-    <div className="bg-background border-y border-border py-2 text-xs font-mono overflow-x-auto scrollbar-none">
-      <div className="container mx-auto max-w-[1200px] px-4 md:px-6 flex items-center justify-between gap-6 whitespace-nowrap">
+    <div className="bg-background border-y border-border py-2 text-xs font-mono overflow-x-auto scrollbar-none" suppressHydrationWarning>
+      <div className="container mx-auto max-w-[1200px] px-4 md:px-6 flex items-center justify-between gap-6 whitespace-nowrap" suppressHydrationWarning>
         <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-muted-foreground flex-none pr-4 border-r border-border">
           <DollarSign className="h-3.5 w-3.5 text-primary" />
           <span>Markets</span>
@@ -51,3 +51,4 @@ export function MarketSnapshotTicker() {
     </div>
   );
 }
+

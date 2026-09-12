@@ -38,11 +38,11 @@ export function EditorialPlanningCalendarClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>("/admin/editorial/planning").catch(() => []);
+      const data = await apiClient.get<PlanningEvent[]>("/admin/editorial/planning").catch(() => []);
       const list = Array.isArray(data) ? data : [];
       setEvents(list);
-    } catch (err: any) {
-      setError(err.message || "Failed to load planning calendar");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load planning calendar");
     } finally {
       setLoading(false);
     }
@@ -68,8 +68,8 @@ export function EditorialPlanningCalendarClient() {
       setShowAddModal(false);
       setTitle("");
       setDescription("");
-    } catch (err: any) {
-      alert("Failed to create planning event: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to create planning event: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 

@@ -20,7 +20,7 @@ export function TopicExplorerWidget() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-border rounded-xs p-5 shadow-sm animate-pulse">
+      <div className="bg-white border border-border rounded-xs p-5 shadow-sm animate-pulse" suppressHydrationWarning>
         <div className="h-4 bg-muted w-32 mb-3 rounded-xs" />
         <div className="flex flex-wrap gap-2">
           {[1, 2, 3, 4, 5].map((i) => (
@@ -34,7 +34,7 @@ export function TopicExplorerWidget() {
   if (topics.length === 0) return null;
 
   return (
-    <div className="bg-white border border-border rounded-xs p-5 shadow-sm">
+    <div className="bg-white border border-border rounded-xs p-5 shadow-sm" suppressHydrationWarning>
       <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
         Explore Topics
       </h3>
@@ -52,3 +52,4 @@ export function TopicExplorerWidget() {
     </div>
   );
 }
+

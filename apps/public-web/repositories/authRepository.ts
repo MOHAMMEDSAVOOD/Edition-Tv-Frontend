@@ -5,6 +5,8 @@ export interface BackendAuthResponse {
   refreshToken: string;
   tokenType?: string;
   expiresIn?: number;
+  username?: string;
+  roles?: string[];
 }
 
 export interface AuthResponseDto {
@@ -14,11 +16,17 @@ export interface AuthResponseDto {
   roles: string[];
 }
 
-export interface AuthResponseDto {
-  token: string;
-  refreshToken: string;
-  username: string;
-  roles: string[];
+function parseJwtRoles(token: string): string[] {
+  try {
+    const payloadBase64 = token.split(".")[1];
+    if (!payloadBase64) return ["ROLE_READER"];
+    const decoded = JSON.parse(atob(payloadBase64));
+    if (Array.isArray(decoded.roles)) return decoded.roles;
+    if (typeof decoded.role === "string") return [decoded.role];
+    return ["ROLE_READER"];
+  } catch {
+    return ["ROLE_READER"];
+  }
 }
 
 export const authRepository = {
@@ -26,20 +34,21 @@ export const authRepository = {
     try {
       const raw = await apiClient.post<BackendAuthResponse>("/auth/login", {
         usernameOrEmail,
-        email: usernameOrEmail,
         password,
       });
 
       if (typeof window !== "undefined" && raw.accessToken) {
         localStorage.setItem("edition_access_token", raw.accessToken);
-        document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax; Secure`;
       }
+
+      const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
 
       return {
         token: raw.accessToken,
         refreshToken: raw.refreshToken || "",
-        username: usernameOrEmail,
-        roles: ["ROLE_READER"],
+        username: raw.username || usernameOrEmail,
+        roles: userRoles,
       };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -59,14 +68,16 @@ export const authRepository = {
 
       if (typeof window !== "undefined" && raw.accessToken) {
         localStorage.setItem("edition_access_token", raw.accessToken);
-        document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax`;
+        document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax; Secure`;
       }
+
+      const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
 
       return {
         token: raw.accessToken,
         refreshToken: raw.refreshToken || "",
-        username,
-        roles: ["ROLE_READER"],
+        username: raw.username || username,
+        roles: userRoles,
       };
     } catch (error) {
       if (error instanceof ApiError) {
@@ -79,11 +90,12 @@ export const authRepository = {
   async refreshToken(refreshToken: string): Promise<AuthResponseDto> {
     try {
       const raw = await apiClient.post<BackendAuthResponse>("/auth/refresh", { refreshToken });
+      const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
       return {
         token: raw.accessToken,
         refreshToken: raw.refreshToken,
-        username: "user",
-        roles: ["ROLE_READER"],
+        username: raw.username || "user",
+        roles: userRoles,
       };
     } catch (error) {
       if (error instanceof ApiError) {

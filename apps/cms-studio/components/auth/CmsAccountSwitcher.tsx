@@ -9,8 +9,6 @@ import {
   User,
   Feather
 } from "lucide-react";
-import { authService } from "@/services/authService";
-
 import { apiClient } from "@/lib/api-client";
 
 interface UserSummary {
@@ -76,7 +74,7 @@ export function CmsAccountSwitcher() {
     }
 
     try {
-      await apiClient.post<any>(`/users`, {
+      await apiClient.post<UserSummary>(`/users`, {
         username: newUsername,
         email: newEmail || `${newUsername}@editiontv.com`,
         password: newPassword,

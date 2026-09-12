@@ -54,7 +54,7 @@ export function UserManagementClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>("/admin/users");
+      const data = await apiClient.get<UserRecord[]>("/admin/users");
       if (data) {
         setUsers(data);
       } else {
@@ -77,7 +77,7 @@ export function UserManagementClient() {
 
     setIsSubmitting(true);
     try {
-      const created = await apiClient.post<any>("/admin/users", formData);
+      const created = await apiClient.post<UserRecord>("/admin/users", formData);
 
       if (created) {
         setUsers((prev) => [created, ...prev]);
@@ -103,7 +103,7 @@ export function UserManagementClient() {
 
   const updateRole = async (id: string, newRole: string) => {
     try {
-      const updated = await apiClient.put<any>(`/admin/users/${id}/role`, { role: newRole });
+      const updated = await apiClient.put<UserRecord>(`/admin/users/${id}/role`, { role: newRole });
       if (updated) {
         setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
         showToast(`Updated role for ${updated.name} to ${newRole}`);
@@ -115,7 +115,7 @@ export function UserManagementClient() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const updated = await apiClient.put<any>(`/admin/users/${id}/status`, { status: newStatus });
+      const updated = await apiClient.put<UserRecord>(`/admin/users/${id}/status`, { status: newStatus });
       if (updated) {
         setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
         showToast(`Account ${updated.name} is now ${newStatus}`);
@@ -129,7 +129,7 @@ export function UserManagementClient() {
     if (!confirm(`Are you sure you want to delete user account "${name}"?`)) return;
 
     try {
-      await apiClient.delete<any>(`/admin/users/${id}`);
+      await apiClient.delete<unknown>(`/admin/users/${id}`);
       setUsers((prev) => prev.filter((u) => u.id !== id));
       showToast(`Deleted user account "${name}"`);
     } catch (e) {

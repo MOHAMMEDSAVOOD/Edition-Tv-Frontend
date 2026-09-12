@@ -34,11 +34,11 @@ export function EditorialAssignmentsClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>("/admin/editorial/assignments/my").catch(() => []);
+      const data = await apiClient.get<Assignment[]>("/admin/editorial/assignments/my").catch(() => []);
       const list = Array.isArray(data) ? data : [];
       setAssignments(list);
-    } catch (err: any) {
-      setError(err.message || "Failed to load newsroom assignments");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load newsroom assignments");
     } finally {
       setLoading(false);
     }
@@ -56,8 +56,8 @@ export function EditorialAssignmentsClient() {
       fetchAssignments();
       setShowAddModal(false);
       setNotes("");
-    } catch (err: any) {
-      alert("Failed to create assignment: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to create assignment: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 

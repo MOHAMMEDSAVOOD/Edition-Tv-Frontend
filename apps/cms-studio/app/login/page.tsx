@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { 
-  Feather, 
   Lock, 
   User, 
   Eye, 
@@ -15,8 +14,7 @@ import {
   CheckCircle2,
   Newspaper,
   Radio,
-  Tv,
-  CheckCheck
+  Tv
 } from "lucide-react";
 import { authService } from "@/services/authService";
 

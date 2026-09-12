@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { WireItem } from "./ArticleList";
 import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw } from "lucide-react";
 
 import { apiClient } from "@/lib/api-client";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
 
 interface OptionItem {
   id: string;
@@ -81,7 +79,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
   const [authorId, setAuthorId] = useState<string>(item.author || "Wire Source / Agency");
 
   // Fetch publication configuration from backend API
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     setIsLoadingConfig(true);
     setConfigError(null);
     try {
@@ -100,12 +98,12 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
         // Fetch categories dynamically from backend API
         let categoryList: OptionItem[] = [];
         try {
-          const raw = await apiClient.get<any>('/categories');
+          const raw = await apiClient.get<OptionItem[] | { content?: OptionItem[]; data?: OptionItem[] }>('/categories');
           if (raw) {
             const items = Array.isArray(raw) ? raw : (raw.content || raw.data || []);
-            categoryList = items.map((c: any) => ({
-              id: c.name || c.title || c.slug,
-              name: c.name || c.title || c.slug,
+            categoryList = items.map((c: OptionItem) => ({
+              id: c.name || c.id,
+              name: c.name || c.id,
               enabled: true,
             }));
           }
@@ -167,12 +165,11 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
     } finally {
       setIsLoadingConfig(false);
     }
-  };
-
+  }, [category, item.author]);
 
   useEffect(() => {
     fetchConfig();
-  }, []);
+  }, [fetchConfig]);
 
   // Section G: Tags
   const generateInitialTags = (title: string, cat: string): string[] => {
@@ -202,7 +199,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
   };
 
   const [slug, setSlug] = useState<string>(generateSlug(item.title));
-  const [seoTitle, setSeoTitle] = useState<string>(item.title);
+  const [seoTitle] = useState<string>(item.title);
   const [seoDescription, setSeoDescription] = useState<string>(item.summary || item.title);
   const [canonicalUrl, setCanonicalUrl] = useState<string>(`https://editiontv.com/articles/${slug}`);
 
@@ -268,7 +265,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
         idempotencyKey,
       };
 
-      const result = await apiClient.post<any>(`/newsroom/wire-items/${item.id}/publish-direct`, payload);
+      const result = await apiClient.post<Record<string, unknown>>(`/newsroom/wire-items/${item.id}/publish-direct`, payload);
       onSuccess(result);
     } catch (err) {
       console.error("Direct publish error:", err);
@@ -544,6 +541,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
 
                   {imageOption === "wire_image" && wireImageUrl ? (
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={wireImageUrl}
                         alt="Wire Preview"

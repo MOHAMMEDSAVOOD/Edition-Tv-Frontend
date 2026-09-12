@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ShieldAlert, ArrowRight, FileText } from "lucide-react";
 import type { ArticleFeedItem } from "@/services/feedService";
 import { SafeImage } from "@/components/common/SafeImage";

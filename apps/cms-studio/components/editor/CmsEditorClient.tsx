@@ -88,8 +88,8 @@ export function CmsEditorClient({ isNew = false, entryId = "" }: CmsEditorClient
       }
 
       const savedData = articleId 
-        ? await apiClient.put<any>(endpoint, payload)
-        : await apiClient.post<any>(endpoint, payload);
+        ? await apiClient.put<{ id?: string; slug?: string }>(endpoint, payload)
+        : await apiClient.post<{ id?: string; slug?: string }>(endpoint, payload);
 
       if (savedData.id) {
         setArticleId(savedData.id);
@@ -98,7 +98,7 @@ export function CmsEditorClient({ isNew = false, entryId = "" }: CmsEditorClient
 
       const newStatus = targetStatus || status;
       if (savedData.id && newStatus && newStatus !== "DRAFT") {
-        const statusData = await apiClient.post<any>(`/articles/${savedData.id}/status?targetStatus=${newStatus}`);
+        const statusData = await apiClient.post<{ id?: string; status?: EntryStatus }>(`/articles/${savedData.id}/status?targetStatus=${newStatus}`);
         if (statusData && statusData.status) setStatus(statusData.status);
       }
 

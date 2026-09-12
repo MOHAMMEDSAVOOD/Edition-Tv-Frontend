@@ -286,7 +286,7 @@ export function NewsSourcesClient() {
       setImportMessage(`Successfully imported ${result?.sourcesCreated || 1} sources and ${result?.feedsCreated || 1} feeds.`);
       setOpmlXmlInput("");
       fetchSourcesAndRuns();
-    } catch (e) {
+    } catch {
       setImportMessage("Failed to import OPML content.");
     }
   };
@@ -297,7 +297,7 @@ export function NewsSourcesClient() {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
       const res = await fetch(`${API_BASE_URL}/admin/news-sources/opml/export`, { headers });
       
       if (res.ok) {
@@ -321,8 +321,9 @@ export function NewsSourcesClient() {
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
       
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
       const res = await fetch(`${API_BASE_URL}/admin/news-sources/db/export`, { headers });
+
       
       if (res.ok) {
         const blob = await res.blob();

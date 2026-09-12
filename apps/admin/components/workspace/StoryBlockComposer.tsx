@@ -14,7 +14,6 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  Plus,
   Copy
 } from "lucide-react";
 
@@ -250,6 +249,7 @@ export function StoryBlockComposer({
                   </div>
                   {block.url ? (
                     <div className="aspect-video rounded-xl overflow-hidden border border-slate-200 bg-slate-100 max-h-48">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={block.url} alt={block.caption || "Preview"} className="w-full h-full object-cover" />
                     </div>
                   ) : null}

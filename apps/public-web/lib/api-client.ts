@@ -50,19 +50,36 @@ export class ApiError extends Error {
  * falls back to NEXT_PUBLIC_API_BASE_URL for local development.
  * Never exposed to the browser.
  */
-function getServerApiBaseUrl(): string {
-  return (
-    process.env.INTERNAL_API_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
+function getClientApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+  const envUrl =
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://api.editiontv.com/api/v1"
-  );
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.INTERNAL_API_URL;
+
+  if (envUrl) {
+    return envUrl;
+  }
+  return "/api/v1";
 }
 
-const CLIENT_API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://api.editiontv.com/api/v1";
+function getServerApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+  const envUrl =
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL;
+
+  if (envUrl) {
+    return envUrl;
+  }
+  return "/api/v1";
+}
+
 
 
 // ---------------------------------------------------------------------------
@@ -100,6 +117,15 @@ export async function serverFetch<T>(
   const baseUrl = getServerApiBaseUrl();
   const url = formatUrl(baseUrl, endpoint);
 
+  // If executing in Node.js server without an absolute HTTP URL, return null gracefully during static build
+  if (!url.startsWith("http")) {
+    // Avoid relative fetch hang during next build if no server is running
+    if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_BASE_URL) {
+      return null;
+    }
+  }
+
+
   const nextCache: RequestInit["next"] = {};
   if (revalidate !== undefined) {
     nextCache.revalidate = revalidate;
@@ -113,18 +139,24 @@ export async function serverFetch<T>(
   const cacheMode: RequestInit["cache"] =
     revalidate === 0 || revalidate === false ? "no-store" : fetchOptions.cache;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
   try {
     const response = await fetch(url, {
       ...fetchOptions,
       cache: cacheMode,
+      signal: fetchOptions.signal || controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...(fetchOptions.headers as Record<string, string>),
       },
       next: Object.keys(nextCache).length > 0 ? nextCache : undefined,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
+
       // 404s and other expected errors: log and return null gracefully
       if (process.env.NODE_ENV !== "production") {
         console.warn(
@@ -139,7 +171,7 @@ export async function serverFetch<T>(
     }
 
     return (await response.json()) as T;
-  } catch (error) {
+  } catch {
     // Network failures (backend down, DNS failure, etc.) — never crash the page, fall back to default UI
     if (process.env.NODE_ENV !== "production") {
       console.warn(`[serverFetch] Service unreachable — ${url}`);
@@ -196,7 +228,7 @@ class ApiClient {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const url = formatUrl(CLIENT_API_BASE_URL, endpoint);
+    const url = formatUrl(getClientApiBaseUrl(), endpoint);
 
     let response: Response;
     try {

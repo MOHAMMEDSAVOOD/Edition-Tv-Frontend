@@ -23,13 +23,13 @@ export function ApiKeysClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>("/admin/api-keys");
+      const data = await apiClient.get<KeyRecord[]>("/admin/api-keys");
       if (data) {
         setKeys(data);
       } else {
         setError("Failed to fetch API keys from backend");
       }
-    } catch (e) {
+    } catch {
       setError("Failed to connect to backend API key service");
     } finally {
       setIsLoading(false);
@@ -42,7 +42,7 @@ export function ApiKeysClient() {
 
   const revokeKey = async (id: string) => {
     try {
-      const updated = await apiClient.post<any>(`/admin/api-keys/${id}/revoke`);
+      const updated = await apiClient.post<KeyRecord>(`/admin/api-keys/${id}/revoke`);
       if (updated) {
         setKeys((prev) => prev.map((k) => (k.id === id ? updated : k)));
       }

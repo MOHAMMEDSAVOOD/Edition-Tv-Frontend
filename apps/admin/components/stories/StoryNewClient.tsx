@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ArrowLeft, Loader2, AlertCircle, Star, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ export function StoryNewClient() {
   }, []);
 
   useEffect(() => {
-    apiClient.get<any>(`/cms/categories`)
+    apiClient.get<CategoryItem[]>(`/cms/categories`)
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
@@ -42,7 +42,7 @@ export function StoryNewClient() {
     setSubmitting(true);
     setError(null);
     try {
-      const created = await apiClient.post<any>(`/articles`, {
+      const created = await apiClient.post<{ id: string }>(`/articles`, {
         headline: headline.trim(),
         summary: summary.trim() || null,
         contentBody: contentBody.trim(),

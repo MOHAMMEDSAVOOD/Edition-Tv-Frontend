@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Save,
@@ -13,8 +13,7 @@ import {
   AlertCircle,
   ImageIcon,
   ShieldCheck,
-  FileText,
-  Code
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StoryBlockComposer, StoryBlock } from "@/components/workspace/StoryBlockComposer";
@@ -78,8 +77,8 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [tags, setTags] = useState<TagItem[]>([]);
-  const [desks, setDesks] = useState<DeskItem[]>([]);
+  const [, setTags] = useState<TagItem[]>([]);
+  const [, setDesks] = useState<DeskItem[]>([]);
 
   // Form fields
   const [headline, setHeadline] = useState("");
@@ -100,11 +99,6 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
     const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
     setAuthToken(stored);
   }, []);
-
-  const authHeaders = useCallback(() => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  }), [authToken]);
 
   // Load story
   useEffect(() => {
@@ -140,9 +134,9 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   // Load taxonomy
   useEffect(() => {
     Promise.all([
-      apiClient.get<any>(`/cms/categories`).catch(() => []),
-      apiClient.get<any>(`/cms/tags`).catch(() => []),
-      apiClient.get<any>(`/cms/desks`).catch(() => []),
+      apiClient.get<CategoryItem[]>(`/cms/categories`).catch(() => []),
+      apiClient.get<TagItem[]>(`/cms/tags`).catch(() => []),
+      apiClient.get<DeskItem[]>(`/cms/desks`).catch(() => []),
     ]).then(([cats, tgs, dks]) => {
       setCategories(Array.isArray(cats) ? cats : []);
       setTags(Array.isArray(tgs) ? tgs : []);
@@ -487,6 +481,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-red-500 font-mono"
                 />
                 {featuredImageUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img src={featuredImageUrl} alt="Preview" className="mt-2 rounded-xl w-full h-36 object-cover border border-slate-200" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                 ) : null}
               </div>

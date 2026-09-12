@@ -3,6 +3,7 @@ import { useState } from "react";
 import { CommentItem, commentsService } from "@/services/commentsService";
 import { MessageSquare, ThumbsUp, Send, ShieldCheck } from "lucide-react";
 import { SectionDivider } from "@/components/news/SectionDivider";
+import { TimeAgo } from "@/components/common/TimeAgo";
 
 interface CommentsSectionProps {
   articleId: string;
@@ -30,7 +31,7 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
           articleId,
           authorName: authorName.trim() || "Verified Reader",
           content: newComment,
-          createdAt: "Just now",
+          createdAt: new Date().toISOString(),
           likesCount: 0,
           status: "APPROVED",
           toxicityScore: 0.0,
@@ -44,7 +45,7 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
         articleId,
         authorName: authorName.trim() || "Verified Reader",
         content: newComment,
-        createdAt: "Just now",
+        createdAt: new Date().toISOString(),
         likesCount: 0,
         status: "APPROVED",
         toxicityScore: 0.0,
@@ -73,7 +74,7 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
           <span className="font-semibold text-foreground flex items-center gap-1.5">
             <MessageSquare className="h-4 w-4 text-primary" /> Join the Discussion
           </span>
-          <span className="flex items-center gap-1 text-[11px] text-emerald-600 ">
+          <span className="flex items-center gap-1 text-[11px] text-emerald-600">
             <ShieldCheck className="h-3.5 w-3.5" /> AI Moderation Active
           </span>
         </div>
@@ -116,7 +117,7 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
             <div key={comment.id} className="p-4 border border-border bg-card rounded-sm space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-foreground">{comment.authorName}</span>
-                <span className="text-muted-foreground text-[11px] font-mono">{comment.createdAt}</span>
+                <span className="text-muted-foreground text-[11px] font-mono"><TimeAgo date={comment.createdAt} /></span>
               </div>
               <p className="text-sm text-foreground/90 leading-relaxed font-sans">{comment.content}</p>
               <div className="flex items-center justify-between pt-1 text-xs">
@@ -128,7 +129,9 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
                   <span>{comment.likesCount} Helpful</span>
                 </button>
                 {comment.toxicityScore < 0.05 && (
-                  <span className="text-[10px] text-muted-foreground/60 font-mono">Verified Civil</span>
+                  <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-mono">
+                    Verified High Quality
+                  </span>
                 )}
               </div>
             </div>

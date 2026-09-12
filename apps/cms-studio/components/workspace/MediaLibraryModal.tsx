@@ -23,6 +23,18 @@ interface MediaLibraryModalProps {
 
 import { apiClient } from "@/lib/api-client";
 
+interface RawMediaItem {
+  id: string;
+  url?: string;
+  storageUrl?: string;
+  filename?: string;
+  storageKey?: string;
+  caption?: string;
+  credit?: string;
+  altText?: string;
+  mimeType?: string;
+}
+
 export function MediaLibraryModal({
   isOpen,
   onClose,
@@ -47,8 +59,8 @@ export function MediaLibraryModal({
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>(`/media`);
-      const list: MediaAsset[] = (Array.isArray(data) ? data : []).map((m: any) => ({
+      const data = await apiClient.get<RawMediaItem[]>(`/media`);
+      const list: MediaAsset[] = (Array.isArray(data) ? data : []).map((m: RawMediaItem) => ({
         id: m.id,
         url: m.url || m.storageUrl || "",
         filename: m.filename || m.storageKey || "image.jpg",
@@ -91,7 +103,7 @@ export function MediaLibraryModal({
     setUploading(true);
     setError(null);
     try {
-      const created = await apiClient.post<any>(`/media`, {
+      const created = await apiClient.post<RawMediaItem>(`/media`, {
         filename: uploadFilename.trim() || "editorial-image.jpg",
         url: uploadUrl.trim(),
         mediaType: "IMAGE",
@@ -101,7 +113,7 @@ export function MediaLibraryModal({
       });
       const newAsset: MediaAsset = {
         id: created.id,
-        url: created.url || created.storageUrl,
+        url: created.url || created.storageUrl || "",
         filename: created.filename || "image.jpg",
         title: created.filename || "Uploaded Asset",
         caption: created.caption || "",
@@ -267,6 +279,7 @@ export function MediaLibraryModal({
                           }`}
                         >
                           {asset.url ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img src={asset.url} alt={asset.title} className="w-full h-full object-cover" />
                           ) : null}
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition p-2 flex flex-col justify-end">
@@ -291,6 +304,7 @@ export function MediaLibraryModal({
                 <div className="space-y-3 overflow-y-auto">
                   {selectedAsset.url ? (
                     <div className="aspect-video rounded-xl overflow-hidden border border-slate-200 bg-white">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={selectedAsset.url} alt={selectedAsset.title} className="w-full h-full object-cover" />
                     </div>
                   ) : null}

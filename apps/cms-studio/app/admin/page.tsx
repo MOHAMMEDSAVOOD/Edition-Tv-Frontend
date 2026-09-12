@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ShieldAlert, Server, Database, Activity, RefreshCw, CheckCircle2, AlertTriangle, Layers, Lock, Users } from "lucide-react";
+import { ShieldAlert, Server, Database, Activity, RefreshCw, CheckCircle2, Lock, Users } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -11,8 +11,8 @@ import { ErrorState } from "@/components/ui/ErrorState";
 export default function AdminControlCenterPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [healthData, setHealthData] = useState<any>(null);
-  const [providers, setProviders] = useState<any[]>([]);
+  const [healthData, setHealthData] = useState<{ status?: string } | null>(null);
+  const [providers, setProviders] = useState<Record<string, unknown>[]>([]);
   const [auditCount, setAuditCount] = useState<number>(0);
 
   const fetchAdminData = useCallback(async () => {
@@ -20,16 +20,16 @@ export default function AdminControlCenterPage() {
     setError(null);
     try {
       const [healthRes, providersRes, auditRes] = await Promise.all([
-        apiClient.get<any>("/actuator/health").catch(() => ({ status: "UP" })),
-        apiClient.get<any[]>("/admin/providers").catch(() => []),
-        apiClient.get<any[]>("/admin/audit-logs").catch(() => []),
+        apiClient.get<{ status?: string }>("/actuator/health").catch(() => ({ status: "UP" })),
+        apiClient.get<Record<string, unknown>[]>("/admin/providers").catch(() => []),
+        apiClient.get<Record<string, unknown>[]>("/admin/audit-logs").catch(() => []),
       ]);
 
       setHealthData(healthRes);
       setProviders(Array.isArray(providersRes) ? providersRes : []);
       setAuditCount(Array.isArray(auditRes) ? auditRes.length : 0);
-    } catch (err: any) {
-      setError(err.message || "Failed to load admin health data");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load admin health data");
     } finally {
       setLoading(false);
     }

@@ -20,7 +20,17 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.editiontv.com/api/v1";
+function getApiBaseUrl(): string {
+  const envUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.INTERNAL_API_URL;
+
+  if (envUrl) {
+    return envUrl;
+  }
+  return "/api/v1";
+}
 
 
 class ApiClient {
@@ -31,6 +41,9 @@ class ApiClient {
   }
 
   public getAccessToken(): string | null {
+    if (!this.accessToken && typeof window !== "undefined") {
+      this.accessToken = localStorage.getItem("edition_access_token");
+    }
     return this.accessToken;
   }
 
@@ -40,15 +53,19 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (!this.accessToken && typeof window !== "undefined") {
-      this.accessToken = localStorage.getItem("edition_access_token");
+    const token = this.getAccessToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
-    if (this.accessToken) {
-      headers['Authorization'] = `Bearer ${this.accessToken}`;
-    }
-
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+    const baseUrl = getApiBaseUrl();
+    const cleanBase = baseUrl.replace(/\/+$/, "");
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = endpoint.startsWith('http')
+      ? endpoint
+      : cleanBase.endsWith("/api/v1") && cleanEndpoint.startsWith("/api/v1")
+      ? `${cleanBase.slice(0, -7)}${cleanEndpoint}`
+      : `${cleanBase}${cleanEndpoint}`;
 
     const response = await fetch(url, {
       ...options,

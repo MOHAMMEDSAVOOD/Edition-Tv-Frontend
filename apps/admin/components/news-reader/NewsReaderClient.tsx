@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { FeedNavigation, FeedCategoryItem } from "./FeedNavigation";
 import { ArticleList, WireItem } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
@@ -82,7 +82,7 @@ export function NewsReaderClient() {
   };
 
   // Fetch Wire Stream Items
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
@@ -115,7 +115,7 @@ export function NewsReaderClient() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeFilter, selectedFeedId, selectedCategoryId, searchQuery, selectedItem]);
 
   useEffect(() => {
     fetchStats();
@@ -124,7 +124,7 @@ export function NewsReaderClient() {
 
   useEffect(() => {
     fetchItems();
-  }, [activeFilter, selectedFeedId, selectedCategoryId, searchQuery]);
+  }, [fetchItems]);
 
   // Handlers
   const handleSelectItem = async (item: WireItem) => {

@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Layers, Pin, Trash2, Plus, Star, RefreshCw } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable, ColumnDef } from "@/components/ui/DataTable";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
@@ -36,11 +35,11 @@ export default function HomepageCurationClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>(`/admin/curation/slots/${activeSlot}`).catch(() => []);
+      const data = await apiClient.get<SlotPlacement[]>(`/admin/curation/slots/${activeSlot}`).catch(() => []);
       const list = Array.isArray(data) ? data : [];
       setPlacements(list);
-    } catch (err: any) {
-      setError(err.message || `Failed to load curation placements for ${activeSlot}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `Failed to load curation placements for ${activeSlot}`);
     } finally {
       setLoading(false);
     }
@@ -50,13 +49,13 @@ export default function HomepageCurationClient() {
     fetchPlacements();
   }, [fetchPlacements]);
 
-  const handleAssign = async (e: React.FormEvent) => {
+  const handleAddPlacement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newArticleId || !newHeadline) return;
+    if (!newArticleId.trim()) return;
     try {
       const payload = {
-        articleId: newArticleId,
-        articleHeadline: newHeadline,
+        articleId: newArticleId.trim(),
+        articleHeadline: newHeadline.trim() || undefined,
         slotType: activeSlot,
         displayOrder: placements.length,
         pinned: false,
@@ -65,8 +64,8 @@ export default function HomepageCurationClient() {
       fetchPlacements();
       setNewArticleId("");
       setNewHeadline("");
-    } catch (err: any) {
-      alert("Failed to curate story placement: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to curate story placement: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -74,8 +73,8 @@ export default function HomepageCurationClient() {
     try {
       await apiClient.post(`/admin/curation/slots/${id}/pin?pinned=${!currentPinned}`).catch(() => null);
       setPlacements((prev) => prev.map((p) => (p.id === id ? { ...p, pinned: !currentPinned } : p)));
-    } catch (err: any) {
-      alert("Failed to toggle pin: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to toggle pin: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -83,8 +82,8 @@ export default function HomepageCurationClient() {
     try {
       await apiClient.delete(`/admin/curation/slots/${id}`).catch(() => null);
       setPlacements((prev) => prev.filter((p) => p.id !== id));
-    } catch (err: any) {
-      alert("Failed to remove placement: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to remove placement: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -218,7 +217,7 @@ export default function HomepageCurationClient() {
           <h2 className="text-xs font-bold uppercase font-mono tracking-wider text-foreground flex items-center gap-2">
             <Plus className="h-4 w-4 text-indigo-400" /> Curate Story to {activeSlot.replace("_", " ")}
           </h2>
-          <form onSubmit={handleAssign} className="space-y-3 text-xs">
+          <form onSubmit={handleAddPlacement} className="space-y-3 text-xs">
             <div>
               <label className="block font-mono font-bold text-[10px] uppercase text-muted-foreground mb-1">Article ID</label>
               <input

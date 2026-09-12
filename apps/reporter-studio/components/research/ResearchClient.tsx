@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { BookOpen, Plus, Trash2, FileText } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 interface ResearchNote {
   id: string;

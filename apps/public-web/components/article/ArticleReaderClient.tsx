@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { ArticleDetail } from "@/services/articleService";
-import { Bookmark, Heart, Share2, Volume2, Eye, Twitter, Linkedin, Facebook, Link as LinkIcon, Check } from "lucide-react";
+import { Bookmark, Heart, Share2, Volume2, Eye } from "lucide-react";
 import { savedArticlesService } from "@/services/savedArticlesService";
 import { cn } from "@/lib/utils";
 import { AudioPlayerBar } from "./AudioPlayerBar";

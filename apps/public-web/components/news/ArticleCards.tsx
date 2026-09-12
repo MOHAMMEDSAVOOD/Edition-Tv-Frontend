@@ -3,16 +3,7 @@ import { Clock, Play, Headphones, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ArticleFeedItem } from "@/services/feedService";
 import { SafeImage } from "@/components/common/SafeImage";
-
-function formatTimeAgo(dateStr: string) {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
+import { TimeAgo } from "@/components/common/TimeAgo";
 
 /* ─── Lead Story Card (full-width hero) ─── */
 export function LeadStoryCard({ article, className }: { article: ArticleFeedItem; className?: string }) {
@@ -56,7 +47,7 @@ export function LeadStoryCard({ article, className }: { article: ArticleFeedItem
             {article.readingTimeMinutes} min read
           </span>
           <span>·</span>
-          <span>{formatTimeAgo(article.publishedAt)}</span>
+          <TimeAgo date={article.publishedAt} />
         </div>
       </div>
     </article>
@@ -89,7 +80,7 @@ export function SecondaryStoryCard({ article, showImage = false }: { article: Ar
           <div className="byline flex items-center gap-2 text-[10px] text-muted-foreground font-mono">
             <span>{article.authorName}</span>
             <span>·</span>
-            <span>{formatTimeAgo(article.publishedAt)}</span>
+            <TimeAgo date={article.publishedAt} />
           </div>
         </div>
       </div>
@@ -121,7 +112,7 @@ export function GridStoryCard({ article }: { article: ArticleFeedItem }) {
       <div className="byline text-[10px] text-muted-foreground flex items-center gap-1.5 font-mono pt-2 border-t border-border/50">
         <span>{article.authorName}</span>
         <span>·</span>
-        <span>{formatTimeAgo(article.publishedAt)}</span>
+        <TimeAgo date={article.publishedAt} />
       </div>
     </article>
   );

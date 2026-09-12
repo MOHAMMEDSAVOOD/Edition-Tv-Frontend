@@ -106,7 +106,7 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
   }, [searchResults, category, sortBy, hasSearched]);
 
   return (
-    <div className="space-y-8" suppressHydrationWarning>
+    <div className="space-y-8">
       {/* Search Input & Controls */}
       <div className="bg-muted/30 border border-border p-4 rounded-sm space-y-4">
         <div className="relative">

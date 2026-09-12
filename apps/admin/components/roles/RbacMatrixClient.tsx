@@ -30,8 +30,8 @@ export function RbacMatrixClient() {
     setError(null);
     try {
       const [rolesData, permData] = await Promise.all([
-        apiClient.get<any>("/admin/roles"),
-        apiClient.get<any>("/admin/permissions"),
+        apiClient.get<RoleRecord[]>("/admin/roles"),
+        apiClient.get<PermissionRow[]>("/admin/permissions"),
       ]);
 
       if (rolesData && permData) {
@@ -40,7 +40,7 @@ export function RbacMatrixClient() {
       } else {
         setError("Failed to fetch RBAC configuration from backend");
       }
-    } catch (e) {
+    } catch {
       setError("Failed to connect to backend RBAC API");
     } finally {
       setIsLoading(false);

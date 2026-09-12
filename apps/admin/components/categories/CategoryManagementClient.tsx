@@ -47,7 +47,7 @@ export function CategoryManagementClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>(`/cms/categories`);
+      const data = await apiClient.get<Category[]>(`/cms/categories`);
       const list = Array.isArray(data) ? data : [];
       setCategories(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
     } catch (err: unknown) {
@@ -67,7 +67,7 @@ export function CategoryManagementClient() {
     setError(null);
 
     try {
-      const data = await apiClient.post<any>(`/auth/login`, { usernameOrEmail: loginUser, password: loginPass });
+      const data = await apiClient.post<{ accessToken?: string; token?: string }>(`/auth/login`, { usernameOrEmail: loginUser, password: loginPass });
       const token = data.accessToken || data.token;
 
       if (token) {
@@ -82,14 +82,6 @@ export function CategoryManagementClient() {
     } finally {
       setLoginLoading(false);
     }
-  };
-
-  const getAuthHeaders = () => {
-    const token = authToken || (typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null);
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
   };
 
   const openCreateModal = () => {
@@ -143,16 +135,17 @@ export function CategoryManagementClient() {
 
       try {
         if (editingId) {
-          await apiClient.put<any>(url, payload);
+          await apiClient.put<Category>(url, payload);
         } else {
-          await apiClient.post<any>(url, payload);
+          await apiClient.post<Category>(url, payload);
         }
-      } catch (err: any) {
-        if (err.status === 401 || err.status === 403) {
+      } catch (err: unknown) {
+        const errorObj = err as { status?: number; message?: string };
+        if (errorObj.status === 401 || errorObj.status === 403) {
           setShowLoginModal(true);
           throw new Error("Admin authentication required. Please log in.");
         }
-        throw new Error(err.message || "Failed to save category");
+        throw new Error(errorObj.message || "Failed to save category");
       }
 
       setIsModalOpen(false);
@@ -175,9 +168,10 @@ export function CategoryManagementClient() {
 
     try {
       try {
-        await apiClient.delete<any>(`/cms/categories/${id}`);
-      } catch (err: any) {
-        if (err.status === 401 || err.status === 403) {
+        await apiClient.delete<unknown>(`/cms/categories/${id}`);
+      } catch (err: unknown) {
+        const errorObj = err as { status?: number; message?: string };
+        if (errorObj.status === 401 || errorObj.status === 403) {
           setShowLoginModal(true);
           throw new Error("Admin authentication required. Please log in.");
         }

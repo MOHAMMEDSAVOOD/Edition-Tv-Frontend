@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Database, RefreshCw, Table, Eye } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { DataTable, ColumnDef } from "@/components/ui/DataTable";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 
 interface TableInfo {
   tableName: string;
@@ -14,7 +13,7 @@ interface TableInfo {
 export default function DatabaseStudioPage() {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>("articles");
-  const [rows, setRows] = useState<any[]>([]);
+  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,7 +21,7 @@ export default function DatabaseStudioPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>("/admin/db/tables").catch(() => []);
+      const data = await apiClient.get<TableInfo[]>("/admin/db/tables").catch(() => []);
       const list = Array.isArray(data) ? data : [
         { tableName: "articles", rowCount: 12 },
         { tableName: "candidates", rowCount: 45 },
@@ -35,8 +34,8 @@ export default function DatabaseStudioPage() {
       if (list.length > 0) {
         fetchRows(list[0].tableName);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load database tables");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load database tables");
     } finally {
       setLoading(false);
     }
@@ -45,7 +44,7 @@ export default function DatabaseStudioPage() {
   const fetchRows = async (table: string) => {
     setSelectedTable(table);
     try {
-      const data = await apiClient.get<any[]>(`/admin/db/tables/${table}/rows`).catch(() => []);
+      const data = await apiClient.get<Record<string, unknown>[]>(`/admin/db/tables/${table}/rows`).catch(() => []);
       setRows(Array.isArray(data) ? data : []);
     } catch {
       setRows([]);

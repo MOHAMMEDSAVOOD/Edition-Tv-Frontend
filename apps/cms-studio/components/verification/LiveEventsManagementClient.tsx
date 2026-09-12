@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Radio, Send, Clock, RefreshCw, AlertTriangle, Wifi, WifiOff } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 
@@ -27,12 +26,12 @@ export default function LiveEventsManagementClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>("/liveblogs").catch(() => []);
+      const data = await apiClient.get<LiveUpdate[]>("/liveblogs").catch(() => []);
       const list = Array.isArray(data) ? data : [];
       setUpdates(list);
       setWsConnected(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to load live coverage updates");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load live coverage updates");
       setWsConnected(false);
     } finally {
       setLoading(false);
@@ -52,8 +51,8 @@ export default function LiveEventsManagementClient() {
       fetchLiveUpdates();
       setHeadline("");
       setContentBody("");
-    } catch (err: any) {
-      alert("Failed to post live update: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to post live update: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 

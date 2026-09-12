@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ShieldCheck, Plus, CheckCircle2, AlertTriangle, ExternalLink, RefreshCw } from "lucide-react";
+import { ShieldCheck, Plus, ExternalLink, RefreshCw } from "lucide-react";
 
 export interface EvidenceItem {
   id: string;
@@ -34,17 +34,12 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
   const [urlOrFilepath, setUrlOrFilepath] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") return localStorage.getItem("edition_access_token");
-    return null;
-  };
-
   const fetchEvidence = useCallback(async () => {
     if (!articleId) return;
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>(`/admin/verification/evidence?storyId=${articleId}`);
+      const data = await apiClient.get<EvidenceItem[]>(`/admin/verification/evidence?storyId=${articleId}`);
       const list: EvidenceItem[] = Array.isArray(data) ? data : [];
       setEvidenceList(list);
       if (onClaimsUpdated) onClaimsUpdated(list.length);
@@ -65,7 +60,7 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
     setSubmitting(true);
     setError(null);
     try {
-      await apiClient.post<any>(`/admin/verification/evidence`, {
+      await apiClient.post<EvidenceItem>(`/admin/verification/evidence`, {
         storyId: articleId,
         evidenceType,
         title,
@@ -87,7 +82,7 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
-      await apiClient.post<any>(
+      await apiClient.post<EvidenceItem>(
         `/admin/verification/evidence/${id}/status?status=${newStatus}`
       );
       await fetchEvidence();

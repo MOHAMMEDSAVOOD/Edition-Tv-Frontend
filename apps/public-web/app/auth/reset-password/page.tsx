@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { userRepository } from "@/repositories/userRepository";
@@ -9,7 +9,6 @@ import { KeyRound, ShieldCheck, CheckCircle2, AlertCircle, Eye, EyeOff } from "l
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const initialEmail = searchParams?.get("email") || "";
   const initialOtpCode = searchParams?.get("otpCode") || searchParams?.get("otp") || "";

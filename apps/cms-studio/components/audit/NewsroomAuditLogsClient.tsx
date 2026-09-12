@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { History, RefreshCw, FileText } from "lucide-react";
+import { History, RefreshCw } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DataTable, ColumnDef } from "@/components/ui/DataTable";
 import { Drawer } from "@/components/ui/Drawer";
 
@@ -31,11 +30,15 @@ export default function NewsroomAuditLogsClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>("/admin/audit-logs");
-      const list = Array.isArray(data?.content) ? data.content : Array.isArray(data) ? data : [];
+      const data = await apiClient.get<{ content?: AuditLogItem[] } | AuditLogItem[]>("/admin/audit-logs");
+      const list = Array.isArray((data as { content?: AuditLogItem[] })?.content)
+        ? (data as { content: AuditLogItem[] }).content
+        : Array.isArray(data)
+        ? (data as AuditLogItem[])
+        : [];
       setLogs(list);
-    } catch (err: any) {
-      setError(err.message || "Failed to load audit provenance logs");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load audit provenance logs");
     } finally {
       setLoading(false);
     }

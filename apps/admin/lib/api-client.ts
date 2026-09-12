@@ -20,7 +20,21 @@ export class ApiError extends Error {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
+function getApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    return "/api/v1";
+  }
+  const envUrl =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.INTERNAL_API_URL;
+
+  if (envUrl) {
+    return envUrl;
+  }
+  return "/api/v1";
+}
+
 
 
 class ApiClient {
@@ -48,7 +62,14 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+    const baseUrl = getApiBaseUrl();
+    const cleanBase = baseUrl.replace(/\/+$/, "");
+    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = endpoint.startsWith('http')
+      ? endpoint
+      : cleanBase.endsWith("/api/v1") && cleanEndpoint.startsWith("/api/v1")
+      ? `${cleanBase.slice(0, -7)}${cleanEndpoint}`
+      : `${cleanBase}${cleanEndpoint}`;
 
     const response = await fetch(url, {
       ...options,
@@ -56,6 +77,15 @@ class ApiClient {
     });
 
     if (!response.ok) {
+      if (response.status === 401 && typeof window !== "undefined") {
+        this.accessToken = null;
+        localStorage.removeItem("edition_access_token");
+        document.cookie = "edition_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
+
       let errorData: ApiErrorResponse;
       try {
         errorData = await response.json();
@@ -69,6 +99,7 @@ class ApiClient {
       }
       throw new ApiError(response.status, errorData);
     }
+
 
     if (response.status === 204) {
       return {} as T;

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { 
-  ShieldCheck, 
   Lock, 
   User, 
   Eye, 
@@ -15,7 +14,6 @@ import {
   CheckCircle2,
   Activity,
   Server,
-  KeyRound,
   Tv
 } from "lucide-react";
 import { authService } from "@/services/authService";
@@ -49,9 +47,10 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white flex font-sans select-none overflow-x-hidden">
+    <div className="min-h-screen w-full bg-white flex font-sans select-none overflow-x-hidden" suppressHydrationWarning>
       {/* 2-Column Split Layout matching reference image design */}
       <div className="w-full flex flex-col lg:flex-row min-h-screen">
+
         
         {/* Left Side: Clean Light Hero Section with Image & Floating Cards */}
         <div className="lg:w-1/2 xl:w-7/12 bg-slate-100/90 p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200">

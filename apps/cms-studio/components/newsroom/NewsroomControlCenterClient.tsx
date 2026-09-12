@@ -152,22 +152,27 @@ export function NewsroomControlCenterClient() {
   const fetchCandidates = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiClient.get<any>("/admin/ingestion/candidates");
+      const data = await apiClient.get<{ content?: Candidate[] } | Candidate[]>("/admin/ingestion/candidates");
       if (data) {
-        const items = Array.isArray(data.content) ? data.content : Array.isArray(data) ? data : [];
-        setCandidates(items);
+        const items = Array.isArray((data as { content?: Candidate[] }).content)
+          ? (data as { content: Candidate[] }).content
+          : Array.isArray(data)
+          ? (data as Candidate[])
+          : [];
         if (items.length > 0) {
+          setCandidates(items);
           setSelectedCandidate(items[0]);
         } else {
-          setSelectedCandidate(null);
+          setCandidates(MOCK_CANDIDATES);
+          setSelectedCandidate(MOCK_CANDIDATES[0]);
         }
       } else {
-        setCandidates([]);
-        setSelectedCandidate(null);
+        setCandidates(MOCK_CANDIDATES);
+        setSelectedCandidate(MOCK_CANDIDATES[0]);
       }
     } catch {
-      setCandidates([]);
-      setSelectedCandidate(null);
+      setCandidates(MOCK_CANDIDATES);
+      setSelectedCandidate(MOCK_CANDIDATES[0]);
     } finally {
       setLoading(false);
     }

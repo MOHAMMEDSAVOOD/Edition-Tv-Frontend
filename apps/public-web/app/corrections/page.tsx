@@ -1,5 +1,5 @@
 import { SectionDivider } from "@/components/news/SectionDivider";
-import { AlertCircle, CheckCircle2, History } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { serverFetch } from "@/lib/api-client";
 

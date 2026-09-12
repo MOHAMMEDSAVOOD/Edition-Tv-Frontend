@@ -10,11 +10,7 @@ import {
   MessageSquare, 
   TrendingUp, 
   TrendingDown, 
-  ExternalLink,
-  CheckCircle2,
-  Clock,
-  Sparkles,
-  Plus
+  ExternalLink
 } from "lucide-react";
 
 interface StorySummary {
@@ -25,10 +21,24 @@ interface StorySummary {
   createdAt: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
+interface RawArticleItem {
+  id: string;
+  headline?: string;
+  title?: string;
+  category?: string;
+  status?: string;
+  createdAt?: string;
+}
+
+const INITIAL_STORIES: StorySummary[] = [
+  { id: "1", headline: "Career growth tips", category: "Tech", status: "Published", createdAt: "18 Mar" },
+  { id: "2", headline: "Top design tools", category: "Design", status: "Draft", createdAt: "18 Mar" },
+  { id: "3", headline: "AI in mentorship", category: "Tech", status: "Published", createdAt: "18 Mar" },
+  { id: "4", headline: "UI/UX case study", category: "Design", status: "Published", createdAt: "18 Mar" },
+];
 
 export function CmsDashboardClient() {
-  const [stories, setStories] = useState<StorySummary[]>([]);
+  const [stories, setStories] = useState<StorySummary[]>(INITIAL_STORIES);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPosts: 560,
@@ -44,18 +54,21 @@ export function CmsDashboardClient() {
   const fetchCmsData = async () => {
     setLoading(true);
     try {
-      const data = await apiClient.get<any>("/articles?size=6");
+      const data = await apiClient.get<{ content?: RawArticleItem[]; totalElements?: number }>("/articles?size=6");
       if (data) {
         const content = Array.isArray(data.content) ? data.content : [];
-        setStories(content.map((art: any) => ({
-          id: art.id,
-          headline: art.headline || art.title || "Untitled Article",
-          category: art.category || "News",
-          status: art.status || "PUBLISHED",
-          createdAt: art.createdAt ? new Date(art.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "18 Mar",
-        })));
-        if (data.totalElements) {
-          setStats((prev) => ({ ...prev, totalPosts: data.totalElements * 14 }));
+        if (content.length > 0) {
+          setStories(content.map((art: RawArticleItem) => ({
+            id: art.id,
+            headline: art.headline || art.title || "Untitled Article",
+            category: art.category || "News",
+            status: art.status || "PUBLISHED",
+            createdAt: art.createdAt ? new Date(art.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "18 Mar",
+          })));
+        }
+        if (typeof data.totalElements === "number") {
+          const total = data.totalElements;
+          setStats((prev) => ({ ...prev, totalPosts: total * 14 }));
         }
       }
     } catch (e) {
@@ -282,34 +295,27 @@ export function CmsDashboardClient() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">Career growth tips</td>
-                  <td className="py-3">
-                    <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">Published</span>
-                  </td>
-                  <td className="py-3 text-right text-slate-400 font-mono">18 Mar</td>
-                </tr>
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">Top design tools</td>
-                  <td className="py-3">
-                    <span className="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full text-[10px]">Draft</span>
-                  </td>
-                  <td className="py-3 text-right text-slate-400 font-mono">18 Mar</td>
-                </tr>
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">AI in mentorship</td>
-                  <td className="py-3">
-                    <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">Published</span>
-                  </td>
-                  <td className="py-3 text-right text-slate-400 font-mono">18 Mar</td>
-                </tr>
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">UI/UX case study</td>
-                  <td className="py-3">
-                    <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">Published</span>
-                  </td>
-                  <td className="py-3 text-right text-slate-400 font-mono">18 Mar</td>
-                </tr>
+                {loading ? (
+                  <tr>
+                    <td colSpan={3} className="py-4 text-center text-slate-400 font-mono">Loading CMS stories...</td>
+                  </tr>
+                ) : (
+                  stories.map((st) => (
+                    <tr key={st.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3 font-bold text-slate-900 truncate max-w-[200px]">{st.headline}</td>
+                      <td className="py-3">
+                        <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
+                          st.status === "PUBLISHED" || st.status === "Published"
+                            ? "text-emerald-700 bg-emerald-50"
+                            : "text-amber-700 bg-amber-50"
+                        }`}>
+                          {st.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right text-slate-400 font-mono">{st.createdAt}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -21,7 +21,7 @@ const INITIAL_ASSIGNMENTS: AssignmentItem[] = [
 ];
 
 export function AssignmentsClient() {
-  const [assignments, setAssignments] = useState<AssignmentItem[]>(INITIAL_ASSIGNMENTS);
+  const [assignments] = useState<AssignmentItem[]>(INITIAL_ASSIGNMENTS);
 
   const getPriorityClass = (p: AssignmentItem["priority"]) => {
     switch (p) {

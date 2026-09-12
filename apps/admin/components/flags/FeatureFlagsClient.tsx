@@ -22,13 +22,13 @@ export function FeatureFlagsClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>("/admin/feature-flags");
+      const data = await apiClient.get<FlagRecord[]>("/admin/feature-flags");
       if (data) {
         setFlags(data);
       } else {
         setError("Failed to fetch feature flags from backend API");
       }
-    } catch (e) {
+    } catch {
       setError("Failed to connect to backend feature flag API");
     } finally {
       setIsLoading(false);
@@ -41,7 +41,7 @@ export function FeatureFlagsClient() {
 
   const toggleFlag = async (key: string) => {
     try {
-      const updated = await apiClient.post<any>(`/admin/feature-flags/${key}/toggle`);
+      const updated = await apiClient.post<FlagRecord>(`/admin/feature-flags/${key}/toggle`);
       if (updated) {
         setFlags((prev) => prev.map((f) => (f.key === key ? updated : f)));
       }

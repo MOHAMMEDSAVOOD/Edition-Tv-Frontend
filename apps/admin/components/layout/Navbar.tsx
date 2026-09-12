@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Radio, Search, Bell, Sparkles, User, LogOut, LogIn, ShieldCheck } from "lucide-react";
+import { Radio, LogOut, LogIn, ShieldCheck } from "lucide-react";
 import { authService } from "@/services/authService";
 
 export function Navbar() {

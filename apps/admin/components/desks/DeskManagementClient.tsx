@@ -23,7 +23,6 @@ export function DeskManagementClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Form modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,16 +34,11 @@ export function DeskManagementClient() {
   const [formPriority, setFormPriority] = useState(10);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(stored);
-  }, []);
-
   const fetchDesks = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>(`/cms/desks`);
+      const data = await apiClient.get<DeskItem[]>(`/cms/desks`);
       setDesks(
         (Array.isArray(data) ? data : []).sort(
           (a: DeskItem, b: DeskItem) => a.priority - b.priority
@@ -60,11 +54,6 @@ export function DeskManagementClient() {
   useEffect(() => {
     fetchDesks();
   }, [fetchDesks]);
-
-  const authHeaders = useCallback(() => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  }), [authToken]);
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -108,9 +97,9 @@ export function DeskManagementClient() {
     try {
       const url = editingId ? `/cms/desks/${editingId}` : `/cms/desks`;
       if (editingId) {
-        await apiClient.put<any>(url, body);
+        await apiClient.put<DeskItem>(url, body);
       } else {
-        await apiClient.post<any>(url, body);
+        await apiClient.post<DeskItem>(url, body);
       }
       showSuccess(editingId ? "Desk updated successfully" : "Desk created successfully");
       setIsModalOpen(false);
@@ -124,7 +113,7 @@ export function DeskManagementClient() {
 
   const handleToggle = async (desk: DeskItem) => {
     try {
-      await apiClient.patch<any>(`/cms/desks/${desk.id}/toggle`, {});
+      await apiClient.patch<DeskItem>(`/cms/desks/${desk.id}/toggle`, {});
       showSuccess(`Desk '${desk.name}' ${!desk.enabled ? "enabled" : "disabled"}`);
       fetchDesks();
     } catch (err: unknown) {
@@ -135,7 +124,7 @@ export function DeskManagementClient() {
   const handleDelete = async (desk: DeskItem) => {
     if (!confirm(`Delete desk "${desk.name}"?`)) return;
     try {
-      await apiClient.delete<any>(`/cms/desks/${desk.id}`);
+      await apiClient.delete<unknown>(`/cms/desks/${desk.id}`);
       showSuccess(`Desk '${desk.name}' deleted`);
       fetchDesks();
     } catch (err: unknown) {

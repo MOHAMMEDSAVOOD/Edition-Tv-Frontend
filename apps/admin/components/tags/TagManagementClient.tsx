@@ -20,7 +20,6 @@ export function TagManagementClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Create form state
   const [formName, setFormName] = useState("");
@@ -32,16 +31,11 @@ export function TagManagementClient() {
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
 
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(stored);
-  }, []);
-
   const fetchTags = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>(`/cms/tags`);
+      const data = await apiClient.get<TagItem[]>(`/cms/tags`);
       setTags(Array.isArray(data) ? data : []);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load tags");
@@ -53,11 +47,6 @@ export function TagManagementClient() {
   useEffect(() => {
     fetchTags();
   }, [fetchTags]);
-
-  const authHeaders = useCallback(() => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  }), [authToken]);
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -73,7 +62,7 @@ export function TagManagementClient() {
     const slug = formSlug.trim() || slugify(formName);
 
     try {
-      await apiClient.post<any>(`/cms/tags`, { name: formName.trim(), slug });
+      await apiClient.post<TagItem>(`/cms/tags`, { name: formName.trim(), slug });
       showSuccess(`Tag "${formName.trim()}" created`);
       setFormName("");
       setFormSlug("");
@@ -94,7 +83,7 @@ export function TagManagementClient() {
   const handleSaveEdit = async (id: string) => {
     if (!editName.trim()) return;
     try {
-      await apiClient.put<any>(`/cms/tags/${id}`, { name: editName.trim(), slug: editSlug.trim() || slugify(editName) });
+      await apiClient.put<TagItem>(`/cms/tags/${id}`, { name: editName.trim(), slug: editSlug.trim() || slugify(editName) });
       showSuccess("Tag updated");
       setEditingId(null);
       fetchTags();
@@ -106,7 +95,7 @@ export function TagManagementClient() {
   const handleDeleteTag = async (tag: TagItem) => {
     if (!confirm(`Delete tag "${tag.name}"?`)) return;
     try {
-      await apiClient.delete<any>(`/cms/tags/${tag.id}`);
+      await apiClient.delete<unknown>(`/cms/tags/${tag.id}`);
       showSuccess(`Tag "${tag.name}" deleted`);
       fetchTags();
     } catch (err: unknown) {

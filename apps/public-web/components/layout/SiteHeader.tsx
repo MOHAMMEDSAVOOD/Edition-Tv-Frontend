@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Search, User, Bookmark, Menu, ArrowLeft, Globe, Briefcase, Laptop, Landmark, Microscope, HeartPulse, Zap, MessageSquare, ShieldAlert } from "lucide-react";
+import { Search, User, Bookmark, Menu, ArrowLeft, Globe } from "lucide-react";
 import { savedArticlesService } from "@/services/savedArticlesService";
 import { CategoryNav } from "./CategoryNav";
 import { NotificationPopover } from "./NotificationPopover";
@@ -42,7 +42,7 @@ export function SiteHeader() {
             }));
           setNavItems(items);
         }
-      } catch (error) {
+      } catch {
         // Pure API mode: no fallback mock data
       }
     };

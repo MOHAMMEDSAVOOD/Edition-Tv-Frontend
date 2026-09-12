@@ -235,6 +235,7 @@ export function StoryBlockComposer({
 
                   {block.url ? (
                     <div className="relative aspect-video max-h-48 rounded-lg overflow-hidden border border-border bg-muted/20">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={block.url} alt={block.altText || "Block image preview"} className="object-cover w-full h-full" />
                     </div>
                   ) : null}

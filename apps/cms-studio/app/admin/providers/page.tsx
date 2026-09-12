@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Server, RefreshCw, Play, CheckCircle2, AlertTriangle, Key, Clock } from "lucide-react";
+import { Server, RefreshCw, Play } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -25,11 +25,11 @@ export default function IngestionProvidersPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any[]>("/admin/providers").catch(() => []);
+      const data = await apiClient.get<Provider[]>("/admin/providers").catch(() => []);
       const list = Array.isArray(data) ? data : [];
       setProviders(list);
-    } catch (err: any) {
-      setError(err.message || "Failed to load ingestion providers");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load ingestion providers");
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,8 @@ export default function IngestionProvidersPage() {
       await apiClient.post(`/admin/providers/${key}/ingest`).catch(() => null);
       alert(`Ingestion triggered for provider: ${key}`);
       fetchProviders();
-    } catch (err: any) {
-      alert("Failed to trigger ingestion: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to trigger ingestion: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -53,8 +53,8 @@ export default function IngestionProvidersPage() {
     try {
       await apiClient.put(`/admin/providers/${key}`, { active: !currentActive }).catch(() => null);
       setProviders((prev) => prev.map((p) => (p.key === key ? { ...p, active: !currentActive } : p)));
-    } catch (err: any) {
-      alert("Failed to update provider status: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to update provider status: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 

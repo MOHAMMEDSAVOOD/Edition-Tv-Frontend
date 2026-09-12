@@ -5,15 +5,11 @@ import {
   ShieldCheck,
   Plus,
   Copy,
-  UserCheck,
   Search,
   CheckCircle2,
   XCircle,
   Play,
-  Lock,
   Layers,
-  Settings,
-  Filter
 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 
@@ -121,8 +117,8 @@ export default function RolesManagementClient() {
       setNewRoleName("");
       setNewRoleDesc("");
       setIsCreating(false);
-    } catch (err: any) {
-      alert("Failed to create role: " + err.message);
+    } catch (err: unknown) {
+      alert("Failed to create role: " + (err instanceof Error ? err.message : "Unknown error"));
     }
   };
 
@@ -149,8 +145,8 @@ export default function RolesManagementClient() {
         grantedPermissions: ["story.read", "story.create", "media.upload"]
       }));
       setSimResult(res as SimulationResult);
-    } catch (err: any) {
-      alert("Simulation failed: " + err.message);
+    } catch (err: unknown) {
+      alert("Simulation failed: " + (err instanceof Error ? err.message : "Unknown error"));
     } finally {
       setIsSimulating(false);
     }
@@ -180,7 +176,7 @@ export default function RolesManagementClient() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             Newsroom Roles & Permission Registry
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-mono font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">
-              <ShieldCheck className="h-3.5 w-3.5" /> DYNAMIC PERMISSIONS
+              <ShieldCheck className="h-3.5 w-3.5" /> {loading ? "LOADING RBAC..." : "DYNAMIC PERMISSIONS"}
             </span>
           </h1>
         </div>
@@ -398,6 +394,19 @@ export default function RolesManagementClient() {
                   onChange={(e) => setNewRoleDesc(e.target.value)}
                   className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:outline-none font-sans"
                 />
+              </div>
+
+              <div>
+                <label className="block text-muted-foreground mb-1 font-mono">Scope</label>
+                <select
+                  value={selectedScope}
+                  onChange={(e) => setSelectedScope(e.target.value)}
+                  className="w-full px-3 py-2 border border-border bg-background rounded-lg focus:outline-none font-sans text-xs"
+                >
+                  <option value="ALL">All Desks & Organizations</option>
+                  <option value="DESK">Assigned Desk Only</option>
+                  <option value="SELF">Self Created Only</option>
+                </select>
               </div>
 
               <div>

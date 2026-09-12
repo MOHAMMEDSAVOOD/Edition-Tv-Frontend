@@ -10,13 +10,7 @@ import {
   MessageSquare, 
   TrendingUp, 
   TrendingDown, 
-  MoreHorizontal, 
-  Eye, 
-  Plus,
-  Sparkles,
-  Radio,
   CheckCircle2,
-  Clock,
   ExternalLink
 } from "lucide-react";
 
@@ -27,8 +21,6 @@ interface StorySummary {
   status: string;
   createdAt: string;
 }
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
 
 export function AdminDashboardClient() {
   const [stories, setStories] = useState<StorySummary[]>([]);
@@ -47,18 +39,19 @@ export function AdminDashboardClient() {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const data = await apiClient.get<any>("/articles?size=6");
+      const data = await apiClient.get<Record<string, unknown>>("/articles?size=6");
       if (data) {
         const content = Array.isArray(data.content) ? data.content : [];
-        setStories(content.map((art: { id?: string; headline?: string; title?: string; category?: string; status?: string; createdAt?: string }) => ({
-          id: art.id,
+        setStories(content.map((art: { id?: string; headline?: string; title?: string; category?: string; status?: string; createdAt?: string }, index: number) => ({
+          id: art.id || `story-${index}`,
           headline: art.headline || art.title || "Untitled Headline",
           category: art.category || "General",
           status: art.status || "PUBLISHED",
           createdAt: art.createdAt ? new Date(art.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "18 Mar",
         })));
-        if (data.totalElements) {
-          setStats((prev) => ({ ...prev, totalStories: data.totalElements }));
+        if (typeof data.totalElements === "number") {
+          const totalStoriesCount = data.totalElements;
+          setStats((prev) => ({ ...prev, totalStories: totalStoriesCount }));
         }
       }
     } catch (e) {

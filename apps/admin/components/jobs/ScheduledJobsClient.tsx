@@ -23,13 +23,13 @@ export function ScheduledJobsClient() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<any>("/admin/jobs");
+      const data = await apiClient.get<JobRecord[]>("/admin/jobs");
       if (data) {
         setJobs(data);
       } else {
         setError("Failed to fetch scheduled jobs from backend");
       }
-    } catch (e) {
+    } catch {
       setError("Failed to connect to backend scheduled job API");
     } finally {
       setIsLoading(false);

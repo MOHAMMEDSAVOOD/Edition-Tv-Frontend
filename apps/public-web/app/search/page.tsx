@@ -18,8 +18,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const initialFeed = await feedService.getPublicFeed(0, 50);
 
   return (
-    <div className="container mx-auto max-w-[1200px] px-4 md:px-6 py-8" suppressHydrationWarning>
-      <div className="border-b border-border pb-4 mb-8" suppressHydrationWarning>
+    <div className="container mx-auto max-w-[1200px] px-4 md:px-6 py-8">
+      <div className="border-b border-border pb-4 mb-8">
         <span className="section-label block mb-1">Archive Search</span>
         <h1 className="headline-xl text-3xl sm:text-4xl font-extrabold">Search Edition TV</h1>
       </div>
@@ -30,3 +30,4 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     </div>
   );
 }
+
