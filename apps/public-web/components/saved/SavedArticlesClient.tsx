@@ -1,17 +1,46 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { BookmarkX, Trash2, ArrowRight } from "lucide-react";
+import { BookmarkX, Trash2, ArrowRight, Loader2 } from "lucide-react";
 import { Article } from "@/types/models";
 import { SecondaryStoryCard } from "@/components/news/ArticleCards";
 import { savedArticlesService } from "@/services/savedArticlesService";
 
 interface SavedArticlesClientProps {
-  initialSaved: Article[];
+  initialSaved?: Article[];
 }
 
-export function SavedArticlesClient({ initialSaved }: SavedArticlesClientProps) {
+export function SavedArticlesClient({ initialSaved = [] }: SavedArticlesClientProps) {
   const [articles, setArticles] = useState<Article[]>(initialSaved);
+  const [loading, setLoading] = useState<boolean>(initialSaved.length === 0);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadSavedArticles = async () => {
+      try {
+        const data = await savedArticlesService.getSavedArticles();
+        if (mounted) {
+          setArticles(data);
+          setLoading(false);
+        }
+      } catch {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadSavedArticles();
+
+    const handleBookmarkChange = () => {
+      loadSavedArticles();
+    };
+
+    window.addEventListener("edition_bookmark_changed", handleBookmarkChange);
+    return () => {
+      mounted = false;
+      window.removeEventListener("edition_bookmark_changed", handleBookmarkChange);
+    };
+  }, []);
 
   const handleRemove = async (id: string) => {
     const updated = articles.filter((a) => a.id !== id && a.slug !== id);
@@ -34,6 +63,15 @@ export function SavedArticlesClient({ initialSaved }: SavedArticlesClientProps) 
       }
     }
   };
+
+  if (loading && articles.length === 0) {
+    return (
+      <div className="py-24 flex flex-col items-center justify-center space-y-3">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <p className="text-xs text-muted-foreground font-mono">Loading saved reading list...</p>
+      </div>
+    );
+  }
 
   if (articles.length === 0) {
     return (
@@ -70,10 +108,16 @@ export function SavedArticlesClient({ initialSaved }: SavedArticlesClientProps) 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {articles.map((article) => (
           <div key={article.id} className="relative group">
-            <SecondaryStoryCard article={{ ...article, headline: article.title }} showImage />
+            <SecondaryStoryCard
+              article={{
+                ...article,
+                headline: article.title,
+              }}
+              showImage
+            />
             <button
               onClick={() => handleRemove(article.id)}
-              className="absolute top-2 right-2 p-1 bg-background/90 hover:bg-red-500 hover:text-white border border-border rounded-xs transition-colors opacity-0 group-hover:opacity-100 text-xs font-bold shadow-xs"
+              className="absolute top-2 right-2 p-1.5 bg-background/90 hover:bg-red-500 hover:text-white border border-border rounded-xs transition-colors opacity-0 group-hover:opacity-100 text-xs font-bold shadow-xs"
               title="Remove from saved"
             >
               ✕

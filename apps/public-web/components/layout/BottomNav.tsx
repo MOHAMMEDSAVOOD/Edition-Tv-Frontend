@@ -11,7 +11,18 @@ export function BottomNav() {
   const [bookmarkCount, setBookmarkCount] = useState(0);
 
   useEffect(() => {
-    savedArticlesService.getSavedArticles().then((items) => setBookmarkCount(items.length)).catch(() => {});
+    const updateBookmarks = () => {
+      savedArticlesService
+        .getSavedArticles()
+        .then((items) => setBookmarkCount(items.length))
+        .catch(() => {});
+    };
+
+    updateBookmarks();
+    window.addEventListener("edition_bookmark_changed", updateBookmarks);
+    return () => {
+      window.removeEventListener("edition_bookmark_changed", updateBookmarks);
+    };
   }, []);
 
   const navItems = [

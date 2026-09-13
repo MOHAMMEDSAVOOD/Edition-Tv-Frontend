@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Search, User, Bookmark, Menu, ArrowLeft, Globe } from "lucide-react";
 import { savedArticlesService } from "@/services/savedArticlesService";
+import { authService, UserSession } from "@/services/authService";
 import { CategoryNav } from "./CategoryNav";
 import { NotificationPopover } from "./NotificationPopover";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
@@ -24,10 +25,26 @@ export function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [navItems, setNavItems] = useState<{ label: string; href: string }[]>([]);
+  const [session, setSession] = useState<UserSession | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    savedArticlesService.getSavedArticles().then((items) => setBookmarkCount(items.length)).catch(() => {});
+
+    const updateSession = () => {
+      setSession(authService.getCurrentSession());
+    };
+    updateSession();
+    window.addEventListener("edition_auth_changed", updateSession);
+
+    const updateBookmarks = () => {
+      savedArticlesService
+        .getSavedArticles()
+        .then((items) => setBookmarkCount(items.length))
+        .catch(() => {});
+    };
+
+    updateBookmarks();
+    window.addEventListener("edition_bookmark_changed", updateBookmarks);
 
     const fetchCategories = async () => {
       try {
@@ -48,6 +65,11 @@ export function SiteHeader() {
     };
     
     fetchCategories();
+
+    return () => {
+      window.removeEventListener("edition_bookmark_changed", updateBookmarks);
+      window.removeEventListener("edition_auth_changed", updateSession);
+    };
   }, []);
 
   // Prevent scroll when drawer is open
@@ -123,9 +145,30 @@ export function SiteHeader() {
                   )}
                 </Link>
 
-                <Link href="/account" className="p-2 rounded-md hover:bg-muted transition-colors" aria-label="Account" title="Reader Account">
-                  <User className="h-4 w-4" />
-                </Link>
+                {mounted && session ? (
+                  <Link
+                    href="/account"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-muted transition-colors text-xs font-semibold text-foreground group border border-border/60 bg-muted/20"
+                    title={`Reader Account (@${session.username})`}
+                  >
+                    <div className="relative">
+                      <User className="h-3.5 w-3.5" />
+                      <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
+                    </div>
+                    <span className="font-mono text-xs hidden lg:inline-block max-w-[110px] truncate">
+                      @{session.username}
+                    </span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/auth/login"
+                    className="px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity flex items-center gap-1.5 shadow-2xs"
+                    title="Sign In"
+                  >
+                    <User className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Sign In</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -184,23 +227,68 @@ export function SiteHeader() {
         </div>
 
         {/* Drawer Account Block */}
-        <div className="p-4 border-b border-border bg-muted/30">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-              <User className="h-5 w-5 text-muted-foreground" />
+        {mounted && session ? (
+          <div className="p-4 border-b border-border bg-muted/30">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold font-mono text-sm uppercase">
+                {session.username.slice(0, 2)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold truncate font-mono">@{session.username}</p>
+                <span className="inline-block px-1.5 py-0.2 text-[9px] font-semibold uppercase bg-emerald-500/10 text-emerald-600 rounded-xs">
+                  Active Subscriber
+                </span>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold">Welcome to Edition TV</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/account"
+                onClick={() => setMobileOpen(false)}
+                className="py-2 bg-primary text-primary-foreground text-center text-xs font-bold rounded-sm tracking-wide"
+              >
+                My Account
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  authService.logout();
+                  setMobileOpen(false);
+                }}
+                className="py-2 border border-border text-center text-xs font-bold rounded-sm hover:bg-muted text-red-500"
+              >
+                Sign Out
+              </button>
             </div>
           </div>
-          <Link 
-            href="/login" 
-            onClick={() => setMobileOpen(false)}
-            className="block w-full py-2 bg-primary text-primary-foreground text-center text-sm font-bold rounded-sm tracking-wide"
-          >
-            Sign In / Register
-          </Link>
-        </div>
+        ) : (
+          <div className="p-4 border-b border-border bg-muted/30">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                <User className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold">Welcome to Edition TV</p>
+                <p className="text-[10px] text-muted-foreground">Sign in for saved stories & preferences</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/auth/login"
+                onClick={() => setMobileOpen(false)}
+                className="py-2 bg-primary text-primary-foreground text-center text-xs font-bold rounded-sm tracking-wide"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/auth/register"
+                onClick={() => setMobileOpen(false)}
+                className="py-2 border border-border text-center text-xs font-bold rounded-sm hover:bg-muted"
+              >
+                Register
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Drawer Navigation */}
         <nav className="flex-1 py-2">

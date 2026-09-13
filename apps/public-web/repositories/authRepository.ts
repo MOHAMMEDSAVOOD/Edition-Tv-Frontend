@@ -16,17 +16,49 @@ export interface AuthResponseDto {
   roles: string[];
 }
 
-function parseJwtRoles(token: string): string[] {
+interface JwtPayload {
+  sub?: string;
+  roles?: string[] | string;
+  exp?: number;
+}
+
+function parseJwtPayload(token: string): JwtPayload | null {
   try {
     const payloadBase64 = token.split(".")[1];
-    if (!payloadBase64) return ["ROLE_READER"];
-    const decoded = JSON.parse(atob(payloadBase64));
-    if (Array.isArray(decoded.roles)) return decoded.roles;
-    if (typeof decoded.role === "string") return [decoded.role];
-    return ["ROLE_READER"];
+    if (!payloadBase64) return null;
+    const jsonStr = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(jsonStr) as JwtPayload;
   } catch {
-    return ["ROLE_READER"];
+    return null;
   }
+}
+
+function parseJwtRoles(token: string): string[] {
+  const payload = parseJwtPayload(token);
+  if (!payload) return ["ROLE_READER"];
+  if (Array.isArray(payload.roles)) return payload.roles;
+  if (typeof payload.roles === "string") return [payload.roles];
+  return ["ROLE_READER"];
+}
+
+function parseJwtUsername(token: string, fallback: string): string {
+  const payload = parseJwtPayload(token);
+  return payload?.sub || fallback;
+}
+
+function mapAuthErrorMessage(error: unknown, defaultMsg: string): string {
+  if (error instanceof ApiError) {
+    const detail = error.details?.detail || error.details?.title;
+    if (detail) {
+      if (detail.toLowerCase().includes("bad credentials")) {
+        return "Invalid email/username or password. Please try again.";
+      }
+      return detail;
+    }
+    return error.message || defaultMsg;
+  }
+  if (error instanceof Error) return error.message;
+  return defaultMsg;
 }
 
 export const authRepository = {
@@ -43,18 +75,16 @@ export const authRepository = {
       }
 
       const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
+      const username = raw.username || parseJwtUsername(raw.accessToken, usernameOrEmail);
 
       return {
         token: raw.accessToken,
         refreshToken: raw.refreshToken || "",
-        username: raw.username || usernameOrEmail,
+        username,
         roles: userRoles,
       };
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw new Error(error.details?.detail || error.details?.title || error.message || "Invalid email or password");
-      }
-      throw error;
+      throw new Error(mapAuthErrorMessage(error, "Invalid email or password"));
     }
   },
 
@@ -72,18 +102,16 @@ export const authRepository = {
       }
 
       const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
+      const resolvedUsername = raw.username || parseJwtUsername(raw.accessToken, username);
 
       return {
         token: raw.accessToken,
         refreshToken: raw.refreshToken || "",
-        username: raw.username || username,
+        username: resolvedUsername,
         roles: userRoles,
       };
     } catch (error) {
-      if (error instanceof ApiError) {
-        throw new Error(error.details?.detail || error.details?.title || error.message || "Registration failed");
-      }
-      throw error;
+      throw new Error(mapAuthErrorMessage(error, "Registration failed"));
     }
   },
 
