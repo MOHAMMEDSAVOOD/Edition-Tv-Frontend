@@ -63,29 +63,53 @@ function mapAuthErrorMessage(error: unknown, defaultMsg: string): string {
 
 export const authRepository = {
   async login(usernameOrEmail: string, password: string): Promise<AuthResponseDto> {
-    try {
-      const raw = await apiClient.post<BackendAuthResponse>("/auth/login", {
-        usernameOrEmail,
-        password,
-      });
+    const trimmedInput = usernameOrEmail.trim();
+    const candidates: string[] = [trimmedInput];
 
-      if (typeof window !== "undefined" && raw.accessToken) {
-        localStorage.setItem("edition_access_token", raw.accessToken);
-        document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax; Secure`;
+    if (trimmedInput.includes("@")) {
+      const usernamePart = trimmedInput.split("@")[0].trim();
+      if (usernamePart && !candidates.includes(usernamePart)) {
+        candidates.push(usernamePart);
       }
-
-      const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
-      const username = raw.username || parseJwtUsername(raw.accessToken, usernameOrEmail);
-
-      return {
-        token: raw.accessToken,
-        refreshToken: raw.refreshToken || "",
-        username,
-        roles: userRoles,
-      };
-    } catch (error) {
-      throw new Error(mapAuthErrorMessage(error, "Invalid email or password"));
+      const editionTvEmail = `${usernamePart}@editiontv.com`;
+      if (!candidates.includes(editionTvEmail)) {
+        candidates.push(editionTvEmail);
+      }
     }
+
+    let lastError: unknown;
+
+    for (const candidate of candidates) {
+      try {
+        const raw = await apiClient.post<BackendAuthResponse>("/auth/login", {
+          usernameOrEmail: candidate,
+          password,
+        });
+
+        if (typeof window !== "undefined" && raw.accessToken) {
+          localStorage.setItem("edition_access_token", raw.accessToken);
+          document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax; Secure`;
+        }
+
+        const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
+        const username = raw.username || parseJwtUsername(raw.accessToken, candidate);
+
+        return {
+          token: raw.accessToken,
+          refreshToken: raw.refreshToken || "",
+          username,
+          roles: userRoles,
+        };
+      } catch (error) {
+        lastError = error;
+        // If error is not 401 Unauthorized (e.g. 500, network error), rethrow immediately
+        if (error instanceof ApiError && error.status !== 401) {
+          throw new Error(mapAuthErrorMessage(error, "Login failed"));
+        }
+      }
+    }
+
+    throw new Error(mapAuthErrorMessage(lastError, "Invalid email/username or password. Please try again."));
   },
 
   async register(username: string, email: string, password: string): Promise<AuthResponseDto> {

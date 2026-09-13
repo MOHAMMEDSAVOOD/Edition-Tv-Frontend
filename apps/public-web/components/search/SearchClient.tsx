@@ -49,28 +49,35 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
       const res = await searchRepository.search(searchQuery, 0, 50);
       
       // Map SearchHitDto back to ArticleFeedItem for UI components
-      const mappedArticles: ArticleFeedItem[] = (res.items || []).map((hit: SearchHitDto) => ({
-        id: hit.articleId,
-        slug: hit.articleId, // fallback to articleId if slug is unavailable
-        title: hit.highlightedTitle || hit.title,
-        headline: hit.highlightedTitle || hit.title,
-        subtitle: hit.summary,
-        summary: hit.highlightedContent || hit.summary,
-        bodyHtml: "",
-        category: hit.category || "Uncategorized",
-        topic: "",
-        tags: [],
-        authorId: "",
-        authorName: hit.author || "Edition Staff",
-        authorTitle: "Staff",
-        publishedAt: new Date().toISOString(), // Fallback
-        readingTime: "3 min read",
-        readingTimeMinutes: 3,
-        featuredImageUrl: "", // SafeImage fallback will handle this
-        viewsCount: 0,
-        commentsCount: 0,
-        summaryPoints: []
-      } as unknown as ArticleFeedItem));
+      const mappedArticles: ArticleFeedItem[] = (res.items || []).map((hit: SearchHitDto) => {
+        const text = (hit.summary || "") + " " + (hit.title || "");
+        const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+        const computedMins = Math.max(1, Math.ceil(wordCount / 200));
+
+        return {
+          id: hit.articleId,
+          slug: hit.articleId, // fallback to articleId if slug is unavailable
+          title: hit.highlightedTitle || hit.title,
+          headline: hit.highlightedTitle || hit.title,
+          subtitle: hit.summary,
+          summary: hit.highlightedContent || hit.summary,
+          bodyHtml: "",
+          category: hit.category || "News",
+          topic: "",
+          tags: [],
+          authorId: "",
+          authorName: hit.author || "Edition Staff",
+          authorTitle: "Staff",
+          publishedAt: hit.publishedAt || "",
+          readingTime: `${computedMins} min read`,
+          readingTimeMinutes: computedMins,
+          featuredImageUrl: "", // SafeImage fallback will handle this
+          viewsCount: 0,
+          likesCount: 0,
+          commentsCount: 0,
+          summaryPoints: []
+        } as unknown as ArticleFeedItem;
+      });
 
       setSearchResults(mappedArticles);
     } catch (error) {

@@ -30,6 +30,7 @@ export function CategoryManagementClient() {
   const [formShowInNav, setFormShowInNav] = useState<boolean>(true);
   const [formParentId, setFormParentId] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Auth State
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -61,6 +62,38 @@ export function CategoryManagementClient() {
     fetchCategories();
   }, [fetchCategories]);
 
+  // Arrange categories hierarchically: Top-level categories followed immediately by their subcategories
+  const hierarchicalCategories = React.useMemo(() => {
+    const topLevel = categories.filter((c) => !c.parentId);
+    const subCats = categories.filter((c) => !!c.parentId);
+    const result: Category[] = [];
+
+    topLevel.forEach((parent) => {
+      result.push(parent);
+      const children = subCats
+        .filter((child) => child.parentId === parent.id)
+        .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      result.push(...children);
+    });
+
+    // Append any orphaned subcategories
+    const addedIds = new Set(result.map((c) => c.id));
+    categories.forEach((cat) => {
+      if (!addedIds.has(cat.id)) {
+        result.push(cat);
+      }
+    });
+
+    return result;
+  }, [categories]);
+
+  // Duplicate slug check for the modal form
+  const isDuplicateSlug = React.useMemo(() => {
+    const trimmed = formSlug.trim().toLowerCase();
+    if (!trimmed) return false;
+    return categories.some((c) => c.slug.toLowerCase() === trimmed && c.id !== editingId);
+  }, [formSlug, categories, editingId]);
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true);
@@ -84,7 +117,7 @@ export function CategoryManagementClient() {
     }
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = (preselectedParentId?: string) => {
     const token = authToken || (typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null);
     if (!token) {
       setShowLoginModal(true);
@@ -96,7 +129,8 @@ export function CategoryManagementClient() {
     setFormDescription("");
     setFormDisplayOrder(categories.length + 1);
     setFormShowInNav(true);
-    setFormParentId("");
+    setFormParentId(preselectedParentId || "");
+    setModalError(null);
     setIsModalOpen(true);
   };
 
@@ -113,21 +147,30 @@ export function CategoryManagementClient() {
     setFormDisplayOrder(category.displayOrder || 0);
     setFormShowInNav(category.showInNav !== false);
     setFormParentId(category.parentId || "");
+    setModalError(null);
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isDuplicateSlug) {
+      setModalError(`A category with slug "${formSlug.trim()}" already exists. Please choose a different slug.`);
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
+    setModalError(null);
+
+    const cleanParentId = formParentId && formParentId.trim() !== "" ? formParentId.trim() : null;
 
     const payload = {
-      name: formName,
-      slug: formSlug,
-      description: formDescription,
+      name: formName.trim(),
+      slug: formSlug.trim(),
+      description: formDescription.trim() || undefined,
       displayOrder: Number(formDisplayOrder),
       showInNav: formShowInNav,
-      parentId: formParentId || null,
+      parentId: cleanParentId,
     };
 
     try {
@@ -140,18 +183,22 @@ export function CategoryManagementClient() {
           await apiClient.post<Category>(url, payload);
         }
       } catch (err: unknown) {
-        const errorObj = err as { status?: number; message?: string };
+        const errorObj = err as { status?: number; message?: string; detail?: string };
         if (errorObj.status === 401 || errorObj.status === 403) {
           setShowLoginModal(true);
           throw new Error("Admin authentication required. Please log in.");
         }
-        throw new Error(errorObj.message || "Failed to save category");
+        const msg = errorObj.detail || errorObj.message || "Failed to save category";
+        throw new Error(msg);
       }
 
       setIsModalOpen(false);
+      setModalError(null);
       await fetchCategories();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An error occurred while saving");
+      const msg = err instanceof Error ? err.message : "An error occurred while saving";
+      setModalError(msg);
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -209,7 +256,7 @@ export function CategoryManagementClient() {
           <Button variant="outline" size="sm" onClick={fetchCategories} disabled={loading} className="border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-semibold">
             <RefreshCw className={`h-3.5 w-3.5 mr-1 text-slate-500 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
-          <Button size="sm" onClick={openCreateModal} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-xs">
+          <Button size="sm" onClick={() => openCreateModal()} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-xs">
             <Plus className="h-4 w-4 mr-1" /> Add Category
           </Button>
         </div>
@@ -248,51 +295,90 @@ export function CategoryManagementClient() {
                 </td>
               </tr>
             ) : (
-              categories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="px-4 py-3 font-mono font-bold text-center">
-                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-50 text-red-600 text-[11px]">
-                      #{cat.displayOrder}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                        {cat.parentId && <span className="text-red-500 font-mono text-[10px]">↳</span>}
-                        {cat.name}
-                      </span>
-                      {cat.parentId && (
-                        <span className="text-[10px] font-mono text-slate-400">
-                          Sub-category of: {categories.find((parent) => parent.id === cat.parentId)?.name || cat.parentId}
+              hierarchicalCategories.map((cat) => {
+                const isSub = !!cat.parentId;
+                const parentCat = isSub ? categories.find((p) => p.id === cat.parentId) : null;
+                return (
+                  <tr
+                    key={cat.id}
+                    className={`transition-colors ${
+                      isSub
+                        ? "bg-slate-50/50 hover:bg-slate-100/70 border-l-2 border-red-500"
+                        : "hover:bg-slate-50/80"
+                    }`}
+                  >
+                    <td className="px-4 py-3 font-mono font-bold text-center">
+                      {isSub ? (
+                        <span className="inline-flex items-center justify-center gap-0.5 px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]">
+                          ↳ #{cat.displayOrder}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-red-50 text-red-600 text-[11px]">
+                          #{cat.displayOrder}
                         </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-mono text-[11px] text-slate-500">/categories/{cat.slug}</td>
-                  <td className="px-4 py-3 text-slate-600 truncate max-w-xs">{cat.description || "—"}</td>
-                  <td className="px-4 py-3 text-center">
-                    {cat.showInNav !== false ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        <Eye className="h-3 w-3" /> Visible
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                        <EyeOff className="h-3 w-3" /> Hidden
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => openEditModal(cat)} className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition" title="Edit Category">
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button onClick={() => handleDelete(cat.id, cat.name)} className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition" title="Delete Category">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                    <td className={`px-4 py-3 ${isSub ? "pl-8" : ""}`}>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                          {isSub && <span className="text-red-600 font-mono text-xs">↳</span>}
+                          {cat.name}
+                          {isSub && (
+                            <span className="text-[9px] uppercase tracking-wider font-mono font-bold px-1.5 py-0.2 rounded bg-red-100 text-red-700">
+                              Sub
+                            </span>
+                          )}
+                        </span>
+                        {isSub && (
+                          <span className="text-[10px] font-mono text-slate-500 mt-0.5">
+                            Sub-category of: <span className="font-bold text-slate-700">{parentCat?.name || cat.parentId}</span>
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-[11px] text-slate-500">/categories/{cat.slug}</td>
+                    <td className="px-4 py-3 text-slate-600 truncate max-w-xs">{cat.description || "—"}</td>
+                    <td className="px-4 py-3 text-center">
+                      {cat.showInNav !== false ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <Eye className="h-3 w-3" /> Visible
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                          <EyeOff className="h-3 w-3" /> Hidden
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {!isSub && (
+                          <button
+                            onClick={() => openCreateModal(cat.id)}
+                            className="px-2 py-1 text-[10px] font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                            title="Add Sub-category under this category"
+                          >
+                            + Sub
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openEditModal(cat)}
+                          className="p-1.5 text-slate-400 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition"
+                          title="Edit Category"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(cat.id, cat.name)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 transition"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -305,6 +391,14 @@ export function CategoryManagementClient() {
             <h2 className="text-lg font-bold text-slate-900 font-heading">
               {editingId ? "Edit Category" : "Add New Category"}
             </h2>
+
+            {modalError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-start gap-2">
+                <span className="shrink-0 text-sm">⚠️</span>
+                <span>{modalError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Category Name</label>
@@ -329,9 +423,16 @@ export function CategoryManagementClient() {
                   required
                   value={formSlug}
                   onChange={(e) => setFormSlug(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-red-500"
+                  className={`w-full px-3 py-2 text-xs font-mono border rounded-xl bg-slate-50 focus:outline-none ${
+                    isDuplicateSlug ? "border-rose-400 focus:border-rose-500 bg-rose-50/20" : "border-slate-200 focus:border-red-500"
+                  }`}
                   placeholder="technology"
                 />
+                {isDuplicateSlug && (
+                  <p className="text-[11px] text-rose-600 font-medium mt-1">
+                    ⚠️ Slug &ldquo;{formSlug.trim()}&rdquo; already exists. Please choose a different slug.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">Description</label>
@@ -352,7 +453,7 @@ export function CategoryManagementClient() {
                 >
                   <option value="">None (Top-Level Main Category)</option>
                   {categories
-                    .filter((c) => c.id !== editingId)
+                    .filter((c) => c.id !== editingId && !c.parentId)
                     .map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name} ({`/categories/${c.slug}`})
@@ -385,7 +486,12 @@ export function CategoryManagementClient() {
                 <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)} className="text-slate-500 text-xs">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submitting} size="sm" className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-xs">
+                <Button
+                  type="submit"
+                  disabled={submitting || isDuplicateSlug || !formName.trim() || !formSlug.trim()}
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   {submitting ? "Saving..." : editingId ? "Update Category" : "Create Category"}
                 </Button>
               </div>

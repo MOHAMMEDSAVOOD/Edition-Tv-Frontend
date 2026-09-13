@@ -49,12 +49,19 @@ export function NewsReaderClient() {
   // Fetch Categories & Sources
   const fetchCategories = async () => {
     try {
-      const data = await apiClient.get<Array<{ id: string; name: string; categoryId?: string }>>("/admin/news-sources");
+      const data = await apiClient.get<Array<{
+        id: string;
+        name: string;
+        category?: string;
+        categoryId?: string;
+        feeds?: Array<{ id: string; feedUrl?: string }>;
+      }>>("/admin/news-sources");
       if (Array.isArray(data)) {
         const catMap: Record<string, FeedCategoryItem> = {};
 
         data.forEach((src) => {
-          const catName = src.categoryId || "General Wire";
+          const rawCat = src.category || src.categoryId || "General";
+          const catName = rawCat.toLowerCase() === "general" ? "General Wire" : rawCat;
           if (!catMap[catName]) {
             catMap[catName] = {
               id: catName,
@@ -63,11 +70,22 @@ export function NewsReaderClient() {
               feeds: [],
             };
           }
-          catMap[catName].feeds.push({
-            id: src.id,
-            name: src.name,
-            unreadCount: 0,
-          });
+
+          if (src.feeds && src.feeds.length > 0) {
+            src.feeds.forEach((f) => {
+              catMap[catName].feeds.push({
+                id: f.id,
+                name: src.name,
+                unreadCount: 0,
+              });
+            });
+          } else {
+            catMap[catName].feeds.push({
+              id: src.id,
+              name: src.name,
+              unreadCount: 0,
+            });
+          }
         });
 
         setCategories(Object.values(catMap));

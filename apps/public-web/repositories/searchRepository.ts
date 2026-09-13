@@ -15,6 +15,7 @@ export interface SearchHitDto {
   score?: number;
   highlightedTitle?: string;
   highlightedContent?: string;
+  publishedAt?: string;
 }
 
 export interface SearchResultPageDto {

@@ -12,25 +12,30 @@ export interface SearchResponse {
 
 function mapHitToResult(hit: SearchHitDto): SearchResultItem {
   const slugText = (hit.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "article";
+  const text = (hit.summary || "") + " " + (hit.title || "");
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  const computedMins = Math.max(1, Math.ceil(wordCount / 200));
+
   return {
     id: hit.articleId || `art-${Date.now()}`,
     slug: slugText,
-    headline: hit.title || "Headline",
-    title: hit.title || "Headline",
+    headline: hit.title || "",
+    title: hit.title || "",
     subtitle: hit.summary || "",
     summary: hit.summary || "",
-    bodyHtml: `<p>${hit.summary || ""}</p>`,
-    category: hit.category || "General",
-    topic: hit.category || "Global",
+    bodyHtml: hit.summary ? `<p>${hit.summary}</p>` : "",
+    category: hit.category || "News",
+    topic: hit.category || "News",
     authorId: "1",
-    authorName: hit.author || "Edition News Desk",
+    authorName: hit.author || "Edition Staff",
     authorTitle: "Correspondent",
-    publishedAt: "Recently",
-    readingTime: "5 min read",
-    readingTimeMinutes: 5,
-    featuredImageUrl: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&auto=format&fit=crop&q=80",
-    viewsCount: 1200,
-    commentsCount: 15,
+    publishedAt: "",
+    readingTime: `${computedMins} min read`,
+    readingTimeMinutes: computedMins,
+    featuredImageUrl: "",
+    viewsCount: 0,
+    commentsCount: 0,
+    likesCount: 0,
     summaryPoints: [],
     tags: [hit.category ? hit.category.toLowerCase() : "news"],
   };

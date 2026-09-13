@@ -18,12 +18,20 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
   const [isReadingMode, setIsReadingMode] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [likesCount, setLikesCount] = useState(42);
+  const [likesCount, setLikesCount] = useState<number>(article.likesCount || 0);
   const [hasLiked, setHasLiked] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
   useEffect(() => {
+    setLikesCount(article.likesCount || 0);
+    try {
+      const likedInStorage = localStorage.getItem(`edition_liked_${article.id}`);
+      if (likedInStorage === "true") {
+        setHasLiked(true);
+      }
+    } catch {}
+
     savedArticlesService.checkIsSaved(article.id).then(setIsBookmarked);
 
     try {
@@ -88,11 +96,21 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
 
   const handleLike = () => {
     if (hasLiked) {
-      setLikesCount((prev) => prev - 1);
+      setLikesCount((prev) => Math.max(0, prev - 1));
       setHasLiked(false);
+      try {
+        localStorage.removeItem(`edition_liked_${article.id}`);
+      } catch {
+        // Ignored
+      }
     } else {
       setLikesCount((prev) => prev + 1);
       setHasLiked(true);
+      try {
+        localStorage.setItem(`edition_liked_${article.id}`, "true");
+      } catch {
+        // Ignored
+      }
     }
   };
 
@@ -114,41 +132,46 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
 
       <div className={cn("transition-all duration-300", isReadingMode && "max-w-2xl mx-auto py-4")}>
         {/* Floating / Sticky Action Bar for Article Reader */}
-        <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-md border border-border rounded-sm py-2 px-4 mb-8 flex items-center justify-between shadow-xs">
+        <div className="sticky top-14 sm:top-16 z-30 bg-background/95 backdrop-blur-md border border-border rounded-lg sm:rounded-sm py-1.5 sm:py-2 px-2 sm:px-4 mb-6 sm:mb-8 flex items-center justify-between shadow-xs gap-1 sm:gap-4 overflow-x-auto no-scrollbar">
           {/* Left: Audio & Text Controls */}
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-1 sm:gap-2 text-xs shrink-0">
             <button
               onClick={() => setIsPlayingAudio(!isPlayingAudio)}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border transition-colors font-medium",
+                "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-md sm:rounded-sm border transition-colors font-medium text-[11px] sm:text-xs shrink-0",
                 isPlayingAudio ? "bg-primary text-black font-bold border-primary" : "border-border hover:bg-muted"
               )}
             >
-              <Volume2 className="h-3.5 w-3.5" />
-              {isPlayingAudio ? "Pause Audio" : "Listen (5 min)"}
+              <Volume2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">
+                {isPlayingAudio ? "Close Audio" : `Listen (${article.readingTime || "3 min"})`}
+              </span>
+              <span className="sm:hidden">
+                {isPlayingAudio ? "Close" : "Listen"}
+              </span>
             </button>
 
-            <div className="h-4 w-px bg-border mx-1" />
+            <div className="h-4 w-px bg-border mx-0.5 sm:mx-1 shrink-0" />
 
             {/* Font size toggle */}
-            <div className="flex items-center gap-1 border border-border rounded-sm p-0.5">
+            <div className="flex items-center gap-0.5 border border-border rounded-md sm:rounded-sm p-0.5 shrink-0">
               <button
                 onClick={() => setFontSize("normal")}
-                className={cn("px-2 py-0.5 text-xs font-bold rounded-xs", fontSize === "normal" && "bg-muted text-foreground")}
+                className={cn("px-1.5 sm:px-2 py-0.5 text-[11px] sm:text-xs font-bold rounded-xs transition-colors", fontSize === "normal" && "bg-muted text-foreground")}
                 title="Normal Font Size"
               >
                 A
               </button>
               <button
                 onClick={() => setFontSize("large")}
-                className={cn("px-2 py-0.5 text-sm font-bold rounded-xs", fontSize === "large" && "bg-muted text-foreground")}
+                className={cn("px-1.5 sm:px-2 py-0.5 text-xs sm:text-sm font-bold rounded-xs transition-colors", fontSize === "large" && "bg-muted text-foreground")}
                 title="Large Font Size"
               >
                 A+
               </button>
               <button
                 onClick={() => setFontSize("xlarge")}
-                className={cn("px-2 py-0.5 text-base font-bold rounded-xs", fontSize === "xlarge" && "bg-muted text-foreground")}
+                className={cn("px-1.5 sm:px-2 py-0.5 text-xs sm:text-base font-bold rounded-xs transition-colors", fontSize === "xlarge" && "bg-muted text-foreground")}
                 title="Extra Large Font Size"
               >
                 A++
@@ -158,7 +181,7 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
             <button
               onClick={() => setIsReadingMode(!isReadingMode)}
               className={cn(
-                "hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-border hover:bg-muted transition-colors font-medium",
+                "hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-sm border border-border hover:bg-muted transition-colors font-medium shrink-0",
                 isReadingMode && "bg-primary/10 text-primary border-primary/30"
               )}
               title="Focus Reading Mode"
@@ -169,11 +192,11 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
           </div>
 
           {/* Right: Like, Save, Share */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               onClick={handleLike}
               className={cn(
-                "flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-sm border transition-colors",
+                "flex items-center gap-1 px-1.5 sm:px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-md sm:rounded-sm border transition-colors shrink-0",
                 hasLiked ? "bg-red-500/10 text-red-500 border-red-500/30" : "border-border hover:bg-muted"
               )}
             >
@@ -184,7 +207,7 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
             <button
               onClick={toggleBookmark}
               className={cn(
-                "p-1.5 rounded-sm border transition-colors",
+                "p-1 sm:p-1.5 rounded-md sm:rounded-sm border transition-colors shrink-0",
                 isBookmarked ? "bg-primary text-black border-primary" : "border-border hover:bg-muted"
               )}
               title={isBookmarked ? "Remove Bookmark" : "Save for Later"}
@@ -194,11 +217,12 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
 
             <button
               onClick={() => setShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-sm border border-red-500/30 bg-red-500/5 text-red-600 hover:bg-red-500/10 transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 text-[11px] sm:text-xs font-bold rounded-md sm:rounded-sm border border-red-500/30 bg-red-500/5 text-red-600 hover:bg-red-500/10 transition-colors shrink-0"
               title="Share Story & Generate Poster"
             >
-              <Share2 className="h-3.5 w-3.5 text-red-600" />
-              <span>Share Poster</span>
+              <Share2 className="h-3.5 w-3.5 text-red-600 shrink-0" />
+              <span className="hidden sm:inline">Share Poster</span>
+              <span className="sm:hidden">Poster</span>
             </button>
           </div>
         </div>
@@ -216,6 +240,9 @@ export function ArticleReaderClient({ article, children }: ArticleReaderClientPr
       {isPlayingAudio && (
         <AudioPlayerBar
           title={article.title}
+          subtitle={article.subtitle}
+          bodyHtml={article.bodyHtml}
+          summary={article.summary}
           authorName={article.authorName}
           audioUrl={article.audioUrl}
           onClose={() => setIsPlayingAudio(false)}

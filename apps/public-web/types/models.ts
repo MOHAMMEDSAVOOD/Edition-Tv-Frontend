@@ -28,6 +28,7 @@ export interface Article {
   isVideo?: boolean;
   viewsCount: number;
   commentsCount: number;
+  likesCount?: number;
   summaryPoints: string[];
   audioUrl?: string;
   relatedSlugs?: string[];

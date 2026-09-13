@@ -29,7 +29,10 @@ function getApiBaseUrl(): string {
   if (envUrl) {
     return envUrl;
   }
+  // Production Base URL:
   return "https://api.editiontv.com/api/v1";
+  // Local Backend for testing:
+  // return "http://localhost:8080/api/v1";
 }
 
 
@@ -53,8 +56,13 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
+    const isPublicAuthEndpoint =
+      endpoint.startsWith("/auth/login") ||
+      endpoint.startsWith("/auth/register") ||
+      endpoint.startsWith("/auth/forgot-password");
+
     const token = this.getAccessToken();
-    if (token) {
+    if (token && !isPublicAuthEndpoint) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 

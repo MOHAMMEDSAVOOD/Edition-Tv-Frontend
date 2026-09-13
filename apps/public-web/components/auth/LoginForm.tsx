@@ -114,6 +114,7 @@ export function LoginForm() {
           placeholder="Enter your email or username"
           className="w-full px-3 py-2.5 text-sm border border-border bg-background rounded-sm focus:outline-none focus:ring-1 focus:ring-primary font-sans"
         />
+        <p className="text-[10px] text-muted-foreground font-mono">You can sign in with either your username or registered email</p>
       </div>
 
       <div className="space-y-1">

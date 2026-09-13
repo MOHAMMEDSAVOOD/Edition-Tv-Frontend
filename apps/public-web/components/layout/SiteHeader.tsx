@@ -5,10 +5,11 @@ import { useState, useEffect } from "react";
 import { Search, User, Bookmark, Menu, ArrowLeft, Globe } from "lucide-react";
 import { savedArticlesService } from "@/services/savedArticlesService";
 import { authService, UserSession } from "@/services/authService";
-import { CategoryNav } from "./CategoryNav";
+import { CategoryNav, NavCategoryItem } from "./CategoryNav";
 import { NotificationPopover } from "./NotificationPopover";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { apiClient } from "@/lib/api-client";
+import { ChevronDown } from "lucide-react";
 
 interface ApiCategory {
   id: string;
@@ -17,6 +18,7 @@ interface ApiCategory {
   description?: string;
   displayOrder: number;
   showInNav?: boolean;
+  parentId?: string | null;
 }
 
 export function SiteHeader() {
@@ -24,7 +26,8 @@ export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
-  const [navItems, setNavItems] = useState<{ label: string; href: string }[]>([]);
+  const [navCategories, setNavCategories] = useState<NavCategoryItem[]>([]);
+  const [expandedMobileCategories, setExpandedMobileCategories] = useState<Record<string, boolean>>({});
   const [session, setSession] = useState<UserSession | null>(null);
 
   useEffect(() => {
@@ -38,8 +41,8 @@ export function SiteHeader() {
 
     const updateBookmarks = () => {
       savedArticlesService
-        .getSavedArticles()
-        .then((items) => setBookmarkCount(items.length))
+        .getSavedCount()
+        .then((count) => setBookmarkCount(count))
         .catch(() => {});
     };
 
@@ -50,14 +53,34 @@ export function SiteHeader() {
       try {
         const data = await apiClient.get<ApiCategory[]>("/cms/categories");
         if (Array.isArray(data)) {
-          const items = data
-            .filter((cat) => cat.showInNav !== false)
-            .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-            .map((cat) => ({
-              label: cat.name,
-              href: `/categories/${cat.slug}`,
-            }));
-          setNavItems(items);
+          const visible = data.filter((cat) => cat.showInNav !== false);
+          const parents = visible
+            .filter((cat) => !cat.parentId)
+            .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+
+          const formatted: NavCategoryItem[] = parents.map((parent) => {
+            const children = visible
+              .filter((cat) => cat.parentId === parent.id)
+              .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+              .map((child) => ({
+                id: child.id,
+                name: child.name,
+                slug: child.slug,
+                href: `/categories/${child.slug}`,
+                description: child.description,
+              }));
+
+            return {
+              id: parent.id,
+              name: parent.name,
+              slug: parent.slug,
+              href: `/categories/${parent.slug}`,
+              description: parent.description,
+              subcategories: children,
+            };
+          });
+
+          setNavCategories(formatted);
         }
       } catch {
         // Pure API mode: no fallback mock data
@@ -86,7 +109,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-background border-b border-border shadow-xs max-w-full overflow-x-hidden">
+      <header className="sticky top-0 z-40 bg-background border-b border-border shadow-xs max-w-full">
         {/* Top bar: logo + date + weather + utilities */}
         <div className="container mx-auto max-w-[1200px] px-4 md:px-6">
           <div className="flex items-center justify-between h-14 relative">
@@ -194,7 +217,7 @@ export function SiteHeader() {
 
         {/* Category navigation (Hidden on mobile) */}
         <div className="hidden md:block">
-          <CategoryNav items={navItems} />
+          <CategoryNav items={navCategories} />
         </div>
       </header>
 
@@ -291,18 +314,60 @@ export function SiteHeader() {
         )}
 
         {/* Drawer Navigation */}
-        <nav className="flex-1 py-2">
-          {navItems.map((item) => {
+        <nav className="flex-1 py-2 divide-y divide-border/40">
+          {navCategories.map((item) => {
+            const hasChildren = item.subcategories && item.subcategories.length > 0;
+            const isExpanded = !!expandedMobileCategories[item.id];
+
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-4 py-3 px-4 text-sm font-medium hover:bg-muted transition-colors"
-              >
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                {item.label}
-              </Link>
+              <div key={item.id} className="py-1">
+                <div className="flex items-center justify-between px-4 py-2 hover:bg-muted/50 rounded-lg transition-colors">
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 text-sm font-semibold uppercase tracking-wide flex-1 text-foreground"
+                  >
+                    <Globe className="h-4 w-4 text-primary" />
+                    {item.name}
+                  </Link>
+                  {hasChildren && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedMobileCategories((prev) => ({
+                          ...prev,
+                          [item.id]: !prev[item.id],
+                        }))
+                      }
+                      className="p-1.5 text-muted-foreground hover:text-foreground rounded-md"
+                      aria-label="Toggle Subcategories"
+                    >
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          isExpanded ? "rotate-180 text-primary" : ""
+                        }`}
+                      />
+                    </button>
+                  )}
+                </div>
+
+                {/* Mobile Subcategories Accordion */}
+                {hasChildren && isExpanded && (
+                  <div className="pl-11 pr-4 py-1.5 space-y-1 bg-muted/20 border-l-2 border-primary ml-6 my-1 rounded-r-lg">
+                    {item.subcategories.map((sub) => (
+                      <Link
+                        key={sub.id}
+                        href={sub.href}
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between py-1.5 text-xs text-muted-foreground hover:text-foreground font-medium"
+                      >
+                        <span className="capitalize">{sub.name}</span>
+                        <span className="text-[10px] text-red-500 font-bold">→</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>

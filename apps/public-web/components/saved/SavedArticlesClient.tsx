@@ -95,17 +95,17 @@ export function SavedArticlesClient({ initialSaved = [] }: SavedArticlesClientPr
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between text-xs text-muted-foreground pb-2 border-b border-border font-mono">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-muted-foreground pb-2 border-b border-border font-mono">
         <span>{articles.length} bookmarked {articles.length === 1 ? "story" : "stories"} saved in cloud account</span>
         <button
           onClick={handleClearAll}
-          className="flex items-center gap-1 text-red-500 hover:underline font-semibold"
+          className="flex items-center gap-1 text-red-500 hover:underline font-semibold self-end sm:self-auto"
         >
           <Trash2 className="h-3.5 w-3.5" /> Clear Entire List
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {articles.map((article) => (
           <div key={article.id} className="relative group">
             <SecondaryStoryCard
@@ -117,7 +117,7 @@ export function SavedArticlesClient({ initialSaved = [] }: SavedArticlesClientPr
             />
             <button
               onClick={() => handleRemove(article.id)}
-              className="absolute top-2 right-2 p-1.5 bg-background/90 hover:bg-red-500 hover:text-white border border-border rounded-xs transition-colors opacity-0 group-hover:opacity-100 text-xs font-bold shadow-xs"
+              className="absolute top-2 right-2 p-1.5 bg-background/90 hover:bg-red-500 hover:text-white border border-border rounded-xs transition-colors opacity-80 sm:opacity-0 sm:group-hover:opacity-100 text-xs font-bold shadow-xs"
               title="Remove from saved"
             >
               ✕

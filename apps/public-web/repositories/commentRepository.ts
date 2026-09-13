@@ -6,6 +6,7 @@ export interface CommentResponseDto {
   parentId?: string;
   authorId: string;
   authorName: string;
+  authorAvatar?: string;
   content: string;
   depth: number;
   status: string;

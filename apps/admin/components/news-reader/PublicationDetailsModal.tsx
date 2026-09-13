@@ -51,8 +51,14 @@ export function PublicationDetailsModal({ item, onClose }: PublicationDetailsMod
     fetchDetails();
   }, [item.id]);
 
-  const slug = item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const publicUrl = details?.publicUrl || `https://editiontv.com/articles/${slug}`;
+  const slug =
+    details?.slug ||
+    item.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  // Real Edition TV Website URL (Production domain)
+  const realBaseUrl = (process.env.NEXT_PUBLIC_PUBLIC_WEB_URL || "https://editiontv.com").replace(/\/+$/, "");
+  const realPublicUrl = `${realBaseUrl}/articles/${slug}`;
+  const localDevUrl = `http://localhost:5002/articles/${slug}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
@@ -65,7 +71,7 @@ export function PublicationDetailsModal({ item, onClose }: PublicationDetailsMod
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 text-sm font-semibold p-1"
+            className="text-slate-400 hover:text-slate-700 text-sm font-semibold p-1 cursor-pointer"
           >
             ✕
           </button>
@@ -104,16 +110,34 @@ export function PublicationDetailsModal({ item, onClose }: PublicationDetailsMod
               <span className="font-semibold text-slate-900 capitalize">{details?.visibility || "public"}</span>
             </div>
 
-            <div className="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-              <span className="text-slate-500 block text-[10px] font-mono uppercase font-bold">Live Public Web URL</span>
+            <div className="col-span-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 block text-[10px] font-mono uppercase font-bold">
+                  Edition TV Live Website URL
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+                  Real Website URL
+                </span>
+              </div>
               <a
-                href={publicUrl}
+                href={realPublicUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-red-600 font-bold hover:underline flex items-center gap-1.5 break-all font-mono"
               >
-                <ExternalLink className="h-3.5 w-3.5 flex-none" /> {publicUrl}
+                <ExternalLink className="h-3.5 w-3.5 flex-none" /> {realPublicUrl}
               </a>
+              <div className="pt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500 font-sans border-t border-slate-200/60">
+                <span className="text-[10px] font-mono text-slate-400">Local dev preview:</span>
+                <a
+                  href={localDevUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-500 hover:text-red-600 underline font-mono text-[10px]"
+                >
+                  {localDevUrl}
+                </a>
+              </div>
             </div>
           </div>
         )}
@@ -121,10 +145,10 @@ export function PublicationDetailsModal({ item, onClose }: PublicationDetailsMod
         {/* Footer Actions */}
         <div className="flex items-center justify-between pt-2 border-t border-slate-200">
           <a
-            href={publicUrl}
+            href={realPublicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition"
+            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition font-sans"
           >
             <ExternalLink className="h-4 w-4" /> Open Public Article
           </a>

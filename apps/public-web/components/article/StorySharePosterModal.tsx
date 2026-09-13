@@ -25,6 +25,7 @@ import {
   Layers,
   Eye,
   Sparkles,
+  Link2,
 } from "lucide-react";
 import { ArticleDetail } from "@/services/articleService";
 import { QRCodeSVG } from "./QRCodeSVG";
@@ -59,7 +60,16 @@ export function StorySharePosterModal({
 
   // Background Image Customization Controls State
   const [customImageUrl, setCustomImageUrl] = useState("");
-  const [bgPosY, setBgPosY] = useState(20);
+  const [imageUrlInput, setImageUrlInput] = useState("");
+  const [optimizedImageDataUrl, setOptimizedImageDataUrl] = useState<string>("");
+  const [ambientBackdropDataUrl, setAmbientBackdropDataUrl] = useState<string>("");
+  const [imageFitMode, setImageFitMode] = useState<"original" | "cover">("original");
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number; ratio: number }>({
+    width: 1200,
+    height: 675,
+    ratio: 1200 / 675,
+  });
+  const [bgPosY, setBgPosY] = useState(22);
   const [bgPosX, setBgPosX] = useState(50);
   const [bgZoom, setBgZoom] = useState(100);
   const [bgBrightness, setBgBrightness] = useState(92);
@@ -69,11 +79,19 @@ export function StorySharePosterModal({
 
   const handleResetBg = () => {
     setCustomImageUrl("");
-    setBgPosY(20);
+    setImageUrlInput("");
+    setImageFitMode("original");
+    setBgPosY(22);
     setBgPosX(50);
     setBgZoom(100);
     setBgBrightness(92);
     setBgContrast(108);
+  };
+
+  const handleApplyImageUrl = () => {
+    if (imageUrlInput.trim()) {
+      setCustomImageUrl(imageUrlInput.trim());
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +106,85 @@ export function StorySharePosterModal({
       reader.readAsDataURL(file);
     }
   };
+
+  // Convert any image URL (CORS, external, or local) to a lossless Data URL for pixel-perfect html2canvas rendering
+  useEffect(() => {
+    let isMounted = true;
+    const targetUrl = customImageUrl || article.featuredImageUrl;
+    if (!targetUrl) {
+      setOptimizedImageDataUrl("");
+      setAmbientBackdropDataUrl("");
+      return;
+    }
+
+    const processLoadedImage = (img: HTMLImageElement, sourceUrl: string) => {
+      const natW = img.naturalWidth || img.width || 1200;
+      const natH = img.naturalHeight || img.height || 675;
+      if (isMounted) {
+        setImageDimensions({
+          width: natW,
+          height: natH,
+          ratio: natW / natH,
+        });
+      }
+
+      // Generate ambient blurred backdrop canvas data URL for 100% html2canvas compatibility
+      try {
+        const ambientCanvas = document.createElement("canvas");
+        ambientCanvas.width = 80;
+        ambientCanvas.height = Math.round(80 * (currentFormat.height / currentFormat.width));
+        const aCtx = ambientCanvas.getContext("2d");
+        if (aCtx) {
+          aCtx.drawImage(img, 0, 0, ambientCanvas.width, ambientCanvas.height);
+          const ambientData = ambientCanvas.toDataURL("image/jpeg", 0.75);
+          if (isMounted) setAmbientBackdropDataUrl(ambientData);
+        }
+      } catch {
+        // Tainted canvas fallback
+      }
+
+      // If already data URL or blob, set directly
+      if (sourceUrl.startsWith("data:") || sourceUrl.startsWith("blob:")) {
+        if (isMounted) setOptimizedImageDataUrl(sourceUrl);
+        return;
+      }
+
+      // Create clean high-resolution canvas dataUrl for lossless html2canvas capture
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = natW;
+        canvas.height = natH;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, natW, natH);
+          const dataUrl = canvas.toDataURL("image/png");
+          if (isMounted) {
+            setOptimizedImageDataUrl(dataUrl);
+            return;
+          }
+        }
+      } catch {
+        // If tainted canvas, use sourceUrl directly
+      }
+      if (isMounted) setOptimizedImageDataUrl(sourceUrl);
+    };
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      processLoadedImage(img, targetUrl);
+    };
+    img.onerror = () => {
+      if (isMounted) setOptimizedImageDataUrl(targetUrl);
+    };
+    img.src = targetUrl;
+
+    return () => {
+      isMounted = false;
+    };
+  }, [customImageUrl, article.featuredImageUrl, currentFormat.width, currentFormat.height]);
 
   const canonicalPosterRef = useRef<HTMLDivElement>(null);
   const previewWrapperRef = useRef<HTMLDivElement>(null);
@@ -145,6 +242,42 @@ export function StorySharePosterModal({
     currentFormat.height,
   ]);
 
+  // Compute exact pixel placement and dimensions for the background visual image (Zero distortion, exact aspect ratio)
+  const imgRatio = imageDimensions.ratio || 16 / 9;
+  const containerW = currentFormat.width;
+  const containerH = currentFormat.height;
+
+  let fgWidth: number;
+  let fgHeight: number;
+  let fgLeft: number;
+  let fgTop: number;
+
+  if (imageFitMode === "original") {
+    // Fits within container width, preserving exact original image aspect ratio without any expansion
+    fgWidth = containerW;
+    fgHeight = Math.round(containerW / imgRatio);
+    if (fgHeight > containerH) {
+      fgHeight = containerH;
+      fgWidth = Math.round(containerH * imgRatio);
+    }
+    const maxTravelY = containerH - fgHeight;
+    const maxTravelX = containerW - fgWidth;
+    fgTop = Math.round(maxTravelY * (bgPosY / 100));
+    fgLeft = Math.round(maxTravelX * (bgPosX / 100));
+  } else {
+    // Cover / Full Frame fill mode
+    const scale = Math.max(
+      containerW / (imageDimensions.width || containerW),
+      containerH / (imageDimensions.height || containerH)
+    );
+    fgWidth = Math.round((imageDimensions.width || containerW) * scale);
+    fgHeight = Math.round((imageDimensions.height || containerH) * scale);
+    const maxTravelY = containerH - fgHeight;
+    const maxTravelX = containerW - fgWidth;
+    fgTop = Math.round(maxTravelY * (bgPosY / 100));
+    fgLeft = Math.round(maxTravelX * (bgPosX / 100));
+  }
+
   if (!isOpen) return null;
 
   const articlePath = article.slug
@@ -185,15 +318,19 @@ export function StorySharePosterModal({
     const targetWidth = currentFormat.width;
     const targetHeight = currentFormat.height;
 
+    // Use 2x supersampling scale for ultra-crisp studio quality (2048x3072 / 2160x3840)
+    const exportScale = 2;
+
     return await html2canvasFn(element, {
       useCORS: true,
       allowTaint: true,
-      scale: 1,
+      scale: exportScale,
       width: targetWidth,
       height: targetHeight,
       windowWidth: targetWidth,
       windowHeight: targetHeight,
       backgroundColor: "#000000",
+      imageTimeout: 15000,
       logging: false,
       onclone: (clonedDoc, clonedElement) => {
         // Strip preview CSS scale transform from cloned element and parents in the cloned document
@@ -421,7 +558,10 @@ export function StorySharePosterModal({
             {customImageUrl && (
               <button
                 type="button"
-                onClick={() => setCustomImageUrl("")}
+                onClick={() => {
+                  setCustomImageUrl("");
+                  setImageUrlInput("");
+                }}
                 className="py-1 sm:py-1.5 px-2 sm:px-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 text-[11px] sm:text-xs font-bold rounded-md sm:rounded-lg border border-red-800 transition-colors shrink-0"
                 title="Restore original article image"
               >
@@ -429,11 +569,86 @@ export function StorySharePosterModal({
               </button>
             )}
           </div>
+
+          {/* Paste Image URL Input with Instant High-Res Preview */}
+          <div className="pt-2">
+            <label className="text-[10px] sm:text-[11px] font-semibold text-slate-300 flex items-center gap-1 mb-1">
+              <Link2 className="h-3 w-3 text-red-500" />
+              <span>Or Paste Image Link (URL)</span>
+            </label>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="url"
+                placeholder="https://... direct image link"
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleApplyImageUrl();
+                  }
+                }}
+                className="flex-1 bg-slate-950 text-slate-100 placeholder-slate-500 text-[11px] sm:text-xs px-2.5 py-1.5 rounded-md sm:rounded-lg border border-slate-800 focus:outline-none focus:border-red-500 font-sans"
+              />
+              <button
+                type="button"
+                onClick={handleApplyImageUrl}
+                className="px-2.5 sm:px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] sm:text-xs font-bold rounded-md sm:rounded-lg transition-colors shrink-0"
+              >
+                Apply
+              </button>
+            </div>
+            <p className="text-[9px] sm:text-[10px] text-slate-400 mt-1 font-sans">
+              Supports any image link (JPG, PNG, WebP) with automatic high-res enhancement & CORS preloading.
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Sliders Grid */}
       <div className="space-y-2 sm:space-y-3 pt-1.5 sm:pt-2 border-t border-slate-800/60">
+        {/* Fit Mode Toggle: Original (Exact) vs Cover */}
+        <div className="space-y-1 sm:space-y-1.5">
+          <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
+            <span className="text-slate-300 font-medium flex items-center gap-1">
+              <ImageIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-500" />
+              <span>Image Display Mode</span>
+            </span>
+            <span className="font-mono text-red-400 font-bold text-[10px]">
+              {imageFitMode === "original" ? "Original (Exact, No Expansion)" : "Fill Poster (Cover)"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setImageFitMode("original")}
+              className={`py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+                imageFitMode === "original"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800"
+              }`}
+            >
+              Original (Exact)
+            </button>
+            <button
+              type="button"
+              onClick={() => setImageFitMode("cover")}
+              className={`py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+                imageFitMode === "cover"
+                  ? "bg-red-600 text-white shadow-sm"
+                  : "bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800"
+              }`}
+            >
+              Fill Poster (Cover)
+            </button>
+          </div>
+          <p className="text-[9px] sm:text-[10px] text-slate-400 font-sans">
+            {imageFitMode === "original"
+              ? "Shows exact original image without expanding, cropping, or stretching."
+              : "Expands image to cover the entire vertical poster frame."}
+          </p>
+        </div>
+
         {/* Vertical Y Position Slider */}
         <div className="space-y-0.5 sm:space-y-1">
           <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
@@ -747,26 +962,82 @@ export function StorySharePosterModal({
                     }}
                   >
                     {/* LAYER 1: Real CMS Article Image Background (or Custom Uploaded Photo) (z-0) */}
-                    {customImageUrl || article.featuredImageUrl ? (
+                    {(optimizedImageDataUrl || customImageUrl || article.featuredImageUrl) ? (
                       <div
                         style={{
                           position: "absolute",
                           inset: 0,
-                          width: "100%",
-                          height: "100%",
-                          backgroundImage: `url("${
-                            customImageUrl || article.featuredImageUrl
-                          }")`,
-                          backgroundSize:
-                            bgZoom === 100 ? "cover" : `${bgZoom}%`,
-                          backgroundPosition: `${bgPosX}% ${bgPosY}%`,
-                          backgroundRepeat: "no-repeat",
-                          filter: `brightness(${
-                            bgBrightness / 100
-                          }) contrast(${bgContrast / 100})`,
+                          width: `${currentFormat.width}px`,
+                          height: `${currentFormat.height}px`,
+                          overflow: "hidden",
                           zIndex: 0,
+                          backgroundColor: "#000000",
                         }}
-                      />
+                      >
+                        {/* 1A: Ambient Backdrop Layer (smooth ambient color glow matching the image) */}
+                        {ambientBackdropDataUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={ambientBackdropDataUrl}
+                            alt=""
+                            aria-hidden="true"
+                            style={{
+                              position: "absolute",
+                              inset: "-30px",
+                              width: `${currentFormat.width + 60}px`,
+                              height: `${currentFormat.height + 60}px`,
+                              objectFit: "cover",
+                              filter: "blur(24px) brightness(0.35)",
+                              opacity: 0.88,
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              background:
+                                "linear-gradient(135deg, #180206 0%, #0a0103 50%, #000000 100%)",
+                            }}
+                          />
+                        )}
+
+                        {/* 1B: Exact Original Foreground Image (Pixel-perfect, zero distortion, exact aspect ratio) */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={optimizedImageDataUrl || customImageUrl || article.featuredImageUrl}
+                          crossOrigin="anonymous"
+                          alt="Story Visual Background"
+                          onLoad={(e) => {
+                            const t = e.currentTarget;
+                            if (t.naturalWidth && t.naturalHeight) {
+                              setImageDimensions({
+                                width: t.naturalWidth,
+                                height: t.naturalHeight,
+                                ratio: t.naturalWidth / t.naturalHeight,
+                              });
+                            }
+                          }}
+                          style={{
+                            position: "absolute",
+                            left: `${fgLeft}px`,
+                            top: `${fgTop}px`,
+                            width: `${fgWidth}px`,
+                            height: `${fgHeight}px`,
+                            maxWidth: "none",
+                            maxHeight: "none",
+                            transform: bgZoom !== 100 ? `scale(${bgZoom / 100})` : "none",
+                            transformOrigin: "center center",
+                            filter: `brightness(${
+                              bgBrightness / 100
+                            }) contrast(${bgContrast / 100})`,
+                            boxShadow:
+                              imageFitMode === "original"
+                                ? "0 14px 48px rgba(0,0,0,0.85)"
+                                : "none",
+                          }}
+                        />
+                      </div>
                     ) : (
                       <div
                         style={{
@@ -822,12 +1093,17 @@ export function StorySharePosterModal({
                         alignItems: "center",
                         justifyContent: "center",
                         color: "#FFFFFF",
-                        fontSize: currentFormat.ribbon.fontSize,
-                        fontWeight: 800,
+                        fontSize:
+                          categoryDisplayName.length > 14
+                            ? "36px"
+                            : categoryDisplayName.length > 10
+                              ? "42px"
+                              : currentFormat.ribbon.fontSize,
+                        fontWeight: 700,
                         fontStyle: "italic",
                         fontFamily:
-                          "'Playfair Display', 'Georgia', 'Merriweather', 'Brush Script MT', cursive, serif",
-                        letterSpacing: "0.06em",
+                          "'Agency FB Bold', 'Agency FB', 'AgencyFB', sans-serif",
+                        letterSpacing: "0.08em",
                         textTransform: "uppercase",
                         textAlign: "center",
                         textShadow: "0 2px 10px rgba(0,0,0,0.9)",

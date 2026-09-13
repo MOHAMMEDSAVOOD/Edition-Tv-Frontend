@@ -106,65 +106,73 @@ export default function AccountPage() {
   }
 
   const activeUser = profile || {
-    userId: session?.username || "reader",
-    fullName: session?.username || "Standard Subscriber",
-    email: `${session?.username || "reader"}@editiontv.com`,
-    avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-    bio: "Verified Edition TV subscriber.",
-    subscriptionTier: "Digital Premium Subscriber",
-    renewalDate: "2027-01-15",
+    userId: session?.username || "",
+    fullName: session?.username || "",
+    email: "",
+    avatarUrl: "",
+    bio: "",
+    subscriptionTier: "Standard Reader",
+    renewalDate: "",
     createdAt: "",
     updatedAt: "",
   };
 
   return (
-    <div className="min-h-screen bg-slate-50  py-16 px-4">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-background py-6 sm:py-10 md:py-16 px-3 sm:px-6">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {notice && (
-          <div className="p-4 bg-emerald-50  border border-emerald-200  text-emerald-800  text-sm font-semibold rounded-xl">
+          <div className="p-3.5 sm:p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm font-semibold rounded-xl">
             {notice}
           </div>
         )}
 
-        <div className="bg-white  rounded-2xl border border-slate-200  p-8 shadow-sm">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-100  pb-6">
-            <div className="flex items-center gap-4">
+        <div className="bg-white dark:bg-card rounded-2xl border border-slate-200 dark:border-border p-4 sm:p-6 md:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 border-b border-slate-100 dark:border-border/60 pb-5 sm:pb-6">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               {activeUser.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={activeUser.avatarUrl}
                   alt={activeUser.fullName}
-                  className="w-16 h-16 rounded-full object-cover border border-slate-200 "
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border border-slate-200 dark:border-border shrink-0"
                 />
-              ) : null}
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-block px-3 py-0.5 bg-emerald-100  text-emerald-800  rounded-full text-xs font-semibold uppercase tracking-wider">
+              ) : (
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-lg sm:text-xl font-serif border border-primary/20 shrink-0">
+                  {(activeUser.fullName || activeUser.userId || "U").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                  <span className="inline-block px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-full text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
                     Active Subscriber
                   </span>
-                  <span className="text-xs font-mono text-slate-400">@{session?.username || activeUser.userId}</span>
+                  <span className="text-xs font-mono text-slate-400 dark:text-muted-foreground truncate">
+                    @{session?.username || activeUser.userId}
+                  </span>
                 </div>
-                <h1 className="text-3xl font-serif font-bold text-slate-900 ">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold text-slate-900 dark:text-foreground truncate">
                   {activeUser.fullName}
                 </h1>
-                <p className="text-slate-500 text-sm">{activeUser.email}</p>
+                <p className="text-slate-500 dark:text-muted-foreground text-xs sm:text-sm truncate">
+                  {activeUser.email}
+                </p>
                 {activeUser.bio && (
-                  <p className="text-slate-600  text-xs mt-1 italic">
+                  <p className="text-slate-600 dark:text-slate-300 text-xs mt-1 italic line-clamp-2">
                     {activeUser.bio}
                   </p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-1 sm:pt-0">
               <button
                 onClick={() => setEditing(!editing)}
-                className="px-4 py-2 bg-slate-900  text-white  text-sm font-semibold rounded-lg hover:opacity-90 transition"
+                className="flex-1 sm:flex-none px-3.5 py-2 bg-slate-900 dark:bg-primary text-white dark:text-black text-xs sm:text-sm font-semibold rounded-lg hover:opacity-90 transition text-center"
               >
                 {editing ? "Cancel Edit" : "Edit Profile"}
               </button>
               <button
                 onClick={handleLogout}
-                className="p-2 border border-slate-300  text-slate-600  rounded-lg hover:bg-slate-100 :bg-slate-800 transition"
+                className="p-2 border border-slate-300 dark:border-border text-slate-600 dark:text-muted-foreground rounded-lg hover:bg-slate-100 dark:hover:bg-muted transition shrink-0"
                 title="Log Out"
               >
                 <LogOut className="h-4 w-4" />
@@ -175,19 +183,19 @@ export default function AccountPage() {
           {editing ? (
             <form onSubmit={handleSave} className="space-y-4 pt-6">
               <div>
-                <label className="block text-xs uppercase font-semibold text-slate-500 mb-1">
+                <label className="block text-xs uppercase font-semibold text-slate-500 dark:text-muted-foreground mb-1">
                   Full Name
                 </label>
                 <input
                   type="text"
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300  bg-white  rounded-lg text-sm text-slate-900 "
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-border bg-white dark:bg-background rounded-lg text-sm text-slate-900 dark:text-foreground focus:outline-none focus:border-primary"
                   required
                 />
               </div>
               <div>
-                <label className="block text-xs uppercase font-semibold text-slate-500 mb-1">
+                <label className="block text-xs uppercase font-semibold text-slate-500 dark:text-muted-foreground mb-1">
                   Email Address (Read-only)
                 </label>
                 <input
@@ -195,64 +203,64 @@ export default function AccountPage() {
                   value={formData.email}
                   disabled
                   readOnly
-                  className="w-full px-3 py-2 border border-slate-200  bg-slate-100  rounded-lg text-sm text-slate-500 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-border bg-slate-100 dark:bg-muted/40 rounded-lg text-sm text-slate-500 dark:text-muted-foreground cursor-not-allowed"
                 />
               </div>
               <div>
-                <label className="block text-xs uppercase font-semibold text-slate-500 mb-1">
+                <label className="block text-xs uppercase font-semibold text-slate-500 dark:text-muted-foreground mb-1">
                   Bio / Tagline
                 </label>
                 <textarea
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300  bg-white  rounded-lg text-sm text-slate-900  h-20"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-border bg-white dark:bg-background rounded-lg text-sm text-slate-900 dark:text-foreground h-20 focus:outline-none focus:border-primary"
                 />
               </div>
               <div>
-                <label className="block text-xs uppercase font-semibold text-slate-500 mb-1">
+                <label className="block text-xs uppercase font-semibold text-slate-500 dark:text-muted-foreground mb-1">
                   Avatar Image URL
                 </label>
                 <input
                   type="url"
                   value={formData.avatarUrl}
                   onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300  bg-white  rounded-lg text-sm text-slate-900 "
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-border bg-white dark:bg-background rounded-lg text-sm text-slate-900 dark:text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
               <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm rounded-lg transition disabled:opacity-50"
+                  className="px-5 py-2 bg-primary text-black font-semibold text-sm rounded-lg transition disabled:opacity-50"
                 >
                   {saving ? "Saving Changes..." : "Save Profile"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditing(false)}
-                  className="px-4 py-2 border border-slate-300  text-slate-700  text-sm font-semibold rounded-lg hover:bg-slate-100 :bg-slate-800 transition"
+                  className="px-4 py-2 border border-slate-300 dark:border-border text-slate-700 dark:text-muted-foreground text-sm font-semibold rounded-lg hover:bg-slate-100 dark:hover:bg-muted transition"
                 >
                   Cancel
                 </button>
               </div>
             </form>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-              <div>
-                <div className="text-xs uppercase text-slate-400 font-semibold mb-1">Plan</div>
-                <div className="text-base font-bold text-slate-900 ">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 pt-5 sm:pt-6">
+              <div className="p-3 sm:p-0 bg-slate-50 dark:bg-muted/30 sm:bg-transparent rounded-lg">
+                <div className="text-[10px] sm:text-xs uppercase text-slate-400 dark:text-muted-foreground font-semibold mb-1">Plan</div>
+                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-foreground">
                   {activeUser.subscriptionTier}
                 </div>
               </div>
-              <div>
-                <div className="text-xs uppercase text-slate-400 font-semibold mb-1">Renewal Date</div>
-                <div className="text-base font-bold text-slate-900 ">
+              <div className="p-3 sm:p-0 bg-slate-50 dark:bg-muted/30 sm:bg-transparent rounded-lg">
+                <div className="text-[10px] sm:text-xs uppercase text-slate-400 dark:text-muted-foreground font-semibold mb-1">Renewal Date</div>
+                <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-foreground">
                   {activeUser.renewalDate}
                 </div>
               </div>
-              <div>
-                <div className="text-xs uppercase text-slate-400 font-semibold mb-1">Status</div>
-                <div className="text-base font-bold text-emerald-600  flex items-center gap-1">
+              <div className="p-3 sm:p-0 bg-slate-50 dark:bg-muted/30 sm:bg-transparent rounded-lg">
+                <div className="text-[10px] sm:text-xs uppercase text-slate-400 dark:text-muted-foreground font-semibold mb-1">Status</div>
+                <div className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <ShieldCheck className="h-4 w-4" /> Auto-Renew Enabled
                 </div>
               </div>
@@ -260,19 +268,19 @@ export default function AccountPage() {
           )}
         </div>
 
-        <div className="bg-white  rounded-2xl border border-slate-200  p-8 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-serif font-bold text-slate-900 ">
+        <div className="bg-white dark:bg-card rounded-2xl border border-slate-200 dark:border-border p-4 sm:p-6 md:p-8 shadow-sm">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3">
+            <h2 className="text-lg sm:text-xl font-serif font-bold text-slate-900 dark:text-foreground">
               Account Security & Credentials
             </h2>
             <Link
               href="/auth/forgot-password"
-              className="text-xs font-semibold text-sky-600 hover:text-sky-500"
+              className="text-xs font-semibold text-primary hover:underline shrink-0"
             >
-              Reset Account Password
+              Reset Account Password →
             </Link>
           </div>
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-500 dark:text-muted-foreground text-xs sm:text-sm leading-relaxed">
             Manage your credentials, security settings, or trigger a secure password reset request token.
           </p>
         </div>

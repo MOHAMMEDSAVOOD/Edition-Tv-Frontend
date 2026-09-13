@@ -22,10 +22,10 @@ export function BreakingTicker() {
   const doubled = [...items, ...items];
 
   return (
-    <div className="breaking-ticker py-1.5 text-xs font-semibold tracking-wide bg-primary text-black max-w-full overflow-x-hidden" suppressHydrationWarning>
-      <div className="container mx-auto max-w-[1200px] px-4 md:px-6 flex items-center gap-3 overflow-hidden" suppressHydrationWarning>
-        <span className="flex-none flex items-center gap-1.5 pr-4 border-r border-black/30 uppercase tracking-widest text-[10px] font-mono font-extrabold">
-          <span className="live-dot inline-block h-2 w-2 rounded-full bg-red-600 animate-ping" />
+    <div className="breaking-ticker py-1 sm:py-1.5 text-xs font-semibold tracking-wide bg-primary text-black max-w-full overflow-x-hidden" suppressHydrationWarning>
+      <div className="container mx-auto max-w-[1200px] px-3 sm:px-4 md:px-6 flex items-center gap-2 sm:gap-3 overflow-hidden" suppressHydrationWarning>
+        <span className="flex-none flex items-center gap-1 sm:gap-1.5 pr-2.5 sm:pr-4 border-r border-black/30 uppercase tracking-widest text-[9px] sm:text-[10px] font-mono font-extrabold">
+          <span className="live-dot inline-block h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-red-600 animate-ping" />
           Breaking
         </span>
 
@@ -33,8 +33,8 @@ export function BreakingTicker() {
           <div className="ticker-track" suppressHydrationWarning>
             {doubled.map((item, i) => (
               <span key={i} className="inline-flex items-center">
-                <span className="mx-6 text-black/40 select-none">◆</span>
-                <Link href={`/articles/${item.slug}`} className="text-black font-bold hover:underline">
+                <span className="mx-3 sm:mx-6 text-black/40 select-none">◆</span>
+                <Link href={`/articles/${item.slug}`} className="text-black font-bold hover:underline text-[11px] sm:text-xs">
                   {item.text}
                 </Link>
               </span>

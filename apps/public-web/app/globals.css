@@ -1,5 +1,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Oswald:ital,wght@1,700;1,900&display=swap');
 
+@font-face {
+  font-family: 'Agency FB';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Agency FB Bold'), local('Agency FB'), url('/fonts/AGENCYB.woff') format('woff'), url('https://fonts.cdnfonts.com/s/14864/AGENCYB.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Agency FB';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Agency FB Bold'), local('Agency FB'), url('/fonts/AGENCYB.woff') format('woff'), url('https://fonts.cdnfonts.com/s/14864/AGENCYB.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Agency FB Bold';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Agency FB Bold'), local('Agency FB'), url('/fonts/AGENCYB.woff') format('woff'), url('https://fonts.cdnfonts.com/s/14864/AGENCYB.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Agency FB Bold';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Agency FB Bold'), local('Agency FB'), url('/fonts/AGENCYB.woff') format('woff'), url('https://fonts.cdnfonts.com/s/14864/AGENCYB.woff') format('woff');
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -118,23 +150,69 @@ body {
   font-size: 1.0625rem;
   line-height: 1.8;
   color: hsl(var(--foreground));
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
-.article-body p { margin-bottom: 1.5em; }
+.article-body p { 
+  margin-bottom: 1.5em; 
+  word-break: break-word;
+}
+
+.article-body img,
+.article-body figure,
+.article-body video,
+.article-body iframe {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 0.25rem;
+}
+
+.article-body table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.article-body pre,
+.article-body code {
+  max-width: 100%;
+  overflow-x: auto;
+  word-break: break-word;
+}
+
 .article-body h2 {
   font-family: var(--font-headline);
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
   font-weight: 700;
-  margin: 2em 0 0.75em;
+  margin: 1.75em 0 0.75em;
+  line-height: 1.3;
 }
 .article-body blockquote {
   border-left: 4px solid hsl(var(--primary));
-  padding: 0.5em 0 0.5em 1.25em;
-  margin: 2em 0;
+  padding: 0.5em 0 0.5em 1em;
+  margin: 1.5em 0;
   font-style: italic;
-  font-size: 1.15rem;
+  font-size: clamp(1rem, 3vw, 1.15rem);
   font-family: var(--font-headline);
   color: hsl(var(--foreground) / 0.85);
+}
+
+/* Safe area inset helpers */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Next.js dev overlay button elevation above bottom nav */
+@media (max-width: 768px) {
+  nextjs-portal,
+  [data-nextjs-dev-tools-button] {
+    bottom: 5rem !important;
+  }
 }
 
 /* Breaking ticker */

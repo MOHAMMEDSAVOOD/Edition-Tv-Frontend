@@ -171,11 +171,13 @@ export function StoriesClient() {
       // Transition status chain if needed
       const currentStatus = story.status;
       const publishChain: string[] = [];
-      if (currentStatus === "DRAFT") publishChain.push("SUBMITTED_FOR_REVIEW", "APPROVED", "PUBLISHED");
-      else if (currentStatus === "SUBMITTED_FOR_REVIEW" || currentStatus === "IN_REVIEW" || currentStatus === "EDITOR_REVIEW") publishChain.push("APPROVED", "PUBLISHED");
+      if (currentStatus === "DRAFT") publishChain.push("SUBMITTED_FOR_REVIEW", "IN_REVIEW", "APPROVED", "PUBLISHED");
+      else if (currentStatus === "SUBMITTED_FOR_REVIEW") publishChain.push("IN_REVIEW", "APPROVED", "PUBLISHED");
+      else if (currentStatus === "IN_REVIEW" || currentStatus === "EDITOR_REVIEW") publishChain.push("APPROVED", "PUBLISHED");
       else if (currentStatus === "FACT_CHECK" || currentStatus === "FACT_CHECK_PENDING" || currentStatus === "COPY_EDIT") publishChain.push("APPROVED", "PUBLISHED");
       else if (currentStatus === "APPROVED") publishChain.push("PUBLISHED");
       else if (currentStatus === "SCHEDULED") publishChain.push("PUBLISHED");
+      else if (currentStatus === "RETRACTED") publishChain.push("DRAFT", "IN_REVIEW", "APPROVED", "PUBLISHED");
 
       for (const targetStatus of publishChain) {
         await apiClient.post(`/articles/${story.id}/status?targetStatus=${targetStatus}`);
@@ -198,12 +200,23 @@ export function StoriesClient() {
     if (!confirm(`Unpublish "${story.headline}" and revert to DRAFT?`)) return;
     setActionLoading(story.id);
     try {
-      await apiClient.post(`/articles/${story.id}/status?targetStatus=DRAFT`);
+      if (story.status === "PUBLISHED" || story.status === "UPDATED") {
+        // Domain state machine transitions PUBLISHED -> RETRACTED -> DRAFT
+        await apiClient.post(`/articles/${story.id}/status?targetStatus=RETRACTED`);
+        await apiClient.post(`/articles/${story.id}/status?targetStatus=DRAFT`);
+      } else {
+        await apiClient.post(`/articles/${story.id}/status?targetStatus=DRAFT`);
+      }
       setStories((prev) => prev.map((s) => (s.id === story.id ? { ...s, status: "DRAFT", isPublishedToWeb: false } : s)));
       await fetchStories();
       await fetchStats();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Unpublish failed");
+      const msg = err instanceof Error ? err.message : "Unpublish failed";
+      if (msg.includes("403") || msg.toLowerCase().includes("denied") || msg.toLowerCase().includes("permission")) {
+        alert("Unpublish failed: Insufficient permissions. Only EDITOR or ADMIN roles can unpublish articles.");
+      } else {
+        alert(msg);
+      }
     } finally {
       setActionLoading(null);
     }
@@ -235,7 +248,12 @@ export function StoriesClient() {
       await fetchStories();
       await fetchStats();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Delete failed");
+      const msg = err instanceof Error ? err.message : "Delete failed";
+      if (msg.includes("403") || msg.toLowerCase().includes("denied") || msg.toLowerCase().includes("permission")) {
+        alert("Delete failed: Insufficient permissions. Only users with EDITOR or ADMIN role can delete articles (Current role is READER). Please sign in as admin@editiontv.com / editor@editiontv.com.");
+      } else {
+        alert(msg);
+      }
     } finally {
       setActionLoading(null);
     }

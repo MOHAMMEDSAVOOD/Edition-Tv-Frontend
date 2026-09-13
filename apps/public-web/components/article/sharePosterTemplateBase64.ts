@@ -52,7 +52,7 @@ export const POSTER_FORMATS: Record<PosterAspectRatio, PosterFormatConfig> = {
       right: "60px",
       width: "320px",
       height: "64px",
-      fontSize: "38px",
+      fontSize: "48px",
     },
     content: {
       bottom: "245px",
@@ -83,7 +83,7 @@ export const POSTER_FORMATS: Record<PosterAspectRatio, PosterFormatConfig> = {
       right: "56px",
       width: "300px",
       height: "64px",
-      fontSize: "36px",
+      fontSize: "46px",
     },
     content: {
       bottom: "260px",

@@ -41,7 +41,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
-  const comments = await commentsService.getCommentsByArticle(article.id || "art-1");
+  const comments = article.id ? await commentsService.getCommentsByArticle(article.id) : [];
 
   // Fetch trending stories in this specific category for the sidebar
   const categoryFeed = await feedService.getFeedByCategory(article.category, 1, 6);
@@ -131,47 +131,61 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </p>
 
           {/* Author & Meta Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-border text-xs text-muted-foreground">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm font-serif">
-                {article.authorName.charAt(0)}
-              </div>
-              <div>
-                <Link href={`/authors/${article.authorId || "1"}`} className="font-semibold text-foreground hover:text-primary transition-colors block text-sm">
-                  {article.authorName}
-                </Link>
-                <span>{article.authorTitle || "Senior Correspondent"}</span>
-              </div>
-            </div>
+          {(article.authorName || article.publishedAt || article.readingTime) && (
+            <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-border text-xs text-muted-foreground">
+              {article.authorName ? (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-sm font-serif">
+                    {article.authorName.charAt(0)}
+                  </div>
+                  <div>
+                    {article.authorId ? (
+                      <Link href={`/authors/${article.authorId}`} className="font-semibold text-foreground hover:text-primary transition-colors block text-sm">
+                        {article.authorName}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-foreground block text-sm">{article.authorName}</span>
+                    )}
+                    {article.authorTitle && <span>{article.authorTitle}</span>}
+                  </div>
+                </div>
+              ) : <div />}
 
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                {article.publishedAt}
-              </span>
-              <span>·</span>
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                {article.readingTime}
-              </span>
+              <div className="flex items-center gap-4 text-xs font-mono">
+                {article.publishedAt && (
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    {article.publishedAt}
+                  </span>
+                )}
+                {article.publishedAt && article.readingTime && <span>·</span>}
+                {article.readingTime && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    {article.readingTime}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </header>
 
         {/* Hero Cover Image */}
-        <figure className="mb-10 max-w-4xl overflow-hidden rounded-xs border border-border bg-muted">
-          <SafeImage
-            src={article.featuredImageUrl}
-            alt={article.title}
-            category={article.category}
-            className="w-full max-h-[500px] object-cover"
-          />
-          {article.imageCaption && (
-            <figcaption className="p-3 text-xs text-muted-foreground font-sans border-t border-border/50 bg-muted/20 italic">
-              {article.imageCaption}
-            </figcaption>
-          )}
-        </figure>
+        {article.featuredImageUrl ? (
+          <figure className="mb-10 max-w-4xl overflow-hidden rounded-xs border border-border bg-muted">
+            <SafeImage
+              src={article.featuredImageUrl}
+              alt={article.title}
+              category={article.category}
+              className="w-full max-h-[500px] object-cover"
+            />
+            {article.imageCaption && (
+              <figcaption className="p-3 text-xs text-muted-foreground font-sans border-t border-border/50 bg-muted/20 italic">
+                {article.imageCaption}
+              </figcaption>
+            )}
+          </figure>
+        ) : null}
 
         {/* Main Layout: Grid with Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
@@ -211,7 +225,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
               {/* Comments Section */}
               <div className="mt-8">
-                <CommentsSection articleId={article.id || "art-1"} initialComments={comments} />
+                <CommentsSection articleId={article.id} initialComments={comments} />
               </div>
             </ArticleReaderClient>
           </div>

@@ -83,22 +83,34 @@ function parseContentBodyToHtml(contentBody?: string): string | null {
 
 export const articleMapper = {
   toArticleDetail(dto: ArticleResponseDto): ArticleDetail {
-    const publishedDate = dto.publishedAt ? new Date(dto.publishedAt) : new Date();
-    const formattedDate = publishedDate.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+    const rawDate = dto.publishedAt || (dto as any).createdAt || (dto as any).webPublishedAt || (dto as any).updatedAt;
+    let formattedDate = "";
+    if (rawDate) {
+      const parsed = new Date(rawDate);
+      if (!isNaN(parsed.getTime())) {
+        formattedDate = parsed.toLocaleDateString("en-US", {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        });
+      }
+    }
 
-    const headlineText = dto.headline || dto.title || "Global AI Engineering Standard Adopted Across Enterprise Systems";
-    const summaryText = dto.summary || dto.subtitle || "Latest breaking analysis from Edition TV correspondents.";
+    const headlineText = dto.headline || dto.title || "";
+    const summaryText = dto.summary || dto.subtitle || "";
 
     const parsedHtml = parseContentBodyToHtml(dto.contentBody || (dto as any).bodyHtml);
-    const bodyHtml = parsedHtml || `<p className="text-base text-slate-900 leading-relaxed font-sans mb-6">${summaryText}</p>`;
+    const bodyHtml = parsedHtml || (summaryText ? `<p className="text-base text-slate-900 leading-relaxed font-sans mb-6">${summaryText}</p>` : "");
 
     const summaryPoints = (dto.summaryPoints && dto.summaryPoints.length > 0)
       ? dto.summaryPoints
       : (summaryText ? [summaryText] : []);
+
+    // Calculate real dynamic reading time from actual text (200 words per min)
+    const combinedContent = (dto.contentBody || "") + " " + (summaryText || "") + " " + (headlineText || "");
+    const cleanWords = combinedContent.replace(/<[^>]*>?/gm, " ").replace(/\s+/g, " ").trim();
+    const wordCount = cleanWords.split(/\s+/).filter(Boolean).length;
+    const computedMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
     return {
       id: dto.id || dto.articleId || `art-${dto.slug}`,
@@ -108,23 +120,24 @@ export const articleMapper = {
       subtitle: summaryText,
       summary: summaryText,
       bodyHtml,
-      category: dto.category || "World",
-      topic: dto.topic || dto.category || "World",
-      authorId: dto.primaryAuthorId || dto.authorId || "1",
-      authorName: dto.authorName || "Edition News Desk",
-      authorTitle: dto.authorTitle || "Senior Correspondent",
-      authorAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      category: dto.category || "",
+      topic: dto.topic || dto.category || "",
+      authorId: dto.primaryAuthorId || dto.authorId || "",
+      authorName: dto.authorName || (dto as any).author?.name || "",
+      authorTitle: dto.authorTitle || "",
+      authorAvatar: (dto as any).authorAvatar || (dto as any).author?.avatarUrl || "",
       publishedAt: formattedDate,
-      readingTime: dto.readingTime || "5 min read",
-      readingTimeMinutes: 5,
+      readingTime: dto.readingTime || (computedMinutes > 0 ? `${computedMinutes} min read` : ""),
+      readingTimeMinutes: computedMinutes,
       featuredImageUrl: getHighResImageUrl((dto as any).featuredImageUrl || (dto as any).coverImageUrl || (dto as any).mediaThumbnailUrl || (dto as any).imageUrl || "") || "",
       imageCaption: (dto as any).imageCaption || "",
-      viewsCount: dto.viewCount || 1250,
+      viewsCount: Number(dto.viewCount || (dto as any).viewsCount || 0),
+      likesCount: Number((dto as any).likeCount || (dto as any).likesCount || 0),
       summaryPoints,
-      tags: (dto as any).tags || [dto.category ? dto.category.toLowerCase() : "news"],
-      commentsCount: (dto as any).commentsCount || 0,
-      audioUrl: "https://actions.google.com/sounds/v1/speech/person_speaking.ogg",
-      toxicityScore: dto.toxicityScore || 0.01,
+      tags: (dto as any).tags || (dto.category ? [dto.category.toLowerCase()] : []),
+      commentsCount: Number((dto as any).commentsCount || (dto as any).commentCount || 0),
+      audioUrl: (dto as any).audioUrl || undefined,
+      toxicityScore: dto.toxicityScore || 0,
     };
   },
 };

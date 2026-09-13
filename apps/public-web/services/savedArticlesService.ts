@@ -36,22 +36,15 @@ export const savedArticlesService = {
         );
         if (fromFeed) return fromFeed;
 
-        // 2. Fetch directly from production API by ID
+        // 2. Fetch directly from production API by ID / slug
         try {
           const res = await apiClient.get<any>(`/articles/${encodeURIComponent(targetId)}`);
           if (res && (res.id || res.slug || res.headline || res.title)) {
             return feedMapper.toArticleFeedItem(res);
           }
         } catch {
-          // 3. Fallback: fetch from production API by slug
-          try {
-            const res = await apiClient.get<any>(`/articles/slug/${encodeURIComponent(targetId)}`);
-            if (res && (res.id || res.slug || res.headline || res.title)) {
-              return feedMapper.toArticleFeedItem(res);
-            }
-          } catch {
-            // Article unreachable
-          }
+          // If article is deleted or unreachable (404), clean up orphan bookmark
+          savedArticlesRepository.unsaveArticle(targetId).catch(() => {});
         }
 
         return null;
@@ -61,6 +54,15 @@ export const savedArticlesService = {
       return resolved.filter((a): a is Article => a !== null);
     } catch {
       return [];
+    }
+  },
+
+  async getSavedCount(): Promise<number> {
+    try {
+      const dtos = await savedArticlesRepository.getSavedArticles();
+      return Array.isArray(dtos) ? dtos.length : 0;
+    } catch {
+      return 0;
     }
   },
 
