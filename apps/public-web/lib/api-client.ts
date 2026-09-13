@@ -51,7 +51,9 @@ export class ApiError extends Error {
  * Never exposed to the browser.
  */
 // Production Base URL:
-const DEFAULT_API_BASE_URL = "https://api.editiontv.com/api/v1";
+const DEFAULT_API_BASE_URL = "https://api1.edition.tv/api/v1";
+// Previous production URL:
+// const DEFAULT_API_BASE_URL = "https://api.editiontv.com/api/v1";
 // Local Backend for testing:
 // const DEFAULT_API_BASE_URL = "http://localhost:8080/api/v1";
 
