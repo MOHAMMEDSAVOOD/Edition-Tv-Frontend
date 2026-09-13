@@ -25,8 +25,12 @@ ENV_FILE="${ENV_FILE:-.env.local}"
 # server-side API URL. Anything else in the OpenBao path is ignored on purpose.
 ALLOWED='^(NEXT_PUBLIC_[A-Z0-9_]+|INTERNAL_API_URL)$'
 
-if [ $# -gt 0 ]; then
-  APPS=("$@")
+# pnpm forwards the `--` separator itself; drop it.
+ARGS=()
+for a in "$@"; do [ "$a" = "--" ] || ARGS+=("$a"); done
+
+if [ ${#ARGS[@]} -gt 0 ]; then
+  APPS=("${ARGS[@]}")
 else
   APPS=()
   for d in "$ROOT"/apps/*/; do APPS+=("$(basename "$d")"); done
