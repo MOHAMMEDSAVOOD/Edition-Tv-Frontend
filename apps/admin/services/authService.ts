@@ -1,71 +1,37 @@
-import { apiClient } from "@/lib/api-client";
+/**
+ * Admin Console auth — thin wrapper over the shared Firebase client.
+ * `login` = Firebase email/password sign-in → `/auth/me` → ROLE_ADMIN check.
+ */
+import { authService as sharedAuth, ensureAppAccess, type LoginResult, type MeProfile } from "@edition/auth";
 
-export interface LoginResponse {
-  accessToken: string;
-  refreshToken?: string;
-  tokenType?: string;
-  expiresIn?: number;
-  username?: string;
-  role?: string;
-}
+export const ADMIN_APP_NAME = "Admin Console";
+export const ADMIN_REQUIRED_ROLES = ["ROLE_ADMIN"];
+
+export type { LoginResult, MeProfile };
 
 export const authService = {
-  async login(usernameOrEmail: string, password: string): Promise<LoginResponse> {
-    try {
-      const data = await apiClient.post<LoginResponse>("/auth/login", { usernameOrEmail, email: usernameOrEmail, password });
-      if (data.accessToken) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("edition_access_token", data.accessToken);
-          localStorage.setItem("edition_username", usernameOrEmail);
-          document.cookie = `edition_access_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-          apiClient.setAccessToken(data.accessToken);
-        }
-      }
-      return data;
-    } catch (err: any) {
-      const errData = err.details || {};
-      throw new Error(
-        errData.detail || errData.message || errData.title || "Invalid credentials. Please check your username and password."
-      );
-    }
+  async login(email: string, password: string): Promise<LoginResult> {
+    const result = await sharedAuth.login(email, password);
+    await ensureAppAccess(result.profile, ADMIN_REQUIRED_ROLES, ADMIN_APP_NAME);
+    return result;
   },
 
-  async refreshToken(refreshToken: string): Promise<LoginResponse> {
-    try {
-      const data = await apiClient.post<LoginResponse>("/auth/refresh-token", { refreshToken });
-      if (data.accessToken && typeof window !== "undefined") {
-        localStorage.setItem("edition_access_token", data.accessToken);
-        document.cookie = `edition_access_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-        apiClient.setAccessToken(data.accessToken);
-      }
-      return data;
-    } catch (err: any) {
-      const errData = err.details || {};
-      throw new Error(errData.detail || errData.message || "Failed to refresh token.");
-    }
+  async loginWithGoogle(): Promise<LoginResult> {
+    const result = await sharedAuth.loginWithGoogle();
+    await ensureAppAccess(result.profile, ADMIN_REQUIRED_ROLES, ADMIN_APP_NAME);
+    return result;
   },
 
-  getToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("edition_access_token");
-  },
-
-  getUsername(): string {
-    if (typeof window === "undefined") return "Admin";
-    return localStorage.getItem("edition_username") || "Admin";
+  me(): Promise<MeProfile | null> {
+    return sharedAuth.me();
   },
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return sharedAuth.isAuthenticated();
   },
 
-  logout() {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("edition_access_token");
-      localStorage.removeItem("edition_username");
-      localStorage.removeItem("edition_user_role");
-      document.cookie = "edition_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      window.location.href = "/login";
-    }
+  /** Sign out of Firebase and return to the login page. */
+  logout(): Promise<void> {
+    return sharedAuth.logout("/login");
   },
 };

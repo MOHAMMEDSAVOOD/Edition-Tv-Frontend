@@ -1,95 +1,41 @@
-import { apiClient, ApiError } from "@/lib/api-client";
-
-export interface BackendAuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  tokenType?: string;
-  expiresIn?: number;
-}
+/**
+ * Auth repository — thin wrapper over the shared Firebase client.
+ * Roles come from `/auth/me`, never from a hardcoded default.
+ */
+import { authService as sharedAuth, type LoginResult, type MeProfile, type Role } from "@edition/auth";
 
 export interface AuthResponseDto {
-  token: string;
-  refreshToken: string;
+  /** Firebase uid */
+  uid: string;
   username: string;
-  roles: string[];
+  email: string;
+  roles: Role[];
+  profile: MeProfile;
 }
 
-export interface AuthResponseDto {
-  token: string;
-  refreshToken: string;
-  username: string;
-  roles: string[];
+function toDto(result: LoginResult): AuthResponseDto {
+  return {
+    uid: result.user.uid,
+    username: result.profile.username || result.user.email || "",
+    email: result.profile.email || result.user.email || "",
+    roles: result.roles,
+    profile: result.profile,
+  };
 }
 
 export const authRepository = {
-  async login(usernameOrEmail: string, password: string): Promise<AuthResponseDto> {
-    try {
-      const raw = await apiClient.post<BackendAuthResponse>("/auth/login", {
-        usernameOrEmail,
-        email: usernameOrEmail,
-        password,
-      });
-
-      if (typeof window !== "undefined" && raw.accessToken) {
-        localStorage.setItem("edition_access_token", raw.accessToken);
-        document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      }
-
-      return {
-        token: raw.accessToken,
-        refreshToken: raw.refreshToken || "",
-        username: usernameOrEmail,
-        roles: ["ROLE_READER"],
-      };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw new Error(error.details?.detail || error.details?.title || error.message || "Invalid email or password");
-      }
-      throw error;
-    }
+  /** Email/password sign-in via Firebase, then `/auth/me`. */
+  async login(email: string, password: string): Promise<AuthResponseDto> {
+    return toDto(await sharedAuth.login(email, password));
   },
 
-  async register(username: string, email: string, password: string): Promise<AuthResponseDto> {
-    try {
-      const raw = await apiClient.post<BackendAuthResponse>("/auth/register", {
-        username,
-        email,
-        password,
-      });
-
-      if (typeof window !== "undefined" && raw.accessToken) {
-        localStorage.setItem("edition_access_token", raw.accessToken);
-        document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-      }
-
-      return {
-        token: raw.accessToken,
-        refreshToken: raw.refreshToken || "",
-        username,
-        roles: ["ROLE_READER"],
-      };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw new Error(error.details?.detail || error.details?.title || error.message || "Registration failed");
-      }
-      throw error;
-    }
+  /** Google popup sign-in via Firebase, then `/auth/me`. */
+  async loginWithGoogle(): Promise<AuthResponseDto> {
+    return toDto(await sharedAuth.loginWithGoogle());
   },
 
-  async refreshToken(refreshToken: string): Promise<AuthResponseDto> {
-    try {
-      const raw = await apiClient.post<BackendAuthResponse>("/auth/refresh", { refreshToken });
-      return {
-        token: raw.accessToken,
-        refreshToken: raw.refreshToken,
-        username: "user",
-        roles: ["ROLE_READER"],
-      };
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw new Error(error.details?.detail || error.details?.title || error.message || "Session refresh failed");
-      }
-      throw error;
-    }
+  /** Create a Firebase account (displayName = fullName); `/auth/me` provisions it server-side (ROLE_READER). */
+  async register(fullName: string, email: string, password: string): Promise<AuthResponseDto> {
+    return toDto(await sharedAuth.register({ email, password, fullName }));
   },
 };

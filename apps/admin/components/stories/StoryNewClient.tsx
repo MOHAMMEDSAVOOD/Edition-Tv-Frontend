@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@edition/auth";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ArrowLeft, Loader2, AlertCircle, Star, FileText } from "lucide-react";
@@ -10,7 +11,8 @@ interface CategoryItem { id: string; name: string; slug: string; }
 
 export function StoryNewClient() {
   const router = useRouter();
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const { user } = useAuth();
+  const isSignedIn = !!user;
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,11 +26,6 @@ export function StoryNewClient() {
   const [isFeatured, setIsFeatured] = useState(false);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(stored);
-  }, []);
-
-  useEffect(() => {
     apiClient.get<any>(`/cms/categories`)
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
@@ -36,7 +33,7 @@ export function StoryNewClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!authToken) return alert("Login required to create stories.");
+    if (!isSignedIn) return alert("Login required to create stories.");
     if (!headline.trim()) return setError("Headline is required.");
     if (!contentBody.trim()) return setError("Content body is required.");
     setSubmitting(true);
@@ -77,7 +74,7 @@ export function StoryNewClient() {
         </div>
       )}
 
-      {!authToken && (
+      {!isSignedIn && (
         <div className="bg-yellow-900/20 border border-yellow-700/40 rounded-lg p-3 text-yellow-400 text-sm">
           ⚠ You must be logged in to create stories. Please log in via the Categories page first.
         </div>
@@ -174,7 +171,7 @@ export function StoryNewClient() {
 
           <Button
             type="submit"
-            disabled={submitting || !authToken}
+            disabled={submitting || !isSignedIn}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold"
           >
             {submitting ? (

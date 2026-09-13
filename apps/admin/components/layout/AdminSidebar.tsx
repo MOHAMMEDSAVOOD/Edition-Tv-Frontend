@@ -132,7 +132,7 @@ export function AdminSidebar() {
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>
             </span>
-            <span className="text-[9px] font-mono opacity-80 uppercase">JWT</span>
+            <span className="text-[9px] font-mono opacity-80 uppercase">Firebase</span>
           </button>
 
           <div className="flex items-center justify-between text-slate-500 font-bold text-[10px] font-mono px-1">

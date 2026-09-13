@@ -3,31 +3,39 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { 
-  ShieldCheck, 
-  Lock, 
-  User, 
-  Eye, 
-  EyeOff, 
-  ArrowRight, 
-  Sparkles, 
-  AlertCircle, 
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Sparkles,
+  AlertCircle,
   CheckCircle2,
   Activity,
   Server,
-  KeyRound,
   Tv
 } from "lucide-react";
+import { GoogleIcon } from "@edition/auth";
 import { authService } from "@/services/authService";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const onSignedIn = () => {
+    setSuccess(true);
+    setTimeout(() => {
+      router.push("/");
+      router.refresh();
+    }, 300);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,12 +43,8 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      await authService.login(username, password);
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/");
-        router.refresh();
-      }, 300);
+      await authService.login(email, password);
+      onSignedIn();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Authentication failed. Please check credentials.");
     } finally {
@@ -48,14 +52,29 @@ export default function AdminLoginPage() {
     }
   };
 
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    try {
+      await authService.loginWithGoogle();
+      onSignedIn();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const busy = loading || googleLoading;
+
   return (
     <div className="min-h-screen w-full bg-white flex font-sans select-none overflow-x-hidden">
       {/* 2-Column Split Layout matching reference image design */}
       <div className="w-full flex flex-col lg:flex-row min-h-screen">
-        
+
         {/* Left Side: Clean Light Hero Section with Image & Floating Cards */}
         <div className="lg:w-1/2 xl:w-7/12 bg-slate-100/90 p-8 lg:p-16 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200">
-          
+
           {/* Subtle Background Pattern */}
           <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-70 pointer-events-none" />
 
@@ -80,16 +99,16 @@ export default function AdminLoginPage() {
 
             {/* Hero Image Container */}
             <div className="relative rounded-3xl overflow-hidden border border-slate-200 shadow-2xl bg-white group">
-              <Image 
-                src="/hero.png" 
-                alt="Admin Control Room" 
-                width={1000} 
-                height={600} 
+              <Image
+                src="/hero.png"
+                alt="Admin Control Room"
+                width={1000}
+                height={600}
                 className="w-full h-[340px] object-cover object-center group-hover:scale-105 transition-transform duration-700"
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-              
+
               {/* Floating Metric Badge 1 */}
               <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border border-slate-100 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
@@ -111,14 +130,14 @@ export default function AdminLoginPage() {
 
           {/* Left Footer Info */}
           <div className="relative z-10 text-xs text-slate-500 font-mono flex items-center justify-between pt-4 border-t border-slate-200/80">
-            <span>TLS 1.3 Strict &bull; Spring Security JWT</span>
+            <span>TLS 1.3 Strict &bull; Firebase Authentication</span>
             <span>PostgreSQL & OpenSearch Online</span>
           </div>
         </div>
 
         {/* Right Side: Clean White Form Container matching reference image */}
         <div className="flex-1 lg:w-1/2 xl:w-5/12 bg-white p-8 lg:p-16 flex flex-col justify-between relative shadow-xl min-h-screen">
-          
+
           {/* Top Header with Edition TV Red Logo */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -136,7 +155,7 @@ export default function AdminLoginPage() {
 
           {/* Login Form Box */}
           <div className="my-auto py-6 space-y-6 max-w-md w-full mx-auto">
-            
+
             {/* Title & Subtitle */}
             <div className="space-y-1">
               <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight font-serif">
@@ -163,38 +182,38 @@ export default function AdminLoginPage() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+            <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1.5">
-                  Username or Email
+                <label htmlFor="edition_admin_email" className="text-xs font-semibold text-slate-700 block mb-1.5">
+                  Email
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
-                    type="text"
-                    name="edition_admin_user"
-                    id="edition_admin_user"
-                    autoComplete="off"
+                    type="email"
+                    name="email"
+                    id="edition_admin_email"
+                    autoComplete="email"
                     required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter username or email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@editiontv.com"
                     className="w-full bg-slate-50 border border-slate-200 focus:border-red-600 focus:bg-white focus:ring-2 focus:ring-red-600/10 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm transition outline-none font-medium"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                <label htmlFor="edition_admin_pass" className="text-xs font-semibold text-slate-700 block mb-1.5">
                   Password
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     type={showPassword ? "text" : "password"}
-                    name="edition_admin_pass"
+                    name="password"
                     id="edition_admin_pass"
-                    autoComplete="new-password"
+                    autoComplete="current-password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -204,6 +223,7 @@ export default function AdminLoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -214,7 +234,7 @@ export default function AdminLoginPage() {
               {/* Primary Red Sign In Button matching reference design */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={busy}
                 className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-extrabold text-sm py-3.5 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-600/30 uppercase tracking-wider disabled:opacity-50 mt-2"
               >
                 {loading ? (
@@ -229,11 +249,29 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </form>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 text-[10px] font-mono uppercase text-slate-400">
+              <span className="h-px flex-1 bg-slate-200" />
+              <span>or</span>
+              <span className="h-px flex-1 bg-slate-200" />
+            </div>
+
+            {/* Google Sign In */}
+            <button
+              type="button"
+              onClick={handleGoogle}
+              disabled={busy}
+              className="w-full bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm py-3 rounded-xl border border-slate-200 transition flex items-center justify-center gap-2.5 disabled:opacity-50 shadow-xs"
+            >
+              <GoogleIcon className="h-4 w-4" />
+              <span>{googleLoading ? "Waiting for Google..." : "Continue with Google"}</span>
+            </button>
           </div>
 
           {/* Right Footer */}
           <div className="text-center text-xs text-slate-400 font-sans">
-            Edition TV Platform &copy; 2026 &bull; Secured with Spring Security JWT
+            Edition TV Platform &copy; 2026 &bull; Secured with Firebase Authentication
           </div>
 
         </div>

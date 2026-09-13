@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@edition/auth";
 import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, RefreshCw, LayoutGrid, AlertCircle, CheckCircle, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,8 @@ export function DeskManagementClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const { user } = useAuth();
+  const isSignedIn = !!user;
 
   // Form modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,11 +36,6 @@ export function DeskManagementClient() {
   const [formEnabled, setFormEnabled] = useState(true);
   const [formPriority, setFormPriority] = useState(10);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(stored);
-  }, []);
 
   const fetchDesks = useCallback(async () => {
     setLoading(true);
@@ -60,11 +57,6 @@ export function DeskManagementClient() {
   useEffect(() => {
     fetchDesks();
   }, [fetchDesks]);
-
-  const authHeaders = useCallback(() => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  }), [authToken]);
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);

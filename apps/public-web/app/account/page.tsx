@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { displayNameOf, useAuth } from "@edition/auth";
 import { userRepository, UserProfileData } from "@/repositories/userRepository";
-import { authService, UserSession } from "@/services/authService";
+import { authService } from "@/services/authService";
 import { LogOut, User, ShieldCheck } from "lucide-react";
 
 export default function AccountPage() {
+  const { user, loading: authLoading, profile: me, profileLoading, roles } = useAuth();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
-  const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -21,13 +22,14 @@ export default function AccountPage() {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
+    if (authLoading) return;
+    let cancelled = false;
+
     async function loadData() {
       setLoading(true);
-      const activeSession = authService.getCurrentSession();
-      setSession(activeSession);
-
-      if (activeSession) {
+      if (user) {
         const data = await userRepository.fetchUserProfile();
+        if (cancelled) return;
         if (data) {
           setProfile(data);
           setFormData({
@@ -37,11 +39,16 @@ export default function AccountPage() {
             avatarUrl: data.avatarUrl || "",
           });
         }
+      } else {
+        setProfile(null);
       }
       setLoading(false);
     }
     loadData();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,14 +65,13 @@ export default function AccountPage() {
     setSaving(false);
   };
 
-  const handleLogout = () => {
-    authService.logout();
+  const handleLogout = async () => {
+    await authService.logout();
     setProfile(null);
-    setSession(null);
     window.location.href = "/";
   };
 
-  if (loading) {
+  if (authLoading || (user && (loading || (profileLoading && !me)))) {
     return (
       <div className="min-h-screen bg-slate-50  py-16 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
@@ -75,7 +81,7 @@ export default function AccountPage() {
     );
   }
 
-  if (!session && !profile) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-slate-50  py-16 px-4">
         <div className="max-w-md mx-auto bg-white  rounded-2xl border border-slate-200  p-8 shadow-sm text-center space-y-4">
@@ -105,14 +111,19 @@ export default function AccountPage() {
     );
   }
 
+  // Identity comes from /auth/me + the Firebase user; the extended profile (bio, avatar, plan) from /users/me/profile.
+  const identityName = displayNameOf(me, user.displayName || user.email || "Reader");
+  const identityEmail = me?.email || user.email || "";
+  const handle = me?.username || user.email?.split("@")[0] || user.uid;
+
   const activeUser = profile || {
-    userId: session?.username || "reader",
-    fullName: session?.username || "Standard Subscriber",
-    email: `${session?.username || "reader"}@editiontv.com`,
-    avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
-    bio: "Verified Edition TV subscriber.",
-    subscriptionTier: "Digital Premium Subscriber",
-    renewalDate: "2027-01-15",
+    userId: me?.id || user.uid,
+    fullName: identityName,
+    email: identityEmail,
+    avatarUrl: user.photoURL || "",
+    bio: "",
+    subscriptionTier: "Free Reader",
+    renewalDate: "—",
     createdAt: "",
     updatedAt: "",
   };
@@ -136,18 +147,24 @@ export default function AccountPage() {
                   alt={activeUser.fullName}
                   className="w-16 h-16 rounded-full object-cover border border-slate-200 "
                 />
-              ) : null}
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500">
+                  <User className="h-7 w-7" />
+                </div>
+              )}
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="inline-block px-3 py-0.5 bg-emerald-100  text-emerald-800  rounded-full text-xs font-semibold uppercase tracking-wider">
-                    Active Subscriber
+                    {roles.includes("ROLE_ADMIN") || roles.includes("ROLE_EDITOR") || roles.includes("ROLE_REPORTER")
+                      ? "Editorial Staff"
+                      : "Active Reader"}
                   </span>
-                  <span className="text-xs font-mono text-slate-400">@{session?.username || activeUser.userId}</span>
+                  <span className="text-xs font-mono text-slate-400">@{handle}</span>
                 </div>
                 <h1 className="text-3xl font-serif font-bold text-slate-900 ">
-                  {activeUser.fullName}
+                  {activeUser.fullName || identityName}
                 </h1>
-                <p className="text-slate-500 text-sm">{activeUser.email}</p>
+                <p className="text-slate-500 text-sm">{activeUser.email || identityEmail}</p>
                 {activeUser.bio && (
                   <p className="text-slate-600  text-xs mt-1 italic">
                     {activeUser.bio}
@@ -192,7 +209,7 @@ export default function AccountPage() {
                 </label>
                 <input
                   type="email"
-                  value={formData.email}
+                  value={formData.email || identityEmail}
                   disabled
                   readOnly
                   className="w-full px-3 py-2 border border-slate-200  bg-slate-100  rounded-lg text-sm text-slate-500 cursor-not-allowed"
@@ -251,9 +268,10 @@ export default function AccountPage() {
                 </div>
               </div>
               <div>
-                <div className="text-xs uppercase text-slate-400 font-semibold mb-1">Status</div>
+                <div className="text-xs uppercase text-slate-400 font-semibold mb-1">Roles</div>
                 <div className="text-base font-bold text-emerald-600  flex items-center gap-1">
-                  <ShieldCheck className="h-4 w-4" /> Auto-Renew Enabled
+                  <ShieldCheck className="h-4 w-4" />
+                  {roles.length ? roles.map((r) => r.replace("ROLE_", "")).join(", ") : "Reader"}
                 </div>
               </div>
             </div>
@@ -273,7 +291,9 @@ export default function AccountPage() {
             </Link>
           </div>
           <p className="text-slate-500 text-sm">
-            Manage your credentials, security settings, or trigger a secure password reset request token.
+            Your sign-in is managed by Firebase Authentication
+            {user.providerData?.some((p) => p.providerId === "google.com") ? " (Google account)" : " (email and password)"}.
+            Use the link above to receive a secure password reset email.
           </p>
         </div>
       </div>

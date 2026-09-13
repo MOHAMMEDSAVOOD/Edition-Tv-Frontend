@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@edition/auth";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -75,7 +76,8 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const { user } = useAuth();
+  const isSignedIn = !!user;
 
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [tags, setTags] = useState<TagItem[]>([]);
@@ -95,16 +97,6 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const [activeBlockIdForMedia, setActiveBlockIdForMedia] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"EDITOR" | "FACT_CHECK">("EDITOR");
-
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(stored);
-  }, []);
-
-  const authHeaders = useCallback(() => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  }), [authToken]);
 
   // Load story
   useEffect(() => {
@@ -198,7 +190,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   };
 
   const handleSave = async () => {
-    if (!authToken) return alert("Login required to save.");
+    if (!isSignedIn) return alert("Login required to save.");
     setSaving(true);
     setError(null);
     try {
@@ -215,7 +207,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   };
 
   const handlePublish = async () => {
-    if (!authToken) return alert("Login required to publish.");
+    if (!isSignedIn) return alert("Login required to publish.");
     if (!story) return;
     setPublishing(true);
     setError(null);
@@ -234,7 +226,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   };
 
   const handleArchive = async () => {
-    if (!authToken) return alert("Login required.");
+    if (!isSignedIn) return alert("Login required.");
     if (!story) return;
     if (!confirm("Archive this story?")) return;
     setSaving(true);
@@ -251,7 +243,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   };
 
   const handleTransition = async (targetStatus: string) => {
-    if (!authToken) return alert("Login required.");
+    if (!isSignedIn) return alert("Login required.");
     setSaving(true);
     setError(null);
     try {

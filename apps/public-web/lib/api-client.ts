@@ -10,10 +10,13 @@
  *    - Accepts Next.js cache options (revalidate, tags)
  *
  * 2. `apiClient` singleton — for Client Components ('use client') only
- *    - Reads JWT from localStorage
- *    - Used for auth-gated mutations (login, bookmark, profile, etc.)
+ *    - Sends the signed-in user's Firebase ID token as `Authorization: Bearer`
+ *      (force-refreshes once and retries once on a 401)
+ *    - Used for auth-gated mutations (bookmark, profile, etc.)
  *    - NEVER import apiClient in a Server Component
  */
+
+import { getCurrentUser, getIdToken } from "@edition/auth";
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -153,58 +156,50 @@ export async function serverFetch<T>(
 // ---------------------------------------------------------------------------
 
 class ApiClient {
-  private accessToken: string | null = null;
-
-  public setAccessToken(token: string | null) {
-    this.accessToken = token;
+  /** Firebase ID token for the signed-in user, or null. */
+  public getAccessToken(forceRefresh = false): Promise<string | null> {
+    return getIdToken(forceRefresh);
   }
 
-  public getAccessToken(): string | null {
-    if (!this.accessToken && typeof window !== "undefined") {
-      try {
-        const sessionRaw = localStorage.getItem("edition_auth_session");
-        if (sessionRaw) {
-          const session = JSON.parse(sessionRaw);
-          if (session?.token) {
-            this.accessToken = session.token;
-          }
-        }
-        if (!this.accessToken) {
-          const legacyToken = localStorage.getItem("accessToken");
-          if (legacyToken) {
-            this.accessToken = legacyToken;
-          }
-        }
-      } catch {
-        // Ignored — localStorage may be unavailable (private mode etc.)
-      }
-    }
-    return this.accessToken;
+  /** Synchronous check: is a Firebase user currently signed in? */
+  public isAuthenticated(): boolean {
+    return getCurrentUser() !== null;
   }
 
   public async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...(options.headers as Record<string, string>),
-    };
-
-    const token = this.getAccessToken();
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const url = formatUrl(CLIENT_API_BASE_URL, endpoint);
 
-    let response: Response;
-    try {
-      response = await fetch(url, { ...options, headers });
-    } catch (error) {
-      throw new Error(
-        `Network error: unable to reach ${url}. Is the backend running? (${String(error)})`
-      );
+    const buildHeaders = (token: string | null): Record<string, string> => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
+    };
+
+    const doFetch = async (token: string | null): Promise<Response> => {
+      try {
+        return await fetch(url, { ...options, headers: buildHeaders(token) });
+      } catch (error) {
+        throw new Error(
+          `Network error: unable to reach ${url}. Is the backend running? (${String(error)})`
+        );
+      }
+    };
+
+    const token = await this.getAccessToken();
+    let response = await doFetch(token);
+
+    // Expired/invalid ID token: force-refresh once and retry once.
+    if (response.status === 401 && token) {
+      const fresh = await this.getAccessToken(true);
+      if (fresh) {
+        response = await doFetch(fresh);
+      }
     }
 
     if (!response.ok) {

@@ -17,7 +17,7 @@ frontend/
 ├── packages/
 │   ├── ui/                  # @edition/ui — Shared UI components
 │   ├── api/                 # @edition/api — API client & services
-│   ├── auth/                # @edition/auth — JWT auth helpers
+│   ├── auth/                # @edition/auth — Firebase Authentication client (useAuth, fetchMe, sign-in helpers)
 │   ├── config/              # @edition/config — Design tokens & config
 │   ├── types/               # @edition/types — TypeScript DTOs
 │   ├── utils/               # @edition/utils — Utility functions
@@ -47,11 +47,18 @@ frontend/
 ```ts
 import { Button, Card, Navbar } from "@edition/ui";
 import { feedService, articleService } from "@edition/api";
-import { authService } from "@edition/auth";
+import { AuthProvider, useAuth, signInWithEmail, signInWithGoogle, fetchMe, signOut } from "@edition/auth";
 import { cn } from "@edition/utils";
 import { useLocalStorage } from "@edition/hooks";
 import type { ArticleFeedItem } from "@edition/types";
 ```
+
+## Authentication
+
+All apps sign in with **Firebase Authentication** (email/password or Google) through `@edition/auth`.
+Every API request carries `Authorization: Bearer <Firebase ID token>`; the Spring backend verifies it
+and `GET /auth/me` returns the platform profile and roles (`ROLE_ADMIN`, `ROLE_EDITOR`, `ROLE_REPORTER`, `ROLE_READER`).
+Copy `.env.example` to `apps/<app>/.env.local` and fill in the `NEXT_PUBLIC_FIREBASE_*` values.
 
 ## Tech Stack
 

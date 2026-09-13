@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@edition/auth";
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
@@ -134,18 +135,8 @@ export function JournalistWorkspaceClient() {
   const [previewDevice, setPreviewDevice] = useState<"DESKTOP" | "TABLET" | "MOBILE">("DESKTOP");
   const [submittingAction, setSubmittingAction] = useState(false);
 
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") return localStorage.getItem("edition_access_token");
-    return null;
-  };
-
-  const authHeaders = useCallback(() => {
-    const token = getAuthToken();
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  }, []);
+  const { user: firebaseUser } = useAuth();
+  const getAuthToken = () => (firebaseUser ? firebaseUser.uid : null);
 
   // 1. Fetch Taxonomy & Users
   useEffect(() => {
@@ -153,8 +144,7 @@ export function JournalistWorkspaceClient() {
     apiClient.get<any[]>('/cms/desks').then((d) => setApiDesks(Array.isArray(d) ? d : [])).catch(() => {});
     apiClient.get<any[]>('/users').then((d) => setApiUsers(Array.isArray(d) ? d : [])).catch(() => {});
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    if (token) {
+    if (firebaseUser) {
       apiClient.get<any>('/users/me')
         .then((user) => {
           if (user?.id) setCurrentUserId(user.id);

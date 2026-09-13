@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@edition/auth";
 import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, RefreshCw, Tag as TagIcon, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,8 @@ export function TagManagementClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const { user } = useAuth();
+  const isSignedIn = !!user;
 
   // Create form state
   const [formName, setFormName] = useState("");
@@ -31,11 +33,6 @@ export function TagManagementClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
-
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(stored);
-  }, []);
 
   const fetchTags = useCallback(async () => {
     setLoading(true);
@@ -53,11 +50,6 @@ export function TagManagementClient() {
   useEffect(() => {
     fetchTags();
   }, [fetchTags]);
-
-  const authHeaders = useCallback(() => ({
-    "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-  }), [authToken]);
 
   const showSuccess = (msg: string) => {
     setSuccessMsg(msg);

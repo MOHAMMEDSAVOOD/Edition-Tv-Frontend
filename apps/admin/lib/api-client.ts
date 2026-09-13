@@ -1,3 +1,5 @@
+import { getCurrentUser, getIdToken } from "@edition/auth";
+
 export interface ApiErrorResponse {
   type: string;
   title: string;
@@ -22,38 +24,47 @@ export class ApiError extends Error {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
 
+/** Backend origin without the `/api/v1` suffix (for endpoints mounted at the root, e.g. `/internal/**`). */
+export const API_ORIGIN = API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
 
+/**
+ * Browser API client. Attaches `Authorization: Bearer <Firebase ID token>`
+ * whenever a user is signed in; on a 401 it force-refreshes the token once and
+ * retries once. Server-side callers have no browser user and go unauthenticated.
+ */
 class ApiClient {
-  private accessToken: string | null = null;
-
-  public setAccessToken(token: string | null) {
-    this.accessToken = token;
+  /** Firebase ID token for the signed-in user, or null. */
+  public getAccessToken(forceRefresh = false): Promise<string | null> {
+    return getIdToken(forceRefresh);
   }
 
-  public getAccessToken(): string | null {
-    if (!this.accessToken && typeof window !== "undefined") {
-      this.accessToken = localStorage.getItem("edition_access_token");
-    }
-    return this.accessToken;
+  /** Synchronous check: is a Firebase user currently signed in? */
+  public isAuthenticated(): boolean {
+    return getCurrentUser() !== null;
   }
 
   public async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
-    };
-
-    const token = this.getAccessToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    const buildHeaders = (token: string | null): Record<string, string> => {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string>),
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    };
+
+    let token = await this.getAccessToken();
+    let response = await fetch(url, { ...options, headers: buildHeaders(token) });
+
+    if (response.status === 401 && token) {
+      const fresh = await this.getAccessToken(true);
+      if (fresh) {
+        token = fresh;
+        response = await fetch(url, { ...options, headers: buildHeaders(token) });
+      }
+    }
 
     if (!response.ok) {
       let errorData: ApiErrorResponse;

@@ -1,31 +1,21 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Radio, Search, Bell, Sparkles, User, LogOut, LogIn, ShieldCheck } from "lucide-react";
+import { Radio, LogOut, LogIn, ShieldCheck } from "lucide-react";
+import { displayNameOf, useAuth } from "@edition/auth";
 import { authService } from "@/services/authService";
 
 export function Navbar() {
   const pathname = usePathname();
-  const [username, setUsername] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("edition_username");
-      const token = localStorage.getItem("edition_access_token");
-      if (token) {
-        setUsername(storedUser || "admin");
-      } else {
-        setUsername(null);
-      }
-    }
-  }, [pathname]);
+  const { user, profile } = useAuth();
+  const username = user ? displayNameOf(profile, user.displayName || user.email || "admin") : null;
 
   const handleLogout = () => {
-    authService.logout();
+    void authService.logout();
   };
 
   return (

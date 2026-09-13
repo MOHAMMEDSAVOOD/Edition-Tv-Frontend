@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@edition/auth";
 import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, RefreshCw, Eye, EyeOff, Layers, Lock, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,17 +32,10 @@ export function CategoryManagementClient() {
   const [formParentId, setFormParentId] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Auth State
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  // Auth State (Firebase session via AuthProvider)
+  const { user } = useAuth();
+  const isSignedIn = !!user;
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
-  const [loginUser, setLoginUser] = useState<string>("");
-  const [loginPass, setLoginPass] = useState<string>("");
-  const [loginLoading, setLoginLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(token);
-  }, []);
 
   const fetchCategories = useCallback(async () => {
     setLoading(true);
@@ -61,40 +55,8 @@ export function CategoryManagementClient() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginLoading(true);
-    setError(null);
-
-    try {
-      const data = await apiClient.post<any>(`/auth/login`, { usernameOrEmail: loginUser, password: loginPass });
-      const token = data.accessToken || data.token;
-
-      if (token) {
-        localStorage.setItem("edition_access_token", token);
-        setAuthToken(token);
-        setShowLoginModal(false);
-      } else {
-        throw new Error("No token returned from login server");
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed");
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
-  const getAuthHeaders = () => {
-    const token = authToken || (typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null);
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-  };
-
   const openCreateModal = () => {
-    const token = authToken || (typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null);
-    if (!token) {
+    if (!isSignedIn) {
       setShowLoginModal(true);
       return;
     }
@@ -109,8 +71,7 @@ export function CategoryManagementClient() {
   };
 
   const openEditModal = (category: Category) => {
-    const token = authToken || (typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null);
-    if (!token) {
+    if (!isSignedIn) {
       setShowLoginModal(true);
       return;
     }
@@ -165,8 +126,7 @@ export function CategoryManagementClient() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    const token = authToken || (typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null);
-    if (!token) {
+    if (!isSignedIn) {
       setShowLoginModal(true);
       return;
     }
@@ -202,7 +162,7 @@ export function CategoryManagementClient() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {authToken ? (
+          {isSignedIn ? (
             <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
               <Key className="h-3 w-3" /> Admin Authenticated
             </span>
@@ -409,38 +369,16 @@ export function CategoryManagementClient() {
               <h2 className="text-base font-bold text-slate-900 font-heading">Admin Authentication Login</h2>
             </div>
             <p className="text-xs text-slate-500">
-              Please authenticate to create, edit, or reorder categories. Default editor account: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-800">editor</code>
+              Your session has ended. Please sign in again to create, edit, or reorder categories.
             </p>
-            <form onSubmit={handleAdminLogin} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Username / Email</label>
-                <input
-                  type="text"
-                  required
-                  value={loginUser}
-                  onChange={(e) => setLoginUser(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-red-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Password</label>
-                <input
-                  type="password"
-                  required
-                  value={loginPass}
-                  onChange={(e) => setLoginPass(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-xl bg-slate-50 focus:outline-none focus:border-red-500"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-                <Button type="button" variant="ghost" size="sm" onClick={() => setShowLoginModal(false)} disabled={loginLoading} className="text-slate-500 text-xs">
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loginLoading} size="sm" className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-xs">
-                  {loginLoading ? "Authenticating..." : "Sign In & Proceed"}
-                </Button>
-              </div>
-            </form>
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowLoginModal(false)} className="text-slate-500 text-xs">
+                Cancel
+              </Button>
+              <Button type="button" size="sm" onClick={() => { window.location.href = "/login"; }} className="bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-xs">
+                Go to Sign In
+              </Button>
+            </div>
           </div>
         </div>
       )}

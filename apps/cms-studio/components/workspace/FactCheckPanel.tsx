@@ -34,11 +34,6 @@ export function FactCheckPanel({ articleId, onClaimsUpdated }: FactCheckPanelPro
   const [urlOrFilepath, setUrlOrFilepath] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") return localStorage.getItem("edition_access_token");
-    return null;
-  };
-
   const fetchEvidence = useCallback(async () => {
     if (!articleId) return;
     setLoading(true);

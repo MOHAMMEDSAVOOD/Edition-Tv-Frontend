@@ -14,7 +14,7 @@ export interface BookmarkStatusDto {
 export const savedArticlesRepository = {
   async getSavedArticles(): Promise<SavedArticleEntityDto[]> {
     try {
-      if (!apiClient.getAccessToken()) return [];
+      if (!apiClient.isAuthenticated()) return [];
       return await apiClient.get<SavedArticleEntityDto[]>("/bookmarks");
     } catch {
       return [];
@@ -31,7 +31,7 @@ export const savedArticlesRepository = {
 
   async checkIsSaved(articleId: string): Promise<boolean> {
     try {
-      if (!apiClient.getAccessToken()) return false;
+      if (!apiClient.isAuthenticated()) return false;
       const res = await apiClient.get<BookmarkStatusDto>(`/bookmarks/check/${articleId}`);
       return res?.saved || false;
     } catch {

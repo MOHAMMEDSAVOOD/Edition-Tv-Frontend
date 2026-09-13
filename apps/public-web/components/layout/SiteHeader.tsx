@@ -194,7 +194,7 @@ export function SiteHeader() {
             </div>
           </div>
           <Link 
-            href="/login" 
+            href="/auth/login" 
             onClick={() => setMobileOpen(false)}
             className="block w-full py-2 bg-primary text-primary-foreground text-center text-sm font-bold rounded-sm tracking-wide"
           >

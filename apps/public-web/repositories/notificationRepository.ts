@@ -14,7 +14,7 @@ export interface NotificationDto {
 export const notificationRepository = {
   async getNotifications(): Promise<NotificationDto[]> {
     try {
-      if (!apiClient.getAccessToken()) return [];
+      if (!apiClient.isAuthenticated()) return [];
       return await apiClient.get<NotificationDto[]>("/notifications");
     } catch {
       return [];
@@ -23,7 +23,7 @@ export const notificationRepository = {
 
   async getUnreadNotifications(): Promise<NotificationDto[]> {
     try {
-      if (!apiClient.getAccessToken()) return [];
+      if (!apiClient.isAuthenticated()) return [];
       return await apiClient.get<NotificationDto[]>("/notifications/unread");
     } catch {
       return [];
@@ -32,7 +32,7 @@ export const notificationRepository = {
 
   async markAsRead(id: string): Promise<void> {
     try {
-      if (!apiClient.getAccessToken()) return;
+      if (!apiClient.isAuthenticated()) return;
       await apiClient.put<void>(`/notifications/${id}/read`, {});
     } catch {
       // Ignore

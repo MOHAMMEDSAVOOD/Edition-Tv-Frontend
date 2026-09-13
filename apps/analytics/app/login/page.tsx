@@ -2,17 +2,29 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, User, Eye, EyeOff, ArrowRight, BarChart3, AlertCircle, CheckCircle2 } from "lucide-react";
-import { authService } from "@edition/auth";
+import { Lock, Mail, Eye, EyeOff, ArrowRight, BarChart3, AlertCircle, CheckCircle2 } from "lucide-react";
+import { GoogleIcon, STAFF_ROLES, authService, ensureAppAccess } from "@edition/auth";
+
+const APP_NAME = "Analytics";
+const ALLOWED_ROLES = STAFF_ROLES;
 
 export default function AnalyticsLoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const onSignedIn = () => {
+    setSuccess(true);
+    setTimeout(() => {
+      router.push("/");
+      router.refresh();
+    }, 500);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,18 +32,31 @@ export default function AnalyticsLoginPage() {
     setError(null);
 
     try {
-      await authService.login({ username, password });
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/");
-        router.refresh();
-      }, 500);
+      const result = await authService.login(email, password);
+      await ensureAppAccess(result.profile, ALLOWED_ROLES, APP_NAME);
+      onSignedIn();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoogle = async () => {
+    setGoogleLoading(true);
+    setError(null);
+    try {
+      const result = await authService.loginWithGoogle();
+      await ensureAppAccess(result.profile, ALLOWED_ROLES, APP_NAME);
+      onSignedIn();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed.");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const busy = loading || googleLoading;
 
   return (
     <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex items-center justify-center p-6 font-sans">
@@ -60,34 +85,34 @@ export default function AnalyticsLoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
           <div>
-            <label className="text-xs font-semibold text-slate-400 block mb-1.5">Admin Handle</label>
+            <label htmlFor="edition_analytics_email" className="text-xs font-semibold text-slate-400 block mb-1.5">Email</label>
             <div className="relative">
-              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               <input
-                type="text"
-                name="edition_analytics_user"
-                id="edition_analytics_user"
-                autoComplete="off"
+                type="email"
+                name="email"
+                id="edition_analytics_email"
+                autoComplete="email"
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username or email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
                 className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 text-white rounded-xl pl-10 pr-4 py-3 text-sm outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-400 block mb-1.5">Password</label>
+            <label htmlFor="edition_analytics_pass" className="text-xs font-semibold text-slate-400 block mb-1.5">Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
               <input
                 type={showPassword ? "text" : "password"}
-                name="edition_analytics_pass"
+                name="password"
                 id="edition_analytics_pass"
-                autoComplete="new-password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -97,6 +122,7 @@ export default function AnalyticsLoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -106,13 +132,29 @@ export default function AnalyticsLoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 uppercase tracking-wider text-xs shadow-lg shadow-emerald-600/30"
+            disabled={busy}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 uppercase tracking-wider text-xs shadow-lg shadow-emerald-600/30 disabled:opacity-50"
           >
             {loading ? "Authenticating..." : "Enter Telemetry Portal"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
+
+        <div className="flex items-center gap-3 text-[10px] font-mono uppercase text-slate-500">
+          <span className="h-px flex-1 bg-slate-800" />
+          <span>or</span>
+          <span className="h-px flex-1 bg-slate-800" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogle}
+          disabled={busy}
+          className="w-full bg-slate-950 hover:bg-slate-800 text-slate-100 font-bold py-3 rounded-xl border border-slate-800 transition flex items-center justify-center gap-2.5 text-xs disabled:opacity-50"
+        >
+          <GoogleIcon className="h-4 w-4" />
+          <span>{googleLoading ? "Waiting for Google..." : "Continue with Google"}</span>
+        </button>
       </div>
     </div>
   );

@@ -1,23 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Search, Bell, LogOut, Server } from "lucide-react";
+import { displayNameOf, useAuth } from "@edition/auth";
 import { authService } from "@/services/authService";
 import { AdminAccountSwitcher } from "@/components/auth/AdminAccountSwitcher";
 
 export function AdminTopNav() {
   const [cluster, setCluster] = useState("us-east-1-prod");
-  const [username, setUsername] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("edition_username");
-      if (stored) setUsername(stored);
-    }
-  }, []);
+  const { user, profile } = useAuth();
+  const username = displayNameOf(profile, user?.displayName || user?.email || "");
 
   const handleLogout = () => {
-    authService.logout();
+    void authService.logout();
   };
 
   return (
@@ -27,7 +22,7 @@ export function AdminTopNav() {
         <div className="truncate">
           <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 block leading-tight">Welcome 👋</span>
           <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight block capitalize truncate font-heading">
-            {username === "admin" ? "Platform Admin" : username}
+            {username || "Platform Admin"}
           </span>
         </div>
 
@@ -42,7 +37,7 @@ export function AdminTopNav() {
         </div>
       </div>
 
-      {/* Right: Actions, Account Switcher & Logout */}
+      {/* Right: Actions, Account Menu & Logout */}
       <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Environment Cluster Pill */}
         <div className="hidden lg:flex items-center gap-1.5 bg-slate-100 border border-slate-200 rounded-full px-3 py-1 text-xs font-mono">
@@ -66,7 +61,7 @@ export function AdminTopNav() {
           <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-600 rounded-full ring-2 ring-white animate-pulse" />
         </button>
 
-        {/* Account Switcher */}
+        {/* Account Menu */}
         <AdminAccountSwitcher />
 
         {/* Logout Button */}

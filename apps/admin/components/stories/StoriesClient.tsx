@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@edition/auth";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -84,7 +85,8 @@ export function StoriesClient() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const { user } = useAuth();
+  const isSignedIn = !!user;
 
   // Filters
   const [statusFilter, setStatusFilter] = useState("");
@@ -100,12 +102,6 @@ export function StoriesClient() {
 
   // Action state
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    setAuthToken(stored);
-    apiClient.setAccessToken(stored);
-  }, []);
 
   // Debounce search input
   useEffect(() => {
@@ -165,7 +161,7 @@ export function StoriesClient() {
   // Authorization headers are automatically handled by apiClient
 
   const handlePublish = async (story: StoryItem) => {
-    if (!authToken) return alert("Login required to publish.");
+    if (!isSignedIn) return alert("Login required to publish.");
     setActionLoading(story.id);
     try {
       // Transition status chain if needed
@@ -194,7 +190,7 @@ export function StoriesClient() {
   };
 
   const handleUnpublish = async (story: StoryItem) => {
-    if (!authToken) return alert("Login required to unpublish.");
+    if (!isSignedIn) return alert("Login required to unpublish.");
     if (!confirm(`Unpublish "${story.headline}" and revert to DRAFT?`)) return;
     setActionLoading(story.id);
     try {
@@ -210,7 +206,7 @@ export function StoriesClient() {
   };
 
   const handleArchive = async (story: StoryItem) => {
-    if (!authToken) return alert("Login required.");
+    if (!isSignedIn) return alert("Login required.");
     if (!confirm(`Archive "${story.headline}"?`)) return;
     setActionLoading(story.id);
     try {
@@ -225,7 +221,7 @@ export function StoriesClient() {
   };
 
   const handleDelete = async (story: StoryItem) => {
-    if (!authToken) return alert("Login required.");
+    if (!isSignedIn) return alert("Login required.");
     if (!confirm(`Permanently delete "${story.headline}"? This cannot be undone.`)) return;
     setActionLoading(story.id);
     try {
