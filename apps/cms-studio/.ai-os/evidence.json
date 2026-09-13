@@ -1,0 +1,10 @@
+[
+  {
+    "evidence_id": "ev-1789298500",
+    "command": "npx pnpm build && npx pnpm lint",
+    "exit_code": 0,
+    "output_summary": "omponents/workspace/StoryBlockComposer.tsx\n238:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element\n\ninfo  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules\n",
+    "passed": true,
+    "timestamp": "2026-09-13T11:21:40.730406+00:00"
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "task_id": "task-1789297899",
+  "title": "Lead Management Dashboard",
+  "description": "Create a dashboard with filtering, pagination, and role-based access for lead management.",
+  "current_phase": "SHIP",
+  "autonomy_level": 1,
+  "files_targeted": [],
+  "files_modified": [],
+  "skills_loaded": [],
+  "evidence": [],
+  "verification_status": {
+    "IMPLEMENTED": [],
+    "TESTED": [],
+    "VERIFIED": [],
+    "NOT_VERIFIED": [],
+    "KNOWN_RISKS": []
+  },
+  "created_at": "2026-09-13T11:11:39.062119+00:00",
+  "updated_at": "2026-09-13T11:22:14.958967+00:00"
+}

@@ -14,11 +14,13 @@ if (fs.existsSync(rootEnvPath)) {
   }
 }
 
+const DEFAULT_BACKEND_URL = "https://api.editiontv.com";
+
 const rawApiUrl =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.INTERNAL_API_URL ||
-  "";
+  DEFAULT_BACKEND_URL;
 
 const backendOrigin = rawApiUrl.replace(/\/api\/v1\/?$/, "");
 

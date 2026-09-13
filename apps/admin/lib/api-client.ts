@@ -29,7 +29,7 @@ function getApiBaseUrl(): string {
   if (envUrl) {
     return envUrl;
   }
-  return "/api/v1";
+  return "https://api.editiontv.com/api/v1";
 }
 
 

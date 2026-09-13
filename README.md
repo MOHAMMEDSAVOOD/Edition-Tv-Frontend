@@ -41,6 +41,8 @@ frontend/
 | `npm run dev:admin` | Start admin console dev server | http://localhost:5006 |
 | `npm run build:all` | Build all 7 applications | — |
 | `npm run lint:all` | Lint all 7 applications | — |
+| `pnpm --filter <app> build:cf` | Build an app for Cloudflare (e.g. `@edition/admin`) | — |
+| `pnpm --filter <app> deploy:cf` | Deploy an app to Cloudflare (e.g. `@edition/public-web`) | — |
 
 ## Shared Package Imports
 
@@ -55,8 +57,9 @@ import type { ArticleFeedItem } from "@edition/types";
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 15.1 (App Router) with React 19
+- **Deployment**: Cloudflare Workers/Pages (via OpenNext)
 - **Language**: TypeScript 5
-- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **Styling**: Tailwind CSS 3.4 + shadcn/ui
 - **Backend**: Spring Boot 3 @ `https://api.editiontv.com/api/v1`
 

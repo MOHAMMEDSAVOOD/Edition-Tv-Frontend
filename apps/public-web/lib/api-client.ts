@@ -50,6 +50,8 @@ export class ApiError extends Error {
  * falls back to NEXT_PUBLIC_API_BASE_URL for local development.
  * Never exposed to the browser.
  */
+const DEFAULT_API_BASE_URL = "https://api.editiontv.com/api/v1";
+
 function getClientApiBaseUrl(): string {
   const envUrl =
     process.env.NEXT_PUBLIC_API_URL ||
@@ -59,7 +61,7 @@ function getClientApiBaseUrl(): string {
   if (envUrl) {
     return envUrl;
   }
-  return "/api/v1";
+  return DEFAULT_API_BASE_URL;
 }
 
 function getServerApiBaseUrl(): string {
@@ -71,7 +73,7 @@ function getServerApiBaseUrl(): string {
   if (envUrl) {
     return envUrl;
   }
-  return "/api/v1";
+  return DEFAULT_API_BASE_URL;
 }
 
 
