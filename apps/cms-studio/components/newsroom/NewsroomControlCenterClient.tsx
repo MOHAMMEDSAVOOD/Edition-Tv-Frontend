@@ -139,7 +139,7 @@ export function NewsroomControlCenterClient() {
   const [showConvertModal, setShowConvertModal] = useState<boolean>(false);
 
   // Form states
-  const [assignUser, setAssignUser] = useState<string>("reporter.desk@editiontv.com");
+  const [assignUser, setAssignUser] = useState<string>("");
   const [assignDesk, setAssignDesk] = useState<string>("desk-001");
   const [triageNotes, setTriageNotes] = useState<string>("");
 
@@ -147,7 +147,7 @@ export function NewsroomControlCenterClient() {
   const [convertSummary, setConvertSummary] = useState<string>("");
   const [convertBody, setConvertBody] = useState<string>("");
   const [convertDeskId, setConvertDeskId] = useState<string>("desk-001");
-  const [convertReporterId, setConvertReporterId] = useState<string>("reporter.lead@editiontv.com");
+  const [convertReporterId, setConvertReporterId] = useState<string>("");
 
   const fetchCandidates = useCallback(async () => {
     setLoading(true);

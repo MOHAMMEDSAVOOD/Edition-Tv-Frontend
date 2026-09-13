@@ -40,7 +40,6 @@ export function UserManagementClient() {
     name: "",
     username: "",
     email: "",
-    password: "",
     role: "EDITOR",
     status: "ACTIVE",
   });
@@ -86,8 +85,7 @@ export function UserManagementClient() {
           name: "",
           username: "",
           email: "",
-          password: "",
-          role: "EDITOR",
+                role: "EDITOR",
           status: "ACTIVE",
         });
         showToast(`Successfully created user ${created.name} (${created.role})`);
@@ -380,7 +378,7 @@ export function UserManagementClient() {
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-red-600" />
-                <h3 className="text-sm font-extrabold text-slate-900 font-heading">Create User / Admin Account</h3>
+                <h3 className="text-sm font-extrabold text-slate-900 font-heading">Pre-register User (signs in with Firebase)</h3>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -391,6 +389,9 @@ export function UserManagementClient() {
             </div>
 
             <form onSubmit={handleCreateUser} className="space-y-3">
+              <p className="text-[11px] text-slate-500 font-mono">
+                No password is set here. The person signs in with Firebase (email/password or Google) using this email and is linked to this record and role on their first request.
+              </p>
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1 font-mono">
                   Full Name <span className="text-red-600">*</span>
@@ -428,20 +429,6 @@ export function UserManagementClient() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="e.g. savood@edition.tv"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-500 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1 font-mono">
-                  Initial Password <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="••••••••••••"
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-red-500 font-mono"
                 />
               </div>
