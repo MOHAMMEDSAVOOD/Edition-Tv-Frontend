@@ -30,7 +30,10 @@ function getApiBaseUrl(): string {
     return envUrl;
   }
   // Production Base URL:
-  return "https://api.editiontv.com/api/v1";
+  return "https://api1.editiontv.com/api/v1";
+  // Alternative production URL:
+  // return "https://api.editiontv.com/api/v1";
+  // return "https://api1.edition.tv/api/v1";
   // Local Backend for testing:
   // return "http://localhost:8080/api/v1";
 }
