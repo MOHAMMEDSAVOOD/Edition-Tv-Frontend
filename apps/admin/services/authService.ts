@@ -12,16 +12,20 @@ export interface LoginResponse {
 export const authService = {
   async login(usernameOrEmail: string, password: string): Promise<LoginResponse> {
     try {
+      apiClient.setAccessToken(null);
+      const trimmed = usernameOrEmail.trim();
       const data = await apiClient.post<LoginResponse>("/auth/login", {
-        usernameOrEmail,
-        username: usernameOrEmail,
-        email: usernameOrEmail,
+        usernameOrEmail: trimmed,
         password,
       });
       if (data.accessToken) {
         if (typeof window !== "undefined") {
           localStorage.setItem("edition_access_token", data.accessToken);
-          localStorage.setItem("edition_username", usernameOrEmail);
+          localStorage.setItem("edition_username", trimmed);
+          localStorage.setItem(
+            "edition_auth_session",
+            JSON.stringify({ username: trimmed, token: data.accessToken, roles: data.role ? [data.role] : [] })
+          );
           document.cookie = `edition_access_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
           apiClient.setAccessToken(data.accessToken);
         }

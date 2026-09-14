@@ -204,9 +204,9 @@ class ApiClient {
           }
         }
         if (!this.accessToken) {
-          const legacyToken = localStorage.getItem("accessToken");
-          if (legacyToken) {
-            this.accessToken = legacyToken;
+          const directToken = localStorage.getItem("edition_access_token") || localStorage.getItem("accessToken");
+          if (directToken) {
+            this.accessToken = directToken;
           }
         }
       } catch {

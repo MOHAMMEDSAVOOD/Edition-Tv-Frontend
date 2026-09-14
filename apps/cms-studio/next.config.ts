@@ -14,7 +14,7 @@ if (fs.existsSync(rootEnvPath)) {
   }
 }
 
-const DEFAULT_BACKEND_URL = "https://api.editiontv.com";
+const DEFAULT_BACKEND_URL = "https://api1.editiontv.com";
 
 const rawApiUrl =
   process.env.NEXT_PUBLIC_API_URL ||

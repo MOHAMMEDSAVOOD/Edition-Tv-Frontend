@@ -81,18 +81,24 @@ export const authRepository = {
 
     for (const candidate of candidates) {
       try {
+        apiClient.setAccessToken(null);
         const raw = await apiClient.post<BackendAuthResponse>("/auth/login", {
           usernameOrEmail: candidate,
           password,
         });
 
-        if (typeof window !== "undefined" && raw.accessToken) {
-          localStorage.setItem("edition_access_token", raw.accessToken);
-          document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax; Secure`;
-        }
-
         const userRoles = raw.roles || parseJwtRoles(raw.accessToken);
         const username = raw.username || parseJwtUsername(raw.accessToken, candidate);
+
+        if (typeof window !== "undefined" && raw.accessToken) {
+          localStorage.setItem("edition_access_token", raw.accessToken);
+          localStorage.setItem(
+            "edition_auth_session",
+            JSON.stringify({ username, token: raw.accessToken, roles: userRoles })
+          );
+          document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax; Secure`;
+          apiClient.setAccessToken(raw.accessToken);
+        }
 
         return {
           token: raw.accessToken,

@@ -50,6 +50,15 @@ class ApiClient {
   public getAccessToken(): string | null {
     if (!this.accessToken && typeof window !== "undefined") {
       this.accessToken = localStorage.getItem("edition_access_token");
+      if (!this.accessToken) {
+        try {
+          const sessionRaw = localStorage.getItem("edition_auth_session");
+          if (sessionRaw) {
+            const session = JSON.parse(sessionRaw);
+            if (session?.token) this.accessToken = session.token;
+          }
+        } catch {}
+      }
     }
     return this.accessToken;
   }
@@ -60,8 +69,15 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
+    const isPublicAuthEndpoint =
+      endpoint.startsWith("/auth/login") ||
+      endpoint.startsWith("/auth/register") ||
+      endpoint.startsWith("/auth/forgot-password") ||
+      endpoint.startsWith("/auth/verify-otp") ||
+      endpoint.startsWith("/auth/reset-password");
+
     const token = this.getAccessToken();
-    if (token) {
+    if (token && !isPublicAuthEndpoint) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
