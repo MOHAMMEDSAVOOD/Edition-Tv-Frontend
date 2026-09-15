@@ -19,22 +19,8 @@ export default function AdvertisePage() {
         </p>
       </div>
 
-      <section className="mb-16">
-        <SectionDivider label="Audience Insights" />
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { label: "Monthly Unique Readers", value: "94M+" },
-            { label: "Executive & C-Suite Readers", value: "38%" },
-            { label: "Average Session Duration", value: "4m 12s" },
-            { label: "Newsletter Subscribers", value: "1.2M+" },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-card border border-border rounded-sm p-6 text-center space-y-2">
-              <div className="text-3xl font-extrabold text-primary font-mono">{stat.value}</div>
-              <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* TODO: restore an audience section once real, verifiable reach figures are available.
+          It previously advertised invented readership numbers to prospective advertisers. */}
 
       <section className="mb-16">
         <SectionDivider label="Advertising Formats" />

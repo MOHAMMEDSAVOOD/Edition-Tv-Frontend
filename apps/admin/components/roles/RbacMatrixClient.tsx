@@ -56,10 +56,10 @@ export function RbacMatrixClient() {
       <div className="bg-white border border-slate-200/80 p-5 rounded-2xl flex items-center justify-between shadow-2xs">
         <div>
           <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2 font-heading">
-            <ShieldCheck className="h-4 w-4 text-red-600" /> Dynamic Role-Based Access Control Matrix
+            <ShieldCheck className="h-4 w-4 text-red-600" /> Roles & Permission Registry
           </h3>
           <p className="text-slate-500 text-[11px] font-mono mt-0.5">
-            Live permission registry enforced across Spring Security and Keycloak OAuth2 scopes.
+            Roles defined in the backend and the permission keys they can be granted.
           </p>
         </div>
         <button
@@ -78,19 +78,77 @@ export function RbacMatrixClient() {
         </div>
       )}
 
-      {/* Permissions Matrix */}
+      {/* Roles defined in the backend */}
       <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+        <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+          Roles
+        </div>
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+            <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+              <th className="py-3.5 px-4">Role</th>
+              <th className="py-3.5 px-4">Description</th>
+              <th className="py-3.5 px-4">Type</th>
+              <th className="py-3.5 px-4 text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {isLoading && roles.length === 0 ? (
+              [1, 2, 3].map((i) => (
+                <tr key={i} className="animate-pulse">
+                  <td className="py-3.5 px-4"><div className="h-4 w-28 bg-slate-200 rounded-full" /></td>
+                  <td className="py-3.5 px-4"><div className="h-4 w-48 bg-slate-200 rounded-full" /></td>
+                  <td className="py-3.5 px-4"><div className="h-4 w-16 bg-slate-200 rounded-full" /></td>
+                  <td className="py-3.5 px-4 text-right"><div className="h-4 w-16 bg-slate-200 rounded-full ml-auto" /></td>
+                </tr>
+              ))
+            ) : roles.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-8 text-center text-slate-400 font-mono">
+                  No roles configured in backend.
+                </td>
+              </tr>
+            ) : (
+              roles.map((r) => (
+                <tr key={r.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="py-3 px-4 font-mono text-[11px] font-bold text-red-600">{r.name}</td>
+                  <td className="py-3 px-4 text-slate-600">{r.description || "—"}</td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                      {r.isSystemRole ? "SYSTEM" : "CUSTOM"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <span
+                      className={cn(
+                        "px-2 py-0.5 rounded-full text-[10px] font-bold font-mono border",
+                        r.isActive
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-slate-100 text-slate-500 border-slate-200"
+                      )}
+                    >
+                      {r.isActive ? "ACTIVE" : "INACTIVE"}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Permission registry. The backend exposes no role-to-permission grant mapping, so the
+          registry is listed on its own rather than rendered as a matrix with invented grants. */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+        <div className="px-4 py-3 border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
+          Permission Registry
+        </div>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
               <th className="py-3.5 px-4">Permission Key</th>
               <th className="py-3.5 px-4">Module</th>
               <th className="py-3.5 px-4">Description</th>
-              {roles.map((r) => (
-                <th key={r.id} className="py-3.5 px-4 text-center">
-                  {r.name}
-                </th>
-              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -100,11 +158,14 @@ export function RbacMatrixClient() {
                   <td className="py-3.5 px-4"><div className="h-4 w-32 bg-slate-200 rounded-full" /></td>
                   <td className="py-3.5 px-4"><div className="h-4 w-20 bg-slate-200 rounded-full" /></td>
                   <td className="py-3.5 px-4"><div className="h-4 w-36 bg-slate-200 rounded-full" /></td>
-                  {roles.map((r) => (
-                    <td key={r.id} className="py-3.5 px-4 text-center"><div className="h-4 w-6 bg-slate-200 rounded-full mx-auto" /></td>
-                  ))}
                 </tr>
               ))
+            ) : permissions.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="p-8 text-center text-slate-400 font-mono">
+                  No permissions registered in backend.
+                </td>
+              </tr>
             ) : (
               permissions.map((p) => (
                 <tr key={p.key} className="hover:bg-slate-50/60 transition-colors">
@@ -115,11 +176,6 @@ export function RbacMatrixClient() {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-slate-600">{p.description}</td>
-                  {roles.map((r) => (
-                    <td key={r.id} className="py-3 px-4 text-center font-bold text-emerald-600">
-                      ✓
-                    </td>
-                  ))}
                 </tr>
               ))
             )}

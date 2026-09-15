@@ -101,15 +101,15 @@ export function SearchClient({ initialQuery, initialCategory, initialArticles }:
       filtered = filtered.filter((art) => art.category.toLowerCase() === category.toLowerCase());
     }
 
-    // Basic sorting logic (mock implementation for demonstration)
+    // "Relevant" keeps the backend's own ordering, which is already relevance-ranked for a search.
     if (sortBy === "relevant" && hasSearched) {
-      // If we had a score from backend, we could sort by it here
-      // But assuming backend already returns sorted by relevance if it's a search
-      return filtered; 
+      return filtered;
     }
 
-    // Default to 'latest' (mocking by reversing just to show change if needed, but usually we just return as is)
-    return filtered;
+    // "Latest" sorts by publish date rather than leaving the control inert.
+    return [...filtered].sort(
+      (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
   }, [searchResults, category, sortBy, hasSearched]);
 
   return (

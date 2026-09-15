@@ -9,14 +9,9 @@ interface ResearchNote {
   updated: string;
 }
 
-const INITIAL_NOTES: ResearchNote[] = [
-  { id: "r-1", topic: "Zurich Quantum Center Thermal Shielding", content: "Key formula: Transmon qubit thermal noise reduction via aluminum superconducting shield. Contact: Dr. Lindqvist.", updated: "1h ago" },
-  { id: "r-2", topic: "EU Chip Export Regulation Timeline", content: "Regulatory vote passed 412-18. Effective date: October 1, 2026. Target chips: >500 TFLOPS FP16 accelerators.", updated: "3h ago" },
-  { id: "r-3", topic: "Methane Emission Transition Fund Mechanics", content: "200 billion USD pledge broken into 40% grants, 60% concessionary loans managed by World Bank group.", updated: "Yesterday" },
-];
-
 export function ResearchClient() {
-  const [notes, setNotes] = useState<ResearchNote[]>(INITIAL_NOTES);
+  // TODO: persist research notes to the backend. Empty until that endpoint is wired.
+  const [notes, setNotes] = useState<ResearchNote[]>([]);
   const [topic, setTopic] = useState("");
   const [content, setContent] = useState("");
 
@@ -26,7 +21,7 @@ export function ResearchClient() {
     const newNote: ResearchNote = {
       id: `r-${Date.now()}`,
       topic: topic.trim(),
-      content: content.trim() || "Research note placeholder...",
+      content: content.trim(),
       updated: "Just now",
     };
     setNotes([newNote, ...notes]);
@@ -42,6 +37,9 @@ export function ResearchClient() {
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
       {/* Notes Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {notes.length === 0 && (
+          <p className="p-6 text-center text-xs text-muted-foreground">No research notes.</p>
+        )}
         {notes.map((note) => (
           <div key={note.id} className="bg-card border border-border p-4 rounded-md space-y-2 relative group shadow-xs">
             <div className="flex items-center justify-between text-xs border-b border-border pb-2">

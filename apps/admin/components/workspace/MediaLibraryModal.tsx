@@ -51,13 +51,13 @@ export function MediaLibraryModal({
       const list: MediaAsset[] = (Array.isArray(data) ? data : []).map((m: { id: string; url?: string; storageUrl?: string; filename?: string; storageKey?: string; caption?: string; credit?: string; altText?: string; mediaType?: string; mimeType?: string; contentType?: string; filesize?: string; createdAt?: string }) => ({
         id: m.id,
         url: m.url || m.storageUrl || "",
-        filename: m.filename || m.storageKey || "image.jpg",
-        title: m.filename || m.caption || "Editorial Media",
+        filename: m.filename || m.storageKey || "—",
+        title: m.filename || m.caption || "—",
         caption: m.caption || "",
         credit: m.credit || "",
         altText: m.altText || "",
-        contentType: m.contentType || "image/jpeg",
-        filesize: m.filesize || "1.2 MB",
+        contentType: m.contentType || m.mimeType || "",
+        filesize: m.filesize || "",
       }));
       setMediaAssets(list);
     } catch (err: unknown) {
@@ -81,7 +81,7 @@ export function MediaLibraryModal({
     try {
       await apiClient.post<MediaAsset>(`/media`, {
         url: uploadUrl,
-        filename: uploadFilename || "uploaded_asset.jpg",
+        filename: uploadFilename || uploadUrl.split("/").pop() || "",
         caption: uploadCaption,
         credit: uploadCredit,
         altText: uploadAltText,

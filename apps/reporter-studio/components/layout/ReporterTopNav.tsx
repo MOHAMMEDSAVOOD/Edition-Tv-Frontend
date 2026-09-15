@@ -1,11 +1,27 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Wifi, Check, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export function ReporterTopNav() {
   const { theme, setTheme } = useTheme();
   const [isSaved] = useState(true);
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setUsername(localStorage.getItem("edition_username") ?? "");
+    }
+  }, []);
+
+  const initials = username
+    ? username
+        .split(/[\s._-]+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("")
+    : "";
 
   return (
     <header className="h-14 bg-card border-b border-border px-6 flex items-center justify-between flex-none z-20">
@@ -44,11 +60,10 @@ export function ReporterTopNav() {
 
         <div className="flex items-center gap-2 border-l border-border pl-3">
           <div className="h-7 w-7 rounded-full bg-primary/20 text-primary font-bold text-xs flex items-center justify-center border border-primary/30">
-            ER
+            {initials || "—"}
           </div>
           <div className="hidden md:block text-left text-xs">
-            <span className="font-bold text-foreground block leading-tight">Elena Rostova</span>
-            <span className="text-[10px] text-muted-foreground">Tech & Economy Desk</span>
+            <span className="font-bold text-foreground block leading-tight capitalize">{username || "—"}</span>
           </div>
         </div>
       </div>

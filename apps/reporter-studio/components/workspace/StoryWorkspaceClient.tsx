@@ -14,29 +14,19 @@ interface StoryWorkspaceClientProps {
 }
 
 export function StoryWorkspaceClient({ storyId }: StoryWorkspaceClientProps) {
-  const [headline, setHeadline] = useState(
-    "Quantum Computing Coherence Milestone Achieved in Superconducting Circuits"
-  );
-  const [deck, setDeck] = useState(
-    "Physicists at the Zurich Quantum Center maintain 500-microsecond qubit coherence, opening new pathways for fault-tolerant error correction."
-  );
-  const [bodyText, setBodyText] = useState(
-    `ZURICH — In what researchers are calling a pivotal advance for practical quantum computing, an international team of physicists has demonstrated a tenfold increase in superconducting qubit coherence times under operational thermal loads.\n\nThe findings, scheduled for publication in Physical Review X, address the primary bottleneck holding back commercial quantum scaling: rapid decoherence caused by environmental thermal fluctuations.\n\n"We are moving from proof-of-concept physics to true engineering reliability," said lead researcher Dr. Anna Lindqvist in an exclusive interview with Edition TV.`
-  );
+  // A reporter's workspace starts blank. It previously opened pre-filled with a complete
+  // fabricated article, including quotes attributed to named researchers who do not exist.
+  // TODO: load the real story identified by `storyId` from the backend.
+  const [headline, setHeadline] = useState("");
+  const [deck, setDeck] = useState("");
+  const [bodyText, setBodyText] = useState("");
   const [fontFamily, setFontFamily] = useState<"sans" | "serif" | "mono">("sans");
   const [activeRightTab, setActiveRightTab] = useState<"sources" | "notes">("sources");
 
   // Research / Sources state
-  const [sources] = useState([
-    { name: "Dr. Anna Lindqvist", affiliation: "Zurich Quantum Center", verified: true, quote: "Decoherence is no longer an insurmountable barrier." },
-    { name: "Dr. Aris Thorne", affiliation: "MIT Lincoln Laboratory", verified: true, quote: "The 500us benchmark exceeds our 2026 roadmap expectations." },
-  ]);
+  const [sources] = useState<{ name: string; affiliation: string; verified: boolean; quote: string }[]>([]);
 
-  const [notes, setNotes] = useState([
-    "Key stat: 500us coherence vs 50us legacy benchmark",
-    "Paper title: Thermal Shielding in Superconducting Transmon Architecture",
-    "Embargo lifts: Today at 17:00 EST",
-  ]);
+  const [notes, setNotes] = useState<string[]>([]);
 
   const [newNote, setNewNote] = useState("");
 
@@ -170,6 +160,9 @@ export function StoryWorkspaceClient({ storyId }: StoryWorkspaceClientProps) {
           <div className="p-4 flex-1 overflow-y-auto space-y-4 text-xs no-scrollbar">
             {activeRightTab === "sources" && (
               <div className="space-y-3">
+                {sources.length === 0 && (
+                  <p className="text-xs text-muted-foreground py-4 text-center">No sources added.</p>
+                )}
                 {sources.map((src, i) => (
                   <div key={i} className="p-3 bg-muted/30 border border-border rounded-md space-y-1">
                     <div className="flex items-center justify-between font-bold text-foreground">
@@ -207,6 +200,9 @@ export function StoryWorkspaceClient({ storyId }: StoryWorkspaceClientProps) {
                 </form>
 
                 <div className="space-y-2">
+                  {notes.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-4 text-center">No research notes.</p>
+                  )}
                   {notes.map((note, i) => (
                     <div key={i} className="p-2.5 bg-muted/30 border border-border rounded text-xs text-foreground flex items-start gap-2">
                       <span className="text-primary font-bold">•</span>

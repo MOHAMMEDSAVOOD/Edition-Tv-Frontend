@@ -7,38 +7,16 @@ export const metadata = {
   description: "Explore career opportunities at Edition TV. We are hiring journalists, editors, engineers, and media professionals worldwide.",
 };
 
-const OPEN_POSITIONS = [
-  {
-    title: "Senior Investigative Journalist",
-    department: "Editorial",
-    location: "London, UK / Remote",
-    type: "Full-Time",
-  },
-  {
-    title: "Middle East Correspondent",
-    department: "International Desk",
-    location: "Dubai, UAE",
-    type: "Full-Time",
-  },
-  {
-    title: "Lead Frontend Engineer (Next.js & React)",
-    department: "Product & Technology",
-    location: "Remote",
-    type: "Full-Time",
-  },
-  {
-    title: "Video Producer & News Anchor",
-    department: "Media & Broadcast",
-    location: "New York, USA",
-    type: "Full-Time",
-  },
-  {
-    title: "Editorial Standards & Compliance Manager",
-    department: "Editorial Operations",
-    location: "London, UK",
-    type: "Full-Time",
-  },
-];
+interface OpenPosition {
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+}
+
+// TODO: populate with real open roles (or load them from an ATS). The page previously listed
+// five fabricated vacancies that readers could apply to.
+const OPEN_POSITIONS: OpenPosition[] = [];
 
 export default function CareersPage() {
   return (
@@ -60,7 +38,7 @@ export default function CareersPage() {
             {
               icon: Globe,
               title: "Global Reach",
-              desc: "Collaborate with correspondents in 42 countries serving 94 million readers.",
+              desc: "Collaborate with correspondents and editors across our global desks.",
             },
             {
               icon: Award,
@@ -92,6 +70,11 @@ export default function CareersPage() {
       <section className="mb-16">
         <SectionDivider label="Open Roles" />
         <div className="mt-6 space-y-4">
+          {OPEN_POSITIONS.length === 0 && (
+            <p className="bg-card border border-border rounded-sm p-6 text-sm text-muted-foreground">
+              There are no open roles listed right now.
+            </p>
+          )}
           {OPEN_POSITIONS.map((role) => (
             <div
               key={role.title}

@@ -17,19 +17,11 @@ const PRESETS = [
   "Summarize Executive Points",
 ];
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: "m-1",
-    sender: "assistant",
-    content: "Welcome to Edition TV AI Studio. Select an editorial preset below or type a prompt to research, fact-check, or draft story content with GPT-5 / Claude 3.7.",
-    timestamp: "18:00",
-  },
-];
-
 export function AiChatWorkbenchClient() {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSend = (textToSend?: string) => {
     const prompt = textToSend || input;
@@ -44,18 +36,12 @@ export function AiChatWorkbenchClient() {
 
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInput("");
-    setIsGenerating(true);
+    setIsGenerating(false);
 
-    setTimeout(() => {
-      const aiMsg: ChatMessage = {
-        id: `a-${Date.now()}`,
-        sender: "assistant",
-        content: `### Editorial Analysis Complete\n\n1. **Style Alignment**: Passed AP/Reuters standards.\n2. **Clarity**: 98/100.\n3. **Fact Verification**: All 4 entity citations matched verified knowledge base.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsGenerating(false);
-    }, 600);
+    // TODO: wire to a backend chat endpoint. Previously this returned a canned "fact verification
+    // passed" reply after a timer, which told editors their copy had been checked when no model
+    // had run. Refusing to answer is the only honest behaviour until the endpoint exists.
+    setError("The AI copilot is not connected to a model backend yet, so no response can be generated.");
   };
 
   return (
@@ -78,6 +64,12 @@ export function AiChatWorkbenchClient() {
 
       {/* Chat Stream Window */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+        {messages.length === 0 && !error && (
+          <p className="text-center text-muted-foreground font-mono text-[11px] py-8">
+            No messages yet.
+          </p>
+        )}
+
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -110,6 +102,12 @@ export function AiChatWorkbenchClient() {
         {isGenerating && (
           <div className="flex items-center gap-2 p-3 bg-muted/30 border border-border rounded-md text-xs text-purple-400 font-mono animate-pulse max-w-xs">
             <Sparkles className="h-4 w-4 animate-spin" /> Thinking & Generating Response...
+          </div>
+        )}
+
+        {error && (
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-md text-xs text-rose-400 font-mono max-w-3xl">
+            {error}
           </div>
         )}
       </div>

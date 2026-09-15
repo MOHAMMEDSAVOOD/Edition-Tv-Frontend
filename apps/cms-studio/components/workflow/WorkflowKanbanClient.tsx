@@ -13,14 +13,6 @@ interface KanbanItem {
   updated: string;
 }
 
-const INITIAL_KANBAN: KanbanItem[] = [
-  { id: "k-1", title: "Quantum Computing Qubit Breakthrough", author: "Priya Nair", category: "Science", stage: "DRAFT", updated: "2h ago" },
-  { id: "k-2", title: "EU Semiconductor Export Restrictions", author: "Marcus Vance", category: "Technology", stage: "REVIEW", updated: "4h ago" },
-  { id: "k-3", title: "Autonomous Vehicle Regulation Audit", author: "James Whitfield", category: "Politics", stage: "LEGAL", updated: "1d ago" },
-  { id: "k-4", title: "AI Executive Governance Standards", author: "Elena Rostova", category: "Technology", stage: "APPROVED", updated: "Just now" },
-  { id: "k-5", title: "Federal Reserve Interest Rate Decision", author: "Sarah Chen", category: "Business", stage: "PUBLISHED", updated: "3h ago" },
-];
-
 const COLUMNS: { key: KanbanItem["stage"]; label: string; color: string }[] = [
   { key: "DRAFT", label: "Draft Stories", color: "border-amber-500/40 text-amber-400" },
   { key: "REVIEW", label: "Editorial Review", color: "border-indigo-500/40 text-indigo-400" },
@@ -30,7 +22,7 @@ const COLUMNS: { key: KanbanItem["stage"]; label: string; color: string }[] = [
 ];
 
 export function WorkflowKanbanClient() {
-  const [items, setItems] = useState<KanbanItem[]>(INITIAL_KANBAN);
+  const [items, setItems] = useState<KanbanItem[]>([]);
 
   const moveStage = (id: string, nextStage: KanbanItem["stage"]) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, stage: nextStage } : item)));

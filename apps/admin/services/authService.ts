@@ -94,7 +94,7 @@ export const authService = {
       if (err instanceof Error && err.message.includes("Invalid admin email")) {
         throw err;
       }
-      // Fall through to legacy/mock fallback if Firebase is unreachable
+      // Fall through to the backend /auth/login path if Firebase is unreachable
     }
 
     // 2. Fallback: Direct backend /auth/login

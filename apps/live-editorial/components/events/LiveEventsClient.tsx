@@ -12,14 +12,9 @@ interface LiveEventItem {
   lastUpdate: string;
 }
 
-const INITIAL_EVENTS: LiveEventItem[] = [
-  { id: "ev-1", slug: "global-tech-summit", title: "Global Tech & Climate Policy Summit 2026", status: "ACTIVE", updatesCount: 42, lastUpdate: "2 mins ago" },
-  { id: "ev-2", slug: "fed-interest-rate-announcement", title: "Federal Reserve FOMC Rate Decision & Presser", status: "ACTIVE", updatesCount: 18, lastUpdate: "15 mins ago" },
-  { id: "ev-3", slug: "geneva-climate-plenary", title: "Geneva Plenary Methane Accord Reading", status: "PAUSED", updatesCount: 29, lastUpdate: "1 hour ago" },
-];
-
 export function LiveEventsClient() {
-  const [events, setEvents] = useState<LiveEventItem[]>(INITIAL_EVENTS);
+  // TODO: load live events from the backend. Empty until that endpoint is wired.
+  const [events, setEvents] = useState<LiveEventItem[]>([]);
 
   const toggleStatus = (id: string) => {
     setEvents((prev) =>
@@ -43,6 +38,9 @@ export function LiveEventsClient() {
         </div>
 
         <div className="divide-y divide-border">
+          {events.length === 0 && (
+            <p className="p-6 text-center text-muted-foreground text-[11px]">No live events.</p>
+          )}
           {events.map((ev) => (
             <div key={ev.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/20 transition-colors">
               <div className="space-y-1">

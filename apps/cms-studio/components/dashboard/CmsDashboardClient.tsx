@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
-import { 
-  FileText, 
-  Layers, 
-  Image as ImageIcon, 
-  MessageSquare, 
-  TrendingUp, 
-  TrendingDown, 
-  ExternalLink
+import {
+  FileText,
+  Layers,
+  Image as ImageIcon,
+  MessageSquare,
+  AlertCircle,
+  RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 
 interface StorySummary {
@@ -18,7 +18,15 @@ interface StorySummary {
   headline: string;
   category: string;
   status: string;
-  createdAt: string;
+  createdAt: string | null;
+}
+
+interface ModerationCase {
+  id: string;
+  commentId: string;
+  status: string;
+  toxicityScore: number;
+  createdAt: string | null;
 }
 
 interface RawArticleItem {
@@ -30,257 +38,249 @@ interface RawArticleItem {
   createdAt?: string;
 }
 
-const INITIAL_STORIES: StorySummary[] = [
-  { id: "1", headline: "Career growth tips", category: "Tech", status: "Published", createdAt: "18 Mar" },
-  { id: "2", headline: "Top design tools", category: "Design", status: "Draft", createdAt: "18 Mar" },
-  { id: "3", headline: "AI in mentorship", category: "Tech", status: "Published", createdAt: "18 Mar" },
-  { id: "4", headline: "UI/UX case study", category: "Design", status: "Published", createdAt: "18 Mar" },
-];
+interface CmsStats {
+  totalPosts: number | null;
+  totalCategories: number | null;
+  mediaFiles: number | null;
+  pendingComments: number | null;
+}
+
+interface PipelineStats {
+  draft: number;
+  inReview: number;
+  approved: number;
+  scheduled: number;
+  published: number;
+  archived: number;
+}
+
+const EMPTY_STATS: CmsStats = {
+  totalPosts: null,
+  totalCategories: null,
+  mediaFiles: null,
+  pendingComments: null,
+};
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "—";
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+}
+
+function countOf(value: unknown): number | null {
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === "object") {
+    const page = value as { totalElements?: number; content?: unknown[] };
+    if (typeof page.totalElements === "number") return page.totalElements;
+    if (Array.isArray(page.content)) return page.content.length;
+  }
+  return null;
+}
+
+function StatCard({
+  label,
+  value,
+  icon,
+  accent,
+}: {
+  label: string;
+  value: number | null;
+  icon: React.ReactNode;
+  accent: string;
+}) {
+  return (
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-slate-500">{label}</span>
+        <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${accent}`}>{icon}</div>
+      </div>
+      <div className="mt-2 flex items-baseline">
+        <span className="text-2xl font-extrabold text-slate-900 font-serif">
+          {value === null ? "—" : value.toLocaleString("en-GB")}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function CmsDashboardClient() {
-  const [stories, setStories] = useState<StorySummary[]>(INITIAL_STORIES);
+  const [stories, setStories] = useState<StorySummary[]>([]);
+  const [moderation, setModeration] = useState<ModerationCase[]>([]);
+  const [stats, setStats] = useState<CmsStats>(EMPTY_STATS);
+  const [pipeline, setPipeline] = useState<PipelineStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalPosts: 560,
-    totalCategories: 102,
-    mediaFiles: 430,
-    pendingComments: 160,
-  });
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCmsData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    const [articleStats, categories, media, latest, pending] = await Promise.allSettled([
+      apiClient.get<Record<string, number>>("/articles/stats"),
+      apiClient.get<unknown>("/cms/categories"),
+      apiClient.get<unknown>("/media"),
+      apiClient.get<{ content?: RawArticleItem[] }>("/articles?size=6"),
+      apiClient.get<ModerationCase[]>("/moderation/comments?page=0&size=4"),
+    ]);
+
+    const next: CmsStats = { ...EMPTY_STATS };
+
+    if (articleStats.status === "fulfilled" && articleStats.value) {
+      const s = articleStats.value;
+      next.totalPosts = typeof s.total === "number" ? s.total : null;
+      setPipeline({
+        draft: s.draft ?? 0,
+        inReview: s.inReview ?? 0,
+        approved: s.approved ?? 0,
+        scheduled: s.scheduled ?? 0,
+        published: s.published ?? 0,
+        archived: s.archived ?? 0,
+      });
+    } else {
+      setPipeline(null);
+    }
+
+    if (categories.status === "fulfilled") next.totalCategories = countOf(categories.value);
+    if (media.status === "fulfilled") next.mediaFiles = countOf(media.value);
+
+    if (pending.status === "fulfilled" && Array.isArray(pending.value)) {
+      next.pendingComments = pending.value.length;
+      setModeration(
+        pending.value.map((c) => ({
+          id: c.id,
+          commentId: c.commentId,
+          status: c.status ?? "—",
+          toxicityScore: c.toxicityScore ?? 0,
+          createdAt: c.createdAt ?? null,
+        }))
+      );
+    } else {
+      setModeration([]);
+    }
+
+    setStats(next);
+
+    if (latest.status === "fulfilled" && latest.value) {
+      const content = Array.isArray(latest.value.content) ? latest.value.content : [];
+      setStories(
+        content.map((art) => ({
+          id: art.id,
+          headline: art.headline || art.title || "—",
+          category: art.category || "—",
+          status: art.status || "—",
+          createdAt: art.createdAt ?? null,
+        }))
+      );
+    } else {
+      setStories([]);
+    }
+
+    if (articleStats.status === "rejected" && latest.status === "rejected") {
+      setError("Failed to load CMS data from the backend API.");
+    }
+
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     fetchCmsData();
-  }, []);
+  }, [fetchCmsData]);
 
-  const fetchCmsData = async () => {
-    setLoading(true);
-    try {
-      const data = await apiClient.get<{ content?: RawArticleItem[]; totalElements?: number }>("/articles?size=6");
-      if (data) {
-        const content = Array.isArray(data.content) ? data.content : [];
-        if (content.length > 0) {
-          setStories(content.map((art: RawArticleItem) => ({
-            id: art.id,
-            headline: art.headline || art.title || "Untitled Article",
-            category: art.category || "News",
-            status: art.status || "PUBLISHED",
-            createdAt: art.createdAt ? new Date(art.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "18 Mar",
-          })));
-        }
-        if (typeof data.totalElements === "number") {
-          const total = data.totalElements;
-          setStats((prev) => ({ ...prev, totalPosts: total * 14 }));
-        }
-      }
-    } catch (e) {
-      console.warn("[CmsDashboard] API unreachable, using cached stats fallback:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const pipelineRows: { label: string; value: number }[] = pipeline
+    ? [
+        { label: "Draft", value: pipeline.draft },
+        { label: "In Review", value: pipeline.inReview },
+        { label: "Approved", value: pipeline.approved },
+        { label: "Scheduled", value: pipeline.scheduled },
+        { label: "Published", value: pipeline.published },
+        { label: "Archived", value: pipeline.archived },
+      ]
+    : [];
+  const pipelineMax = pipelineRows.reduce((max, r) => Math.max(max, r.value), 0);
 
   return (
     <div className="space-y-6 max-w-[1600px] w-full mx-auto font-sans pb-10">
-      
-      {/* 1. Top Stat Cards Row (4 Columns matching screenshot) */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-extrabold text-slate-900 font-serif">Content Overview</h2>
+        <button
+          onClick={fetchCmsData}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl transition text-xs font-semibold"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-red-600" : ""}`} /> Refresh
+        </button>
+      </div>
+
+      {error && (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl flex items-center gap-2 text-xs font-medium">
+          <AlertCircle className="h-4 w-4 flex-none text-rose-600" />
+          <span>{error}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Stat Card 1: Total Posts */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total Posts</span>
-            <div className="h-9 w-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
-              <FileText className="h-4.5 w-4.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold text-slate-900 font-serif">{stats.totalPosts}</span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <TrendingUp className="h-3 w-3" /> 40.35%
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Last 30 days</span>
-        </div>
-
-        {/* Stat Card 2: Total Categories */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total Categories</span>
-            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Layers className="h-4.5 w-4.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold text-slate-900 font-serif">{stats.totalCategories}</span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-              <TrendingDown className="h-3 w-3" /> 40.35%
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Last 30 days</span>
-        </div>
-
-        {/* Stat Card 3: Total Media Files */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Total Media Files</span>
-            <div className="h-9 w-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <ImageIcon className="h-4.5 w-4.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold text-slate-900 font-serif">{stats.mediaFiles}</span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <TrendingUp className="h-3 w-3" /> 40.35%
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Last 30 days</span>
-        </div>
-
-        {/* Stat Card 4: Pending Comments */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs hover:shadow-xs transition">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Pending Comments</span>
-            <div className="h-9 w-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <MessageSquare className="h-4.5 w-4.5" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-extrabold text-slate-900 font-serif">{stats.pendingComments}</span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              <TrendingUp className="h-3 w-3" /> 40.35%
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Last 30 days</span>
-        </div>
-
+        <StatCard
+          label="Total Posts"
+          value={stats.totalPosts}
+          accent="bg-red-50 text-red-600"
+          icon={<FileText className="h-4.5 w-4.5" />}
+        />
+        <StatCard
+          label="Total Categories"
+          value={stats.totalCategories}
+          accent="bg-blue-50 text-blue-600"
+          icon={<Layers className="h-4.5 w-4.5" />}
+        />
+        <StatCard
+          label="Media Assets"
+          value={stats.mediaFiles}
+          accent="bg-indigo-50 text-indigo-600"
+          icon={<ImageIcon className="h-4.5 w-4.5" />}
+        />
+        <StatCard
+          label="Comments Awaiting Moderation"
+          value={stats.pendingComments}
+          accent="bg-amber-50 text-amber-600"
+          icon={<MessageSquare className="h-4.5 w-4.5" />}
+        />
       </div>
 
-      {/* 2. Middle Row: 2 Interactive Charts (Matching Screenshot Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left Chart: Post Growth Histogram */}
-        <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-900 font-serif">Post Growth</h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="h-3 w-3 rounded-xs bg-red-600 inline-block" />
-                <span className="text-xs text-slate-500 font-medium">Total number of posts</span>
-              </div>
-            </div>
-            <select className="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none">
-              <option>6 months</option>
-              <option>12 months</option>
-            </select>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
+        <h3 className="text-base font-extrabold text-slate-900 font-serif">Content Pipeline</h3>
+        <p className="text-[11px] text-slate-500 mt-0.5">Article counts by workflow status.</p>
+
+        {pipelineRows.length === 0 ? (
+          <div className="py-8 text-center text-slate-400 font-mono text-xs">
+            {loading ? "Loading pipeline counts..." : "Pipeline counts unavailable."}
           </div>
-
-          {/* Bar Chart Visualization */}
-          <div className="pt-6 relative">
-            {/* Hover Tooltip Pill on February */}
-            <div className="absolute top-0 left-[22%] -translate-x-1/2 bg-slate-900 text-white text-[10px] font-mono px-2 py-1 rounded-md shadow-md flex items-center gap-1 z-10">
-              <span className="font-bold text-red-400">20 posts</span>
-            </div>
-
-            <div className="flex items-end justify-between gap-3 h-44 px-2 border-b border-slate-200 pb-2">
-              <div className="flex-1 flex flex-col items-center gap-1 group">
-                <div className="w-full bg-red-100 rounded-t-lg h-[40%] group-hover:bg-red-200 transition" />
-                <span className="text-xs text-slate-500 font-medium">Jan</span>
+        ) : (
+          <div className="mt-5 space-y-3">
+            {pipelineRows.map((row) => (
+              <div key={row.label} className="flex items-center gap-3">
+                <span className="w-24 shrink-0 text-xs font-semibold text-slate-600">{row.label}</span>
+                <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-red-600 rounded-full transition-all"
+                    style={{ width: pipelineMax > 0 ? `${(row.value / pipelineMax) * 100}%` : "0%" }}
+                  />
+                </div>
+                <span className="w-12 shrink-0 text-right text-xs font-bold text-slate-900 font-mono">
+                  {row.value.toLocaleString("en-GB")}
+                </span>
               </div>
-              <div className="flex-1 flex flex-col items-center gap-1 group">
-                <div className="w-full bg-red-600 rounded-t-lg h-[85%] shadow-md shadow-red-600/20 group-hover:bg-red-700 transition" />
-                <span className="text-xs font-bold text-slate-900">Feb</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1 group">
-                <div className="w-full bg-red-100 rounded-t-lg h-[35%] group-hover:bg-red-200 transition" />
-                <span className="text-xs text-slate-500 font-medium">Mar</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1 group">
-                <div className="w-full bg-red-100 rounded-t-lg h-[65%] group-hover:bg-red-200 transition" />
-                <span className="text-xs text-slate-500 font-medium">Apr</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1 group">
-                <div className="w-full bg-red-100 rounded-t-lg h-[30%] group-hover:bg-red-200 transition" />
-                <span className="text-xs text-slate-500 font-medium">May</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1 group">
-                <div className="w-full bg-red-100 rounded-t-lg h-[45%] group-hover:bg-red-200 transition" />
-                <span className="text-xs text-slate-500 font-medium">Jun</span>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
-
-        {/* Right Chart: Comments Trend (Curved Line Chart matching screenshot) */}
-        <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-extrabold text-slate-900 font-serif">Comments Trend</h3>
-            <select className="bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none">
-              <option>Last 15 days</option>
-              <option>Last 30 days</option>
-            </select>
-          </div>
-
-          {/* Legend Pills */}
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 mb-2">
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-emerald-500" /> Approved
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-amber-500" /> Pending
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-red-600" /> Spam / Rejected
-            </span>
-          </div>
-
-          {/* SVG Smooth Curved Multi-Line Chart */}
-          <div className="w-full h-44 pt-2">
-            <svg viewBox="0 0 500 150" className="w-full h-full overflow-visible">
-              {/* Grid Lines */}
-              <line x1="0" y1="30" x2="500" y2="30" stroke="#f1f5f9" strokeDasharray="4 4" />
-              <line x1="0" y1="75" x2="500" y2="75" stroke="#f1f5f9" strokeDasharray="4 4" />
-              <line x1="0" y1="120" x2="500" y2="120" stroke="#f1f5f9" strokeDasharray="4 4" />
-
-              {/* Green Line */}
-              <path
-                d="M0,140 C80,20 150,10 220,70 C290,120 370,30 500,70"
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="3"
-                strokeDasharray="6 4"
-              />
-
-              {/* Amber Line */}
-              <path
-                d="M0,140 C90,60 140,30 210,90 C280,110 380,50 500,110"
-                fill="none"
-                stroke="#f59e0b"
-                strokeWidth="3"
-                strokeDasharray="6 4"
-              />
-
-              {/* Red Line */}
-              <path
-                d="M0,140 C70,100 130,60 200,110 C270,130 360,60 500,120"
-                fill="none"
-                stroke="#dc2626"
-                strokeWidth="3"
-                strokeDasharray="6 4"
-              />
-            </svg>
-          </div>
-        </div>
-
+        )}
       </div>
 
-      {/* 3. Bottom Row: 2 Data Tables Grid (Matching Screenshot Layout) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left Table: Latest Posts */}
+        {/* Latest posts */}
         <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-extrabold text-slate-900 font-serif">Latest Posts</h3>
-            <Link href="/workspace" className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1">
-              <span>View All</span>
+            <Link href="/content" className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1">
+              <span>View All{stats.totalPosts !== null ? ` (${stats.totalPosts})` : ""}</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -290,29 +290,37 @@ export function CmsDashboardClient() {
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-mono uppercase text-[10px]">
                   <th className="pb-3 font-semibold">Title</th>
+                  <th className="pb-3 font-semibold">Category</th>
                   <th className="pb-3 font-semibold">Status</th>
                   <th className="pb-3 font-semibold text-right">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {loading ? (
+                {loading && stories.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-4 text-center text-slate-400 font-mono">Loading CMS stories...</td>
+                    <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      Loading posts...
+                    </td>
+                  </tr>
+                ) : stories.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      No posts found.
+                    </td>
                   </tr>
                 ) : (
-                  stories.map((st) => (
-                    <tr key={st.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3 font-bold text-slate-900 truncate max-w-[200px]">{st.headline}</td>
+                  stories.map((s) => (
+                    <tr key={s.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3 font-bold text-slate-900 max-w-[200px] truncate">{s.headline}</td>
+                      <td className="py-3 text-slate-600">
+                        <span className="bg-slate-100 px-2 py-0.5 rounded-md font-mono text-[10px]">{s.category}</span>
+                      </td>
                       <td className="py-3">
-                        <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
-                          st.status === "PUBLISHED" || st.status === "Published"
-                            ? "text-emerald-700 bg-emerald-50"
-                            : "text-amber-700 bg-amber-50"
-                        }`}>
-                          {st.status}
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-200 font-mono">
+                          {s.status}
                         </span>
                       </td>
-                      <td className="py-3 text-right text-slate-400 font-mono">{st.createdAt}</td>
+                      <td className="py-3 text-right text-slate-400 font-mono">{formatDate(s.createdAt)}</td>
                     </tr>
                   ))
                 )}
@@ -321,73 +329,54 @@ export function CmsDashboardClient() {
           </div>
         </div>
 
-        {/* Right Table: Recent Comments */}
+        {/* Moderation queue */}
         <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-extrabold text-slate-900 font-serif">Recent Comments</h3>
-            <span className="text-xs font-bold text-red-600 hover:text-red-700 cursor-pointer">
-              Moderate All
-            </span>
+            <h3 className="text-base font-extrabold text-slate-900 font-serif">Moderation Queue</h3>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-sans">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-mono uppercase text-[10px]">
-                  <th className="pb-3 font-semibold">Author</th>
-                  <th className="pb-3 font-semibold">Comment Preview</th>
-                  <th className="pb-3 font-semibold">Date</th>
-                  <th className="pb-3 font-semibold text-right">Action</th>
+                  <th className="pb-3 font-semibold">Comment</th>
+                  <th className="pb-3 font-semibold">Status</th>
+                  <th className="pb-3 font-semibold">Toxicity</th>
+                  <th className="pb-3 font-semibold text-right">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">Neha V.</td>
-                  <td className="py-3 text-slate-600 max-w-[170px] truncate">&quot;Great article on mentorship!&quot;</td>
-                  <td className="py-3 text-slate-400 font-mono">18 Mar</td>
-                  <td className="py-3 text-right">
-                    <span className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">
-                      View
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">Rohan S.</td>
-                  <td className="py-3 text-slate-600 max-w-[170px] truncate">&quot;Can you share more resources?&quot;</td>
-                  <td className="py-3 text-slate-400 font-mono">18 Mar</td>
-                  <td className="py-3 text-right">
-                    <span className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">
-                      View
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">Akshay M.</td>
-                  <td className="py-3 text-slate-600 max-w-[170px] truncate">&quot;This UI is amazing 🔥&quot;</td>
-                  <td className="py-3 text-slate-400 font-mono">18 Mar</td>
-                  <td className="py-3 text-right">
-                    <span className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">
-                      View
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-50/80 transition">
-                  <td className="py-3 font-bold text-slate-900">Priya K.</td>
-                  <td className="py-3 text-slate-600 max-w-[170px] truncate">&quot;Not sure I agree with this...&quot;</td>
-                  <td className="py-3 text-slate-400 font-mono">18 Mar</td>
-                  <td className="py-3 text-right">
-                    <span className="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer">
-                      View
-                    </span>
-                  </td>
-                </tr>
+                {loading && moderation.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      Loading moderation queue...
+                    </td>
+                  </tr>
+                ) : moderation.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      Nothing awaiting moderation.
+                    </td>
+                  </tr>
+                ) : (
+                  moderation.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3 font-mono text-slate-900 max-w-[160px] truncate">{c.commentId}</td>
+                      <td className="py-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-50 text-slate-700 border border-slate-200 font-mono">
+                          {c.status}
+                        </span>
+                      </td>
+                      <td className="py-3 font-mono text-slate-600">{(c.toxicityScore * 100).toFixed(1)}%</td>
+                      <td className="py-3 text-right text-slate-400 font-mono">{formatDate(c.createdAt)}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }
