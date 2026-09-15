@@ -24,7 +24,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { ArticleDetail } from "@/services/articleService";
-import { QRCodeSVG } from "./QRCodeSVG";
+import { ArticlePosterCanvas } from "@edition/ui/poster";
 import { getPosterTheme } from "./CategoryPosterTheme";
 import { SHARE_POSTER_TEMPLATE_BASE64 } from "./sharePosterTemplateBase64";
 
@@ -570,207 +570,22 @@ export function StorySharePosterModal({
                     }}
                   >
                     {/* CANONICAL 1024 × 1536 RENDERER (SINGLE SOURCE OF TRUTH FOR PREVIEW & EXPORT) */}
-                    <div
+                    <ArticlePosterCanvas
                       ref={canonicalPosterRef}
-                      style={{
-                        position: "relative",
-                        width: "1024px",
-                        height: "1536px",
-                        backgroundColor: "#000000",
-                        overflow: "hidden",
-                        fontFamily: "'Georgia', 'Times New Roman', serif",
-                        userSelect: "none",
+                      headline={headlineText}
+                      description={descriptionText}
+                      categoryLabel={categoryDisplayName}
+                      imageUrl={customImageUrl || article.featuredImageUrl}
+                      articleUrl={currentUrl}
+                      frameSrc={activePosterFrame}
+                      adjustments={{
+                        posX: bgPosX,
+                        posY: bgPosY,
+                        zoom: bgZoom,
+                        brightness: bgBrightness,
+                        contrast: bgContrast,
                       }}
-                    >
-                      {/* LAYER 1: Real CMS Article Image Background (or Custom Uploaded Photo) (z-0) */}
-                      {customImageUrl || article.featuredImageUrl ? (
-                        <div
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            backgroundImage: `url("${customImageUrl || article.featuredImageUrl
-                              }")`,
-                            backgroundSize:
-                              bgZoom === 100 ? "cover" : `${bgZoom}%`,
-                            backgroundPosition: `${bgPosX}% ${bgPosY}%`,
-                            backgroundRepeat: "no-repeat",
-                            filter: `brightness(${bgBrightness / 100
-                              }) contrast(${bgContrast / 100})`,
-                            zIndex: 0,
-                          }}
-                        />
-                      ) : (
-                        <div
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            background:
-                              "linear-gradient(135deg, #2a010a 0%, #090104 50%, #000000 100%)",
-                            zIndex: 0,
-                          }}
-                        />
-                      )}
-
-                      {/* LAYER 2A: Full-Width Top Header #E4002B Crimson Brand Glow (z-5) */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: "320px",
-                          background:
-                            "linear-gradient(to bottom, rgba(228, 0, 43, 0.50) 0%, rgba(228, 0, 43, 0.18) 55%, transparent 100%)",
-                          filter: "blur(20px)",
-                          pointerEvents: "none",
-                          zIndex: 5,
-                        }}
-                      />
-
-                      {/* LAYER 2B: Readability Dark Gradient (z-10) */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          height: "960px",
-                          background:
-                            "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.80) 60%, transparent 100%)",
-                          pointerEvents: "none",
-                          zIndex: 10,
-                        }}
-                      />
-
-                      {/* LAYER 2C: DYNAMIC CATEGORY NAME IN TOP RIGHT RED BANNER VIA CSS (z-40 — ON TOP OF FRAME OVERLAY) */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "40px",
-                          right: "60px",
-                          width: "320px",
-                          height: "64px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#FFFFFF",
-                          fontSize: "38px",
-                          fontWeight: 800,
-                          fontStyle: "italic",
-                          fontFamily:
-                            "'Playfair Display', 'Georgia', 'Merriweather', 'Brush Script MT', cursive, serif",
-                          letterSpacing: "0.06em",
-                          textTransform: "uppercase",
-                          textAlign: "center",
-                          textShadow: "0 2px 10px rgba(0,0,0,0.9)",
-                          filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.85))",
-                          zIndex: 40,
-                        }}
-                      >
-                        <span className="whitespace-nowrap px-1">{categoryDisplayName}</span>
-                      </div>
-
-                      {/* LAYER 3 & 4: Dynamic Headline & Description Container */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          bottom: "245px",
-                          left: "155px",
-                          right: "155px",
-                          textAlign: "left",
-                          zIndex: 20,
-                        }}
-                      >
-                        <h1
-                          style={{
-                            fontSize: getHeadlineFontSize(headlineText),
-                            fontWeight: 700,
-                            color: "#FFFFFF",
-                            fontFamily:
-                              "'Georgia', 'Times New Roman', 'Merriweather', serif",
-                            fontStyle: "normal",
-                            lineHeight: 1.2,
-                            letterSpacing: "-0.015em",
-                            margin: 0,
-                            padding: 0,
-                            display: "block",
-                            wordBreak: "break-word",
-                            filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.98))",
-                          }}
-                        >
-                          {headlineText}
-                        </h1>
-
-                        {/* LAYER 4: Dynamic CMS Article Description */}
-                        {descriptionText && (
-                          <p
-                            style={{
-                              marginTop: "14px",
-                              fontSize: "25px",
-                              lineHeight: 1.35,
-                              color: "#F8FAFC",
-                              fontFamily:
-                                "'Inter', 'Helvetica Neue', 'Arial', sans-serif",
-                              fontWeight: 600,
-                              fontStyle: "normal",
-                              margin: "14px 0 0 0",
-                              padding: 0,
-                              display: "block",
-                              wordBreak: "break-word",
-                              filter: "drop-shadow(0 3px 12px rgba(0,0,0,0.98))",
-                            }}
-                          >
-                            {descriptionText}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* LAYER 5: Dynamic Camera-Scannable QR Code Scanner (Larger Size & Placed Further Right in Corner) */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          right: "80px",
-                          bottom: "65px",
-                          width: "148px",
-                          height: "148px",
-                          backgroundColor: "#FFFFFF",
-                          borderRadius: "3px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          padding: "5px",
-                          boxShadow: "0 6px 18px rgba(0,0,0,0.75)",
-                          zIndex: 20,
-                        }}
-                      >
-                        <QRCodeSVG
-                          value={currentUrl}
-                          size={138}
-                          bgColor="#FFFFFF"
-                          fgColor="#000000"
-                        />
-                      </div>
-
-                      {/* LAYER 6: OFFICIAL UNIFIED TRANSPARENT PNG FRAME OVERLAY (/posters/share-poster.png) (z-30) */}
-                      {activePosterFrame ? (
-                        <img
-                          src={activePosterFrame}
-                          alt="Edition TV Share Poster Frame"
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "1024px",
-                            height: "1536px",
-                            objectFit: "cover",
-                            pointerEvents: "none",
-                            zIndex: 30,
-                            opacity: 1,
-                          }}
-                        />
-                      ) : null}
-                    </div>
+                    />
                   </div>
                 </div>
               </div>
