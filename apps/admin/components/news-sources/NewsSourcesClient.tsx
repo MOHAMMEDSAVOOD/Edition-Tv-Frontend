@@ -221,8 +221,40 @@ export function NewsSourcesClient() {
     setTestResult(null);
     try {
       const res = await apiClient.post<TestFeedResult>(`/admin/news-sources/test-feed?feedUrl=${encodeURIComponent(testFeedUrl)}`);
-      setTestResult(res);
+      if (res && res.valid) {
+        setTestResult(res);
+        if (!formData.name && res.title) {
+          setFormData((prev) => ({ ...prev, name: res.title || prev.name }));
+        }
+        return;
+      }
+      // If backend test reported invalid or was blocked by CDN (e.g. CloudFront 403 on Indian Express), fallback to Next.js route with browser headers
+      const fb = await fetch(`/api/news-sources/test-feed?feedUrl=${encodeURIComponent(testFeedUrl)}`);
+      if (fb.ok) {
+        const fbRes = await fb.json();
+        if (fbRes.valid) {
+          setTestResult(fbRes);
+          if (!formData.name && fbRes.title) {
+            setFormData((prev) => ({ ...prev, name: fbRes.title || prev.name }));
+          }
+          return;
+        }
+      }
+      setTestResult(res || { valid: false, errorMessage: "Invalid RSS/Atom feed" });
     } catch (e: unknown) {
+      try {
+        const fb = await fetch(`/api/news-sources/test-feed?feedUrl=${encodeURIComponent(testFeedUrl)}`);
+        if (fb.ok) {
+          const fbRes = await fb.json();
+          if (fbRes.valid) {
+            setTestResult(fbRes);
+            if (!formData.name && fbRes.title) {
+              setFormData((prev) => ({ ...prev, name: fbRes.title || prev.name }));
+            }
+            return;
+          }
+        }
+      } catch {}
       const err = e as { message?: string };
       setTestResult({ valid: false, errorMessage: err?.message || "Failed to connect to backend test-feed endpoint" });
     } finally {
