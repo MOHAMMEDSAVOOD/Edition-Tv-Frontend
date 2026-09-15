@@ -11,7 +11,7 @@ import {
   RefreshCw,
   LayoutTemplate,
 } from "lucide-react";
-import { ArticlePosterCanvas, capturePosterBase64 } from "@edition/ui/poster";
+import { ArticlePosterCanvas, capturePosterBase64 } from "./poster";
 
 import { ApiError } from "@/lib/api-client";
 import {
