@@ -35,7 +35,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  serverExternalPackages: ["isomorphic-dompurify", "jsdom"],
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "date-fns"],
   },
