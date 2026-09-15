@@ -13,12 +13,14 @@ import {
   AlertCircle,
   ImageIcon,
   ShieldCheck,
-  FileText
+  FileText,
+  Instagram
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StoryBlockComposer, StoryBlock } from "@/components/workspace/StoryBlockComposer";
 import { MediaLibraryModal, MediaAsset } from "@/components/workspace/MediaLibraryModal";
 import { FactCheckPanel } from "@/components/workspace/FactCheckPanel";
+import { InstagramPublishModal } from "@/components/social/InstagramPublishModal";
 
 import { apiClient } from "@/lib/api-client";
 interface CategoryItem { id: string; name: string; slug: string; }
@@ -89,6 +91,11 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
   const [category, setCategory] = useState("");
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
+
+  // Social distribution: whether publishing should go on to offer Instagram, and whether the
+  // composer is open (it is also reachable on its own once a story is live).
+  const [shareToInstagram, setShareToInstagram] = useState(true);
+  const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
 
   // Modal State
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
@@ -220,6 +227,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
         setStory(updated);
       }
       showSuccess("Story published to Public Web");
+      if (shareToInstagram) setIsInstagramModalOpen(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Publish failed");
     } finally {
@@ -311,13 +319,38 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
             Save
           </button>
           {canPublish && (
+            <>
+              <label
+                className="flex items-center gap-1.5 px-3 py-2 bg-fuchsia-50 border border-fuchsia-100 rounded-xl text-xs font-bold text-fuchsia-800 cursor-pointer"
+                title="Opens the Instagram composer once the story is live. Nothing is posted until you confirm there."
+              >
+                <input
+                  type="checkbox"
+                  checked={shareToInstagram}
+                  onChange={(e) => setShareToInstagram(e.target.checked)}
+                  className="rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-500"
+                />
+                <Instagram className="h-3.5 w-3.5" />
+                Instagram
+              </label>
+              <button
+                onClick={handlePublish}
+                disabled={publishing}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1 shadow-2xs"
+              >
+                {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                Publish to Web
+              </button>
+            </>
+          )}
+          {/* Already live: sharing is still one click away, without republishing. */}
+          {!canPublish && story.isPublishedToWeb && (
             <button
-              onClick={handlePublish}
-              disabled={publishing}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1 shadow-2xs"
+              onClick={() => setIsInstagramModalOpen(true)}
+              className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-1 shadow-2xs"
             >
-              {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
-              Publish to Web
+              <Instagram className="h-4 w-4" />
+              Share to Instagram
             </button>
           )}
         </div>
@@ -556,6 +589,15 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
         }}
         onSelectMedia={handleSelectMedia}
       />
+
+      {/* Instagram composer: offered right after publishing, or on demand once live */}
+      {isInstagramModalOpen && (
+        <InstagramPublishModal
+          articleId={storyId}
+          headline={story.headline}
+          onClose={() => setIsInstagramModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
