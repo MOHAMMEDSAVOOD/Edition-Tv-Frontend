@@ -48,8 +48,14 @@ function buildChunkTimeline(title: string, subtitle?: string, bodyHtml?: string,
 
   if (rawBodyText) {
     const cleaned = rawBodyText.replace(/\s+/g, " ").trim();
-    const rawSentences = cleaned.split(/(?<=[.?!])\s+/);
-
+    // Replaced lookbehind /(?<=[.?!])\s+/ which throws SyntaxErrors in older engines/Edge environments
+    const splitTokens = cleaned.split(/([.?!]+)\s+/);
+    const rawSentences: string[] = [];
+    for (let i = 0; i < splitTokens.length; i += 2) {
+      const text = splitTokens[i];
+      const punc = splitTokens[i + 1] || "";
+      if (text || punc) rawSentences.push(text + punc);
+    }
     let currentChunk = "";
     for (const sentence of rawSentences) {
       const s = sentence.trim();
