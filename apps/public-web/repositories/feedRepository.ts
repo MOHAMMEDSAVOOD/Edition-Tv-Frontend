@@ -7,18 +7,25 @@
  * - serverFetch never throws — returns null on failure
  */
 import { serverFetch } from "@/lib/api-client";
-import { FeedItemResponseDto, BreakingNewsTickerResponseDto } from "@/dtos/feed.dto";
+import { FeedItemResponseDto, BreakingNewsTickerResponseDto, FeedItemResponseSchema, BreakingNewsTickerResponseSchema } from "@/dtos/feed.dto";
 
 const REVALIDATE = 0;
 
 function unwrapArray(val: any): any[] {
   if (!val) return [];
-  if (Array.isArray(val)) return val;
-  if (Array.isArray(val.content)) return val.content;
-  if (Array.isArray(val.data)) return val.data;
-  if (Array.isArray(val.articles)) return val.articles;
-  if (Array.isArray(val.items)) return val.items;
-  return [];
+  let items: any[] = [];
+  if (Array.isArray(val)) items = val;
+  else if (Array.isArray(val.content)) items = val.content;
+  else if (Array.isArray(val.data)) items = val.data;
+  else if (Array.isArray(val.articles)) items = val.articles;
+  else if (Array.isArray(val.items)) items = val.items;
+  
+  return items.map((item) => {
+    const parsed = FeedItemResponseSchema.safeParse(item);
+    if (parsed.success) return parsed.data;
+    console.warn("Feed item schema validation failed", parsed.error);
+    return null;
+  }).filter(Boolean);
 }
 
 export const feedRepository = {
@@ -26,29 +33,11 @@ export const feedRepository = {
     page = 0,
     size = 10
   ): Promise<FeedItemResponseDto[]> {
-    const candidateEndpoints = [
-      `/articles?status=PUBLISHED&page=${page}&size=${size}`,
-      `/news/feed?page=${page}&size=${size}`,
-      `/public/articles?status=PUBLISHED`,
-    ];
+    const res = await serverFetch<any>(`/api/v1/news/feed?page=${page}&size=${size}`, { revalidate: REVALIDATE, tags: ["feed"] });
+    const items = unwrapArray(res);
 
-    const results = await Promise.allSettled(
-      candidateEndpoints.map((ep) => serverFetch<any>(ep, { revalidate: REVALIDATE, tags: ["feed"] }))
-    );
-
-    let allItems: any[] = [];
-    for (const res of results) {
-      if (res.status === "fulfilled" && res.value) {
-        const items = unwrapArray(res.value);
-        if (items.length > 0) {
-          allItems.push(...items);
-        }
-      }
-    }
-
-    const publishedOnly = allItems.filter((item: any) => {
+    const publishedOnly = items.filter((item: any) => {
       if (item.wireItemId || item.wireSource || item.isWireItem) return false;
-      if (item.status && String(item.status).toUpperCase() !== "PUBLISHED") return false;
       return true;
     });
 
@@ -75,12 +64,10 @@ export const feedRepository = {
 
   async getTrendingFeed(limit = 10): Promise<FeedItemResponseDto[]> {
     const res = await serverFetch<any>(
-      `/news/feed/trending?limit=${limit}`,
+      `/api/v1/news/feed/trending?limit=${limit}`,
       { revalidate: REVALIDATE, tags: ["feed", "trending"] }
     );
-    const items = unwrapArray(res);
-    if (items.length > 0) return items;
-    return (await this.getPublicFeed(0, limit)).slice(0, limit);
+    return unwrapArray(res);
   },
 
   async getEditorsPicks(limit = 4): Promise<FeedItemResponseDto[]> {
@@ -161,13 +148,22 @@ export const feedRepository = {
   },
 
   async getActiveBreakingNews(): Promise<BreakingNewsTickerResponseDto[]> {
-    const res = await serverFetch<any>(
-      "/news/feed/breaking",
-      {
-        revalidate: 30,
-        tags: ["feed", "breaking"],
-      }
-    );
-    return unwrapArray(res);
+    const res = await serverFetch<any>("/api/v1/news/feed/breaking", {
+      revalidate: REVALIDATE,
+      tags: ["feed", "breaking"],
+    });
+
+    let items: any[] = [];
+    if (Array.isArray(res)) items = res;
+    else if (res && Array.isArray(res.content)) items = res.content;
+    else if (res && Array.isArray(res.data)) items = res.data;
+    else if (res && Array.isArray(res.items)) items = res.items;
+
+    return items.map((item) => {
+      const parsed = BreakingNewsTickerResponseSchema.safeParse(item);
+      if (parsed.success) return parsed.data;
+      console.warn("Breaking news schema validation failed", parsed.error);
+      return null;
+    }).filter(Boolean) as BreakingNewsTickerResponseDto[];
   },
 };

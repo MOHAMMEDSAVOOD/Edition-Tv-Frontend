@@ -1,3 +1,4 @@
+import { useAuthStore } from "../store/authStore";
 /**
  * API Client — Edition Platform Public Web
  *
@@ -196,15 +197,14 @@ class ApiClient {
   public getAccessToken(): string | null {
     if (!this.accessToken && typeof window !== "undefined") {
       try {
-        const sessionRaw = localStorage.getItem("edition_auth_session");
-        if (sessionRaw) {
-          const session = JSON.parse(sessionRaw);
+        const session = typeof window !== "undefined" ? useAuthStore.getState().session : null;
+        if (session) {
           if (session?.token) {
             this.accessToken = session.token;
           }
         }
         if (!this.accessToken) {
-          const directToken = localStorage.getItem("edition_access_token") || localStorage.getItem("accessToken");
+          const directToken = typeof window !== "undefined" ? useAuthStore.getState().accessToken : null;
           if (directToken) {
             this.accessToken = directToken;
           }
@@ -260,6 +260,21 @@ class ApiClient {
           detail: `HTTP ${response.status} from ${endpoint}`,
         };
       }
+      
+      // Global Interceptors
+      if (typeof window !== "undefined") {
+        if (response.status === 401) {
+          useAuthStore.getState().clearSession();
+          window.dispatchEvent(new CustomEvent("edition_auth_changed"));
+          window.location.href = "/auth/login?expired=true";
+        } else if (response.status === 403) {
+          console.error("403 Forbidden");
+          // Components should handle 403 or error boundary will catch the ApiError
+        } else if (response.status === 404) {
+          // Components should handle 404 or boundary will catch
+        }
+      }
+
       throw new ApiError(response.status, errorData);
     }
 

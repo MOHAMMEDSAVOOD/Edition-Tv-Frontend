@@ -161,18 +161,9 @@ export const authRepository = {
 
         // Store session tokens
         if (typeof window !== "undefined") {
-          localStorage.setItem("edition_access_token", idToken);
-          localStorage.setItem("edition_username", resolvedUsername);
-          localStorage.setItem(
-            "edition_auth_session",
-            JSON.stringify({
-              username: resolvedUsername,
-              email: resolvedEmail,
-              userId: resolvedUserId,
-              token: idToken,
-              roles,
-            })
-          );
+          
+          
+          
           document.cookie = `edition_access_token=${idToken}; path=/; max-age=86400; SameSite=Lax`;
         }
 
@@ -226,18 +217,9 @@ export const authRepository = {
           const username = raw.username || parseJwtUsername(raw.accessToken, candidate);
 
           if (typeof window !== "undefined") {
-            localStorage.setItem("edition_access_token", raw.accessToken);
-            localStorage.setItem("edition_username", username);
-            localStorage.setItem(
-              "edition_auth_session",
-              JSON.stringify({
-                username,
-                email: raw.email || (isEmail ? trimmedInput : undefined),
-                userId: raw.userId,
-                token: raw.accessToken,
-                roles: userRoles,
-              })
-            );
+            
+            
+            
             document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax`;
             apiClient.setAccessToken(raw.accessToken);
           }
@@ -307,18 +289,9 @@ export const authRepository = {
         const roles = ["ROLE_READER"];
 
         if (typeof window !== "undefined") {
-          localStorage.setItem("edition_access_token", idToken);
-          localStorage.setItem("edition_username", trimmedUser);
-          localStorage.setItem(
-            "edition_auth_session",
-            JSON.stringify({
-              username: trimmedUser,
-              email: trimmedEmail,
-              userId: fbData.localId,
-              token: idToken,
-              roles,
-            })
-          );
+          
+          
+          
           document.cookie = `edition_access_token=${idToken}; path=/; max-age=86400; SameSite=Lax`;
         }
 
@@ -359,17 +332,9 @@ export const authRepository = {
         const resolvedUsername = raw.username || trimmedUser;
 
         if (typeof window !== "undefined") {
-          localStorage.setItem("edition_access_token", raw.accessToken);
-          localStorage.setItem("edition_username", resolvedUsername);
-          localStorage.setItem(
-            "edition_auth_session",
-            JSON.stringify({
-              username: resolvedUsername,
-              email: trimmedEmail,
-              token: raw.accessToken,
-              roles: userRoles,
-            })
-          );
+          
+          
+          
           document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax`;
           apiClient.setAccessToken(raw.accessToken);
         }
@@ -408,7 +373,7 @@ export const authRepository = {
         const username = parseJwtUsername(idToken, "user");
 
         if (typeof window !== "undefined") {
-          localStorage.setItem("edition_access_token", idToken);
+          
           document.cookie = `edition_access_token=${idToken}; path=/; max-age=86400; SameSite=Lax`;
           apiClient.setAccessToken(idToken);
         }
@@ -431,7 +396,7 @@ export const authRepository = {
       const username = raw.username || "user";
 
       if (typeof window !== "undefined" && raw.accessToken) {
-        localStorage.setItem("edition_access_token", raw.accessToken);
+        
         document.cookie = `edition_access_token=${raw.accessToken}; path=/; max-age=86400; SameSite=Lax`;
         apiClient.setAccessToken(raw.accessToken);
       }

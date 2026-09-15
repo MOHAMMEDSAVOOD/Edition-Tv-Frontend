@@ -1,13 +1,8 @@
 import { authRepository, AuthResponseDto } from "@/repositories/authRepository";
 import { apiClient } from "@/lib/api-client";
+import { useAuthStore, UserSession } from "@/store/authStore";
 
-export interface UserSession {
-  username: string;
-  token: string;
-  roles: string[];
-  email?: string;
-  userId?: string;
-}
+export type { UserSession };
 
 export interface RegisterRequest {
   username?: string;
@@ -68,8 +63,7 @@ export const authService = {
         userId: res.userId,
       };
       if (typeof window !== "undefined") {
-        localStorage.setItem("edition_auth_session", JSON.stringify(session));
-        localStorage.setItem("edition_access_token", res.token);
+        useAuthStore.getState().setSession(session, res.token);
       }
       notifyAuthChange();
       return session;
@@ -92,8 +86,7 @@ export const authService = {
         userId: res.userId,
       };
       if (typeof window !== "undefined") {
-        localStorage.setItem("edition_auth_session", JSON.stringify(session));
-        localStorage.setItem("edition_access_token", res.token);
+        useAuthStore.getState().setSession(session, res.token);
       }
       notifyAuthChange();
       return session;
@@ -104,18 +97,11 @@ export const authService = {
 
   getCurrentSession(): UserSession | null {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("edition_auth_session");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.token) {
-            apiClient.setAccessToken(parsed.token);
-            return parsed;
-          }
-        } catch {
-          // Parse error
-        }
+      const session = useAuthStore.getState().session;
+      if (session && session.token) {
+        apiClient.setAccessToken(session.token);
       }
+      return session;
     }
     return null;
   },
@@ -123,8 +109,7 @@ export const authService = {
   logout(): void {
     apiClient.setAccessToken(null);
     if (typeof window !== "undefined") {
-      localStorage.removeItem("edition_auth_session");
-      localStorage.removeItem("edition_access_token");
+      useAuthStore.getState().clearSession();
       document.cookie = "edition_access_token=; path=/; max-age=0; SameSite=Lax";
       notifyAuthChange();
     }

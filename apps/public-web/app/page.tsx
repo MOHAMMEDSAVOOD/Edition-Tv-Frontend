@@ -11,14 +11,25 @@ export const metadata = {
 };
 
 async function HomepageContent() {
-  const feed = await feedService.getPublicFeed(1, 20);
-  const trending = await feedService.getTrendingFeed(5);
-  const editorsPicks = await feedService.getEditorsPicks(4);
-  const opinions = await feedService.getOpinions(3);
-  const investigations = await feedService.getInvestigations(3);
-  const videos = await feedService.getVideos(2);
-  const podcasts = await feedService.getPodcasts(2);
-  const recommended = await feedService.getRecommendedStories(4);
+  const [
+    feed,
+    trending,
+    editorsPicks,
+    opinions,
+    investigations,
+    videos,
+    podcasts,
+    recommended
+  ] = await Promise.all([
+    feedService.getPublicFeed(1, 20),
+    feedService.getTrendingFeed(5),
+    feedService.getEditorsPicks(4),
+    feedService.getOpinions(3),
+    feedService.getInvestigations(3),
+    feedService.getVideos(2),
+    feedService.getPodcasts(2),
+    feedService.getRecommendedStories(4),
+  ]);
 
   return (
     <HomeFeedClient

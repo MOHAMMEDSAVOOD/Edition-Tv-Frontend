@@ -1,5 +1,19 @@
 import { ArticleResponseDto } from "@/dtos/article.dto";
 import { ArticleDetail } from "@/services/articleService";
+import DOMPurify from "isomorphic-dompurify";
+
+const ALLOWED_TAGS = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'blockquote', 'a', 'ul', 'ol', 'li', 'figure', 'img', 'figcaption', 'cite', 'div', 'span', 'br', 'b', 'i', 'code'];
+const ALLOWED_ATTR = ['class', 'className', 'href', 'src', 'alt', 'title', 'target', 'rel'];
+
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS,
+    ALLOWED_ATTR,
+    ALLOW_DATA_ATTR: false,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false
+  }) as string;
+}
 
 function getHighResImageUrl(url?: string): string | undefined {
   if (!url || url.trim() === "") return undefined;
@@ -100,7 +114,8 @@ export const articleMapper = {
     const summaryText = dto.summary || dto.subtitle || "";
 
     const parsedHtml = parseContentBodyToHtml(dto.contentBody || (dto as any).bodyHtml);
-    const bodyHtml = parsedHtml || (summaryText ? `<p className="text-base text-slate-900 leading-relaxed font-sans mb-6">${summaryText}</p>` : "");
+    const rawBodyHtml = parsedHtml || (summaryText ? `<p className="text-base text-slate-900 leading-relaxed font-sans mb-6">${summaryText}</p>` : "");
+    const bodyHtml = sanitizeHtml(rawBodyHtml);
 
     const summaryPoints = (dto.summaryPoints && dto.summaryPoints.length > 0)
       ? dto.summaryPoints

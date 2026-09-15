@@ -78,7 +78,7 @@ export function SiteFooter() {
 
         {/* Copyright */}
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-muted-foreground">
-          <span>© {new Date().getFullYear()} Edition TV. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} EDITION MEDIA PRIVATE LIMITED. All rights reserved.</span>
           <span className="flex items-center gap-4">
             <Link href="/sitemap.xml" className="hover:text-foreground transition-colors">Sitemap</Link>
             <Link href="/rss.xml" className="hover:text-foreground transition-colors">RSS</Link>
