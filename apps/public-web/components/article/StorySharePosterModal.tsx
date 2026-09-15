@@ -26,6 +26,8 @@ import {
   Eye,
   Sparkles,
   Link2,
+  Film,
+  Loader2,
 } from "lucide-react";
 import { ArticleDetail } from "@/services/articleService";
 import { QRCodeSVG } from "./QRCodeSVG";
@@ -54,6 +56,12 @@ export function StorySharePosterModal({
   const [selectedFormat, setSelectedFormat] = useState<PosterAspectRatio>("2:3");
   const [previewScale, setPreviewScale] = useState(0.32);
   const [wrapperHeight, setWrapperHeight] = useState(480);
+
+  // Media Mode: Static Poster (PNG) vs Animated Video Reel (MP4)
+  const [mediaMode, setMediaMode] = useState<"image" | "video">("image");
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoStatusText, setVideoStatusText] = useState("");
 
   // Selected format configuration
   const currentFormat = POSTER_FORMATS[selectedFormat];
@@ -368,6 +376,225 @@ export function StorySharePosterModal({
       console.error("Failed to generate poster image:", err);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleDownloadVideo = async () => {
+    if (typeof window === "undefined") return;
+    setVideoGenerating(true);
+    setVideoProgress(0);
+    setVideoStatusText("Rendering canvas snapshot...");
+
+    let vCanvas: HTMLCanvasElement | null = null;
+    let audioContext: AudioContext | null = null;
+
+    try {
+      // 1. Capture base canonical canvas via single source of truth html2canvas
+      const baseCanvas = await captureCanonicalPoster();
+      if (!baseCanvas) {
+        throw new Error("Unable to capture story canvas");
+      }
+
+      setVideoStatusText("Configuring studio video engine...");
+      setVideoProgress(10);
+
+      // Target video dimensions: Full HD 1080p studio broadcast resolution
+      const videoWidth = 1080;
+      const videoHeight = selectedFormat === "2:3" ? 1620 : 1920;
+
+      vCanvas = document.createElement("canvas");
+      vCanvas.width = videoWidth;
+      vCanvas.height = videoHeight;
+      vCanvas.style.cssText =
+        "position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;z-index:-1;";
+      document.body.appendChild(vCanvas);
+
+      const ctx = vCanvas.getContext("2d", { alpha: false });
+      if (!ctx) {
+        throw new Error("Canvas 2D context not available");
+      }
+
+      // Enable high-quality bicubic downsampling from 2x supersampled master canvas
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      // Render initial frame to prime the canvas buffer before capturing stream
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, videoWidth, videoHeight);
+      ctx.drawImage(
+        baseCanvas,
+        0,
+        0,
+        baseCanvas.width,
+        baseCanvas.height,
+        0,
+        0,
+        videoWidth,
+        videoHeight
+      );
+
+      // Supported MIME types prioritized for QuickTime, VLC, and mobile player compatibility
+      const candidateMimes = [
+        'video/mp4;codecs="avc1.64002A"', // H.264 High Profile Level 4.2 (1080p Full HD)
+        'video/mp4;codecs="avc1.640028"', // H.264 High Profile Level 4.0
+        'video/mp4;codecs="avc1.4D4029"', // H.264 Main Profile Level 4.1
+        'video/mp4;codecs="avc1.4D401F"', // H.264 Main Profile Level 3.1
+        "video/mp4",
+        "video/webm;codecs=vp9",
+        "video/webm;codecs=vp8",
+        "video/webm",
+      ];
+      let mimeType = "";
+      if (typeof MediaRecorder !== "undefined") {
+        for (const candidate of candidateMimes) {
+          if (MediaRecorder.isTypeSupported(candidate)) {
+            mimeType = candidate;
+            break;
+          }
+        }
+      }
+
+      // @ts-expect-error captureStream is supported on HTMLCanvasElement in modern browsers
+      const stream: MediaStream = vCanvas.captureStream ? vCanvas.captureStream(30) : null;
+      if (!stream) {
+        throw new Error("Canvas video capture stream is not supported on this browser.");
+      }
+
+      // Attach silent audio track so macOS QuickTime and AVFoundation recognize valid media
+      try {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          audioContext = new AudioCtx();
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          gain.gain.value = 0; // 100% silent
+          osc.connect(gain);
+          const dest = audioContext.createMediaStreamDestination();
+          gain.connect(dest);
+          osc.start();
+          const audioTrack = dest.stream.getAudioTracks()[0];
+          if (audioTrack) {
+            stream.addTrack(audioTrack);
+          }
+        }
+      } catch {
+        // Non-fatal if audio context is blocked
+      }
+
+      const recorderOptions: MediaRecorderOptions = {
+        videoBitsPerSecond: 16000000, // 16 Mbps ultra-crisp studio broadcast bitrate
+      };
+      if (mimeType) {
+        recorderOptions.mimeType = mimeType;
+      }
+
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, recorderOptions);
+      } catch {
+        recorder = new MediaRecorder(stream);
+      }
+
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      const recordPromise = new Promise<Blob>((resolve, reject) => {
+        recorder.onstop = () => {
+          const finalMime = mimeType || recorder.mimeType || "video/mp4";
+          const blob = new Blob(chunks, { type: finalMime });
+          resolve(blob);
+        };
+        recorder.onerror = (err) => reject(err);
+      });
+
+      // Start recorder with 100ms timeslices so data chunks are buffered actively
+      recorder.start(100);
+
+      const videoTrack = stream.getVideoTracks()[0];
+      const totalFrames = 90; // 3 seconds at 30 fps (standard social video format)
+      setVideoStatusText("Encoding 1080p video...");
+
+      for (let frame = 0; frame < totalFrames; frame++) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, videoWidth, videoHeight);
+
+        // Render EXACT fixed poster: No zoom, no motion, 100% pixel-perfect fidelity
+        ctx.drawImage(
+          baseCanvas,
+          0,
+          0,
+          baseCanvas.width,
+          baseCanvas.height,
+          0,
+          0,
+          videoWidth,
+          videoHeight
+        );
+
+        // Force browser to capture the frame
+        if (videoTrack && (videoTrack as unknown as { requestFrame?: () => void }).requestFrame) {
+          (videoTrack as unknown as { requestFrame: () => void }).requestFrame();
+        }
+
+        // Update progress state periodically
+        if (frame % 3 === 0) {
+          setVideoProgress(10 + Math.round((frame / totalFrames) * 85));
+        }
+
+        // Frame timing delay for smooth stream pacing
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+
+      setVideoStatusText("Finalizing video file...");
+      setVideoProgress(95);
+
+      if (recorder.state === "recording") {
+        recorder.requestData();
+        recorder.stop();
+      }
+
+      const videoBlob = await recordPromise;
+
+      if (!videoBlob || videoBlob.size < 1000) {
+        throw new Error("Generated video file was empty or corrupted.");
+      }
+
+      setVideoProgress(100);
+      setVideoStatusText("Downloading video reel...");
+
+      const isMp4 = (mimeType || recorder.mimeType || "").includes("mp4");
+      const ext = isMp4 ? "mp4" : "webm";
+      const downloadUrl = URL.createObjectURL(videoBlob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `${article.slug || "edition-tv"}-${currentFormat.downloadFilenameSuffix}-reel.${ext}`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 8000);
+    } catch (err) {
+      console.error("Failed to generate video reel:", err);
+      alert("Video generation was interrupted or unsupported on this browser. Falling back to high-res poster image.");
+      handleDownloadPoster();
+    } finally {
+      if (vCanvas && vCanvas.parentNode) {
+        vCanvas.parentNode.removeChild(vCanvas);
+      }
+      if (audioContext && audioContext.state !== "closed") {
+        try {
+          audioContext.close();
+        } catch {
+          // ignore
+        }
+      }
+      setVideoGenerating(false);
+      setVideoProgress(0);
+      setVideoStatusText("");
     }
   };
 
@@ -1216,11 +1443,49 @@ export function StorySharePosterModal({
                     ) : null}
                   </div>
                 </div>
+
+                {/* Motion Reel Overlay when in Video Mode */}
+                {mediaMode === "video" && (
+                  <>
+                    <div className="absolute top-2.5 left-2.5 z-40 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur-md border border-slate-700 shadow-lg">
+                      <Film className="h-3 w-3 text-red-500" />
+                      <span className="text-[10px] font-bold text-white tracking-wide uppercase">Video Mode (MP4)</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
+            {/* Media Mode Toggle: Static Poster (PNG) vs Video Format (MP4) */}
+            <div className="w-full max-w-xs sm:max-w-sm mt-2 sm:mt-2.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800/80 flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMediaMode("image")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+                  mediaMode === "image"
+                    ? "bg-slate-800 text-white shadow-sm border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <ImageIcon className="h-3.5 w-3.5 text-blue-400" />
+                <span>Poster (PNG)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMediaMode("video")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
+                  mediaMode === "video"
+                    ? "bg-red-600 text-white shadow-md"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <Film className="h-3.5 w-3.5 text-amber-300" />
+                <span>Video (MP4)</span>
+              </button>
+            </div>
+
             {/* Poster Format Toggle: 2:3 Feed vs 9:16 Story */}
-            <div className="w-full max-w-xs sm:max-w-sm mt-2 sm:mt-3 bg-slate-900/90 p-1 sm:p-1.5 rounded-xl border border-slate-800 flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <div className="w-full max-w-xs sm:max-w-sm mt-1.5 sm:mt-2 bg-slate-900/90 p-1 sm:p-1.5 rounded-xl border border-slate-800 flex items-center gap-1 sm:gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setSelectedFormat("2:3")}
@@ -1259,38 +1524,73 @@ export function StorySharePosterModal({
             {/* In Preview Mode: Download and Copy Action Buttons */}
             {activeTab === "preview" && (
               <div className="w-full max-w-xs sm:max-w-sm mt-2 sm:mt-3 space-y-1.5 sm:space-y-2 shrink-0">
-                <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                  <button
-                    onClick={handleDownloadPoster}
-                    disabled={generating}
-                    className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#E50914] text-white font-bold text-[11px] sm:text-xs py-2.5 sm:py-3 px-2 sm:px-3 rounded-lg sm:rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50"
-                  >
-                    <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="truncate">
-                      {generating
-                        ? "Exporting..."
-                        : `Download ${currentFormat.badge}`}
-                    </span>
-                  </button>
+                {mediaMode === "video" ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleDownloadVideo}
+                      disabled={videoGenerating || generating}
+                      className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-[#E50914] text-white font-bold text-xs sm:text-sm py-3 sm:py-3.5 px-4 rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all shadow-lg disabled:opacity-60"
+                    >
+                      {videoGenerating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-white" />
+                          <span>{videoStatusText || `Exporting Video (${videoProgress}%)`}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Film className="h-4 w-4 text-white" />
+                          <span>Download as Video ({selectedFormat === "2:3" ? "Feed MP4" : "Story MP4"})</span>
+                        </>
+                      )}
+                      {videoGenerating && (
+                        <div
+                          className="absolute bottom-0 left-0 h-1 bg-amber-400 transition-all duration-150"
+                          style={{ width: `${videoProgress}%` }}
+                        />
+                      )}
+                    </button>
+                    <div className="flex items-center justify-between px-2 text-[10px] text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <Check className="h-3 w-3 text-emerald-400" />
+                        Exact 1:1 Poster in Video Format
+                      </span>
+                      <span className="font-mono text-slate-500">1080p MP4</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                    <button
+                      onClick={handleDownloadPoster}
+                      disabled={generating || videoGenerating}
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#E50914] text-white font-bold text-[11px] sm:text-xs py-2.5 sm:py-3 px-2 sm:px-3 rounded-lg sm:rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50"
+                    >
+                      <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="truncate">
+                        {generating
+                          ? "Exporting..."
+                          : `Download ${currentFormat.badge}`}
+                      </span>
+                    </button>
 
-                  <button
-                    onClick={handleCopyPosterImage}
-                    disabled={generating}
-                    className="flex items-center justify-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-100 font-bold text-[11px] sm:text-xs py-2.5 sm:py-3 px-2 sm:px-3 rounded-lg sm:rounded-xl hover:bg-slate-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50 border border-slate-700"
-                  >
-                    {copiedImage ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
-                        <span className="text-emerald-400 truncate">Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-300" />
-                        <span className="truncate">Copy Image</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                    <button
+                      onClick={handleCopyPosterImage}
+                      disabled={generating || videoGenerating}
+                      className="flex items-center justify-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-100 font-bold text-[11px] sm:text-xs py-2.5 sm:py-3 px-2 sm:px-3 rounded-lg sm:rounded-xl hover:bg-slate-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50 border border-slate-700"
+                    >
+                      {copiedImage ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
+                          <span className="text-emerald-400 truncate">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-300" />
+                          <span className="truncate">Copy Image</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
 
                 {/* Mobile Shortcut to Edit Photo */}
                 <button
