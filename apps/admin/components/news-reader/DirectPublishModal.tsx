@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { WireItem } from "./ArticleList";
-import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw } from "lucide-react";
+import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw, Instagram } from "lucide-react";
 
 import { apiClient } from "@/lib/api-client";
 
@@ -33,7 +33,11 @@ interface PublicationConfig {
 interface DirectPublishModalProps {
   item: WireItem;
   onClose: () => void;
-  onSuccess: (publishedData: Record<string, unknown>) => void;
+  /**
+   * `shareToInstagram` carries the editor's choice in Section L onward, so the caller can open the
+   * Instagram composer once the article is actually live.
+   */
+  onSuccess: (publishedData: Record<string, unknown>, options: { shareToInstagram: boolean }) => void;
 }
 
 export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishModalProps) {
@@ -209,6 +213,10 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
   // Section N: Breaking News
   const [isBreaking, setIsBreaking] = useState<boolean>(false);
 
+  // Section L: Social distribution. On by default — cross-posting is the routine case; the
+  // composer that opens afterwards still has a Skip.
+  const [shareToInstagram, setShareToInstagram] = useState<boolean>(true);
+
   // Modal Submission State
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -269,7 +277,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
       };
 
       const result = await apiClient.post<any>(`/newsroom/wire-items/${item.id}/publish-direct`, payload);
-      onSuccess(result);
+      onSuccess(result, { shareToInstagram });
     } catch (err) {
       console.error("Direct publish error:", err);
       setValidationError(err instanceof Error ? err.message : "Failed to publish wire article. Please try again.");
@@ -605,6 +613,39 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
                     Mark as Breaking News ⚡
                   </label>
                 </div>
+              </div>
+
+              {/* SECTION L: SOCIAL DISTRIBUTION */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5 font-mono">
+                  <Instagram className="h-3.5 w-3.5 text-fuchsia-600" /> Section L — Social Distribution
+                </h4>
+                <label className="flex items-start gap-3 bg-fuchsia-50/60 border border-fuchsia-100 rounded-xl p-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shareToInstagram}
+                    onChange={(e) => setShareToInstagram(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-500"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="block text-xs font-bold text-slate-900 font-mono">
+                      Also share to Instagram
+                    </span>
+                    <span className="block text-[11px] text-slate-600">
+                      Opens the Instagram composer once the article is live, with the caption and
+                      poster already filled in. Nothing is posted until you confirm there.
+                    </span>
+                  </span>
+                </label>
+                {shareToInstagram && !hasWireImage && (
+                  <div className="flex items-start gap-2 text-[11px] text-amber-800 font-mono">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 flex-none mt-0.5" />
+                    <span>
+                      This wire item has no image. Instagram posts need one — you will be asked for a
+                      poster URL in the next step.
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* PUBLICATION SUMMARY & CONTENT WARNING */}
