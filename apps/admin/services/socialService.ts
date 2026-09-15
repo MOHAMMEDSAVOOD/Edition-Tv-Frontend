@@ -43,6 +43,10 @@ export interface SocialShare {
 export interface SocialShareDraft {
   articleId: string;
   headline: string;
+  /** Standfirst, drawn under the headline on the branded poster. */
+  summary: string | null;
+  /** Banner text on the branded poster. */
+  category: string | null;
   status: string;
   suggestedCaption: string;
   imageUrl: string | null;
@@ -80,5 +84,36 @@ export const socialService = {
 
   shareToInstagram(request: ShareToInstagramRequest): Promise<SocialShare> {
     return apiClient.post<SocialShare>("/social/shares/instagram", request);
+  },
+};
+
+/** A remote image fetched by the backend as a data URI, so a canvas drawing it stays exportable. */
+export interface RemoteImage {
+  dataUri: string;
+  mimeType: string;
+  bytes: number;
+}
+
+export interface StoredPoster {
+  /** Absolute, publicly fetchable — this is the URL handed to Instagram. */
+  url: string;
+  key: string;
+  bytes: number;
+}
+
+export const posterService = {
+  /**
+   * Fetches an image through the backend rather than the browser.
+   *
+   * Wire agencies serve images without CORS headers, which taints the poster canvas and makes the
+   * PNG export fail. A data URI has no origin, so it taints nothing.
+   */
+  fetchRemoteImage(url: string): Promise<RemoteImage> {
+    return apiClient.get<RemoteImage>(`/media/remote-image?url=${encodeURIComponent(url)}`);
+  },
+
+  /** Stores the rendered poster and returns the public URL Instagram will fetch. */
+  storePoster(contentBase64: string): Promise<StoredPoster> {
+    return apiClient.post<StoredPoster>("/media/posters", { contentBase64 });
   },
 };
