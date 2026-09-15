@@ -1160,7 +1160,18 @@ importers:
 
   packages/types: {}
 
-  packages/ui: {}
+  packages/ui:
+    dependencies:
+      html2canvas:
+        specifier: ^1.4.1
+        version: 1.4.1
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
+    devDependencies:
+      '@types/qrcode':
+        specifier: ^1.5.6
+        version: 1.5.6
 
   packages/utils: {}
 

@@ -6,6 +6,7 @@ import { ArticleList, WireItem } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
 import { DirectPublishModal } from "./DirectPublishModal";
 import { PublicationDetailsModal } from "./PublicationDetailsModal";
+import { InstagramPublishModal } from "../social/InstagramPublishModal";
 
 import { apiClient } from "../../lib/api-client";
 
@@ -21,6 +22,8 @@ export function NewsReaderClient() {
   // Modal States
   const [publishingItem, setPublishingItem] = useState<WireItem | null>(null);
   const [viewingDetailsItem, setViewingDetailsItem] = useState<WireItem | null>(null);
+  /** The article just published, while the editor decides whether to put it on Instagram. */
+  const [instagramTarget, setInstagramTarget] = useState<{ articleId: string; headline: string } | null>(null);
 
   // Stats state
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -224,12 +227,23 @@ export function NewsReaderClient() {
     }
   };
 
-  const handlePublishSuccess = (item: WireItem) => {
+  const handlePublishSuccess = (
+    item: WireItem,
+    published: Record<string, unknown>,
+    options: { shareToInstagram: boolean },
+  ) => {
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, state: "PUBLISHED" } : i)));
     if (selectedItem?.id === item.id) {
       setSelectedItem({ ...selectedItem, state: "PUBLISHED" });
     }
     setPublishingItem(null);
+
+    // The wire item is now a real article; `publicArticleId` is what the social module needs.
+    const articleId = typeof published?.publicArticleId === "string" ? published.publicArticleId : null;
+    if (options.shareToInstagram && articleId) {
+      setInstagramTarget({ articleId, headline: item.title });
+      return;
+    }
     setViewingDetailsItem({ ...item, state: "PUBLISHED" });
   };
 
@@ -308,7 +322,16 @@ export function NewsReaderClient() {
         <DirectPublishModal
           item={publishingItem}
           onClose={() => setPublishingItem(null)}
-          onSuccess={() => handlePublishSuccess(publishingItem)}
+          onSuccess={(published, options) => handlePublishSuccess(publishingItem, published, options)}
+        />
+      )}
+
+      {/* 4b. Instagram composer, offered once the article is live on the web */}
+      {instagramTarget && (
+        <InstagramPublishModal
+          articleId={instagramTarget.articleId}
+          headline={instagramTarget.headline}
+          onClose={() => setInstagramTarget(null)}
         />
       )}
 
