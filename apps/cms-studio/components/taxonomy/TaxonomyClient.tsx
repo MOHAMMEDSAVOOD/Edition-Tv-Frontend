@@ -10,16 +10,9 @@ interface TaxonomyItem {
   entryCount: number;
 }
 
-const INITIAL_TAXONOMY: TaxonomyItem[] = [
-  { id: "t-1", name: "Technology", slug: "technology", type: "Category", entryCount: 142 },
-  { id: "t-2", name: "Business & Economy", slug: "business", type: "Category", entryCount: 98 },
-  { id: "t-3", name: "Artificial Intelligence", slug: "artificial-intelligence", type: "Topic Tag", entryCount: 64 },
-  { id: "t-4", name: "Semiconductors", slug: "semiconductors", type: "Topic Tag", entryCount: 31 },
-  { id: "t-5", name: "World News", slug: "world", type: "Category", entryCount: 210 },
-];
-
 export function TaxonomyClient() {
-  const [items, setItems] = useState<TaxonomyItem[]>(INITIAL_TAXONOMY);
+  // TODO: load the taxonomy from the backend (GET /cms/categories). Empty until that is wired.
+  const [items, setItems] = useState<TaxonomyItem[]>([]);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState<"Category" | "Topic Tag">("Topic Tag");
 

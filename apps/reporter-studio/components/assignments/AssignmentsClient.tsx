@@ -14,14 +14,9 @@ interface AssignmentItem {
   status: "ASSIGNED" | "IN_PROGRESS" | "SUBMITTED";
 }
 
-const INITIAL_ASSIGNMENTS: AssignmentItem[] = [
-  { id: "a-1", title: "Cover Zurich Quantum Center Coherence Announcement", category: "Science", editorName: "Elena Rostova", deadline: "Today, 17:00 EST", priority: "URGENT", status: "IN_PROGRESS" },
-  { id: "a-2", title: "Investigate EU Semiconductor Supply Chain Restrictions", category: "Technology", editorName: "Marcus Vance", deadline: "Tomorrow, 12:00 EST", priority: "HIGH", status: "ASSIGNED" },
-  { id: "a-3", title: "Interview Geneva Climate Delegates on Methane Target", category: "World", editorName: "Sarah Chen", deadline: "Aug 10, 09:00 EST", priority: "NORMAL", status: "SUBMITTED" },
-];
-
 export function AssignmentsClient() {
-  const [assignments] = useState<AssignmentItem[]>(INITIAL_ASSIGNMENTS);
+  // TODO: load desk assignments from the backend. Empty until that endpoint is wired.
+  const [assignments] = useState<AssignmentItem[]>([]);
 
   const getPriorityClass = (p: AssignmentItem["priority"]) => {
     switch (p) {
@@ -40,6 +35,9 @@ export function AssignmentsClient() {
       </div>
 
       <div className="divide-y divide-border text-xs">
+        {assignments.length === 0 && (
+          <p className="p-6 text-center text-xs text-muted-foreground">No assignments.</p>
+        )}
         {assignments.map((item) => (
           <div key={item.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/20 transition-colors">
             <div className="space-y-1">

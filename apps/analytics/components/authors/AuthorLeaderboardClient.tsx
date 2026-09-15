@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { UserCheck } from "lucide-react";
 
 interface AuthorMetric {
@@ -9,13 +10,11 @@ interface AuthorMetric {
   retentionRate: string;
 }
 
-const AUTHORS: AuthorMetric[] = [
-  { name: "Dr. Elena Rostova", role: "Quantum & Deep Tech Correspondent", articlesCount: 24, totalViews: "612,400", retentionRate: "72.4%" },
-  { name: "Marcus Vance", role: "Senior Financial Analyst", articlesCount: 31, totalViews: "524,100", retentionRate: "64.8%" },
-  { name: "Sophia Al-Mansoor", role: "Global Energy & Climate Editor", articlesCount: 19, totalViews: "389,000", retentionRate: "68.1%" },
-];
-
 export function AuthorLeaderboardClient() {
+  // TODO: no backend endpoint serves author performance metrics yet. Until one exists this stays
+  // empty rather than showing sample correspondents and invented pageview counts.
+  const [authors] = useState<AuthorMetric[]>([]);
+
   return (
     <div className="space-y-6 text-xs font-sans">
       <div className="bg-card border border-border rounded-md overflow-hidden shadow-xs">
@@ -36,15 +35,23 @@ export function AuthorLeaderboardClient() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {AUTHORS.map((a) => (
-              <tr key={a.name} className="hover:bg-muted/20 transition-colors">
-                <td className="p-3 font-bold text-foreground">{a.name}</td>
-                <td className="p-3 text-muted-foreground">{a.role}</td>
-                <td className="p-3 text-muted-foreground">{a.articlesCount}</td>
-                <td className="p-3 text-cyan-400 font-bold">{a.totalViews}</td>
-                <td className="p-3 text-emerald-400 font-bold">{a.retentionRate}</td>
+            {authors.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  No author metrics available.
+                </td>
               </tr>
-            ))}
+            ) : (
+              authors.map((a) => (
+                <tr key={a.name} className="hover:bg-muted/20 transition-colors">
+                  <td className="p-3 font-bold text-foreground">{a.name}</td>
+                  <td className="p-3 text-muted-foreground">{a.role}</td>
+                  <td className="p-3 text-muted-foreground">{a.articlesCount}</td>
+                  <td className="p-3 text-cyan-400 font-bold">{a.totalViews}</td>
+                  <td className="p-3 text-emerald-400 font-bold">{a.retentionRate}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

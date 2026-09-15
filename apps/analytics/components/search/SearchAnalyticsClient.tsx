@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { Search } from "lucide-react";
 
 interface SearchQueryMetric {
@@ -8,14 +9,10 @@ interface SearchQueryMetric {
   hasResults: boolean;
 }
 
-const SEARCH_QUERIES: SearchQueryMetric[] = [
-  { query: "quantum coherence benchmark", count: "14,250", ctr: "84.2%", hasResults: true },
-  { query: "federal reserve interest rates", count: "11,890", ctr: "78.5%", hasResults: true },
-  { query: "geneva methane treaty text", count: "8,420", ctr: "69.1%", hasResults: true },
-  { query: "edition tv live broadcast frequency", count: "4,110", ctr: "0.0%", hasResults: false },
-];
-
 export function SearchAnalyticsClient() {
+  // TODO: no backend endpoint serves reader search analytics yet. Empty until one exists.
+  const [queries] = useState<SearchQueryMetric[]>([]);
+
   return (
     <div className="space-y-6 text-xs font-sans">
       <div className="bg-card border border-border rounded-md overflow-hidden shadow-xs">
@@ -35,7 +32,14 @@ export function SearchAnalyticsClient() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {SEARCH_QUERIES.map((q) => (
+            {queries.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                  No search query data available.
+                </td>
+              </tr>
+            ) : (
+              queries.map((q) => (
               <tr key={q.query} className="hover:bg-muted/20 transition-colors">
                 <td className="p-3 font-bold text-foreground">{q.query}</td>
                 <td className="p-3 text-cyan-400 font-bold">{q.count}</td>
@@ -46,9 +50,10 @@ export function SearchAnalyticsClient() {
                   >
                     {q.hasResults ? "MATCHED" : "ZERO RESULTS"}
                   </span>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

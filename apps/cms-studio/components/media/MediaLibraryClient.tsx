@@ -11,19 +11,13 @@ interface MediaAsset {
   aspectRatio: string;
 }
 
-const DEMO_ASSETS: MediaAsset[] = [
-  { id: "m-1", name: "geneva-climate-summit-keynote.jpg", type: "image", size: "2.4 MB", uploaded: "10 mins ago", aspectRatio: "16:9" },
-  { id: "m-2", name: "ai-chip-fabrication-cleanroom.jpg", type: "image", size: "3.8 MB", uploaded: "1 hour ago", aspectRatio: "16:9" },
-  { id: "m-3", name: "federal-reserve-building-dc.jpg", type: "image", size: "1.9 MB", uploaded: "3 hours ago", aspectRatio: "4:3" },
-  { id: "m-4", name: "quantum-lab-dilution-refrigerator.jpg", type: "image", size: "4.1 MB", uploaded: "Yesterday", aspectRatio: "16:9" },
-  { id: "m-5", name: "press-conference-b-roll.mp4", type: "video", size: "48.2 MB", uploaded: "Yesterday", aspectRatio: "16:9" },
-];
-
 export function MediaLibraryClient() {
-  const [assets, setAssets] = useState<MediaAsset[]>(DEMO_ASSETS);
+  // TODO: load assets from the media backend (GET /media). Empty until that is wired.
+  const [assets] = useState<MediaAsset[]>([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "image" | "video">("all");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const filtered = assets.filter((a) => {
     const matchesSearch = !search || a.name.toLowerCase().includes(search.toLowerCase());
@@ -31,20 +25,11 @@ export function MediaLibraryClient() {
     return matchesSearch && matchesType;
   });
 
-  const handleSimulatedUpload = () => {
-    setIsUploading(true);
-    setTimeout(() => {
-      const newAsset: MediaAsset = {
-        id: `m-${Date.now()}`,
-        name: "newly-uploaded-asset-cover.jpg",
-        type: "image",
-        size: "2.1 MB",
-        uploaded: "Just now",
-        aspectRatio: "16:9",
-      };
-      setAssets([newAsset, ...assets]);
-      setIsUploading(false);
-    }, 800);
+  const handleUpload = () => {
+    // The previous version invented a fixed asset entry after a timer, so the library listed
+    // files that were never uploaded.
+    setIsUploading(false);
+    setUploadError("Media upload is not connected to the media backend yet.");
   };
 
   return (
@@ -86,7 +71,7 @@ export function MediaLibraryClient() {
         </div>
 
         <button
-          onClick={handleSimulatedUpload}
+          onClick={handleUpload}
           disabled={isUploading}
           className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-1.5 rounded-md transition-colors shadow-xs disabled:opacity-50"
         >
@@ -95,8 +80,17 @@ export function MediaLibraryClient() {
         </button>
       </div>
 
+      {uploadError && (
+        <p className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-md text-xs">
+          {uploadError}
+        </p>
+      )}
+
       {/* Asset Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {filtered.length === 0 && (
+          <p className="col-span-full p-8 text-center text-xs text-muted-foreground">No media assets.</p>
+        )}
         {filtered.map((asset) => (
           <div key={asset.id} className="bg-card border border-border rounded-md overflow-hidden group hover:border-indigo-500/40 transition-all flex flex-col justify-between shadow-xs">
             <div className="aspect-video bg-muted/60 relative flex items-center justify-center border-b border-border">

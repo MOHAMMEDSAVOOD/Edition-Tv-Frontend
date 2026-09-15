@@ -12,14 +12,10 @@ interface SourceContact {
   notes: string;
 }
 
-const INITIAL_SOURCES: SourceContact[] = [
-  { id: "src-1", name: "Dr. Anna Lindqvist", role: "Principal Physicist", organization: "Zurich Quantum Center", credibility: "A1 (High)", email: "a.lindqvist@zqc.ch", notes: "Primary source for quantum coherence breakthroughs." },
-  { id: "src-2", name: "Marcus Vance", role: "Senior Analyst", organization: "European Semiconductor Policy Forum", credibility: "A1 (High)", email: "m.vance@espf.eu", notes: "Off-the-record background on EU export control timeline." },
-  { id: "src-3", name: "Amara Diallo", role: "Climate Policy Delegate", organization: "UNEP Geneva", credibility: "B2 (Medium)", email: "a.diallo@unep.org", notes: "Methane target negotiator." },
-];
-
 export function SourceVaultClient() {
-  const [sources, setSources] = useState<SourceContact[]>(INITIAL_SOURCES);
+  // TODO: persist the source vault to the backend. Seeding it with invented contacts, emails
+  // and off-the-record notes has no place in a reporter's source list.
+  const [sources, setSources] = useState<SourceContact[]>([]);
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [org, setOrg] = useState("");
@@ -30,11 +26,13 @@ export function SourceVaultClient() {
     const newSrc: SourceContact = {
       id: `src-${Date.now()}`,
       name: name.trim(),
-      role: role.trim() || "Independent Source",
-      organization: org.trim() || "Private",
-      credibility: "A1 (High)",
-      email: `${name.toLowerCase().replace(" ", ".")}@source.vault`,
-      notes: "Newly added source vault contact.",
+      role: role.trim(),
+      organization: org.trim(),
+      // Credibility is a reporter's judgement and the address must be the real one — neither is
+      // invented here. Both stay blank until they are entered.
+      credibility: "C3 (Unverified)",
+      email: "",
+      notes: "",
     };
     setSources([...sources, newSrc]);
     setName("");
@@ -53,6 +51,9 @@ export function SourceVaultClient() {
         </div>
 
         <div className="divide-y divide-border text-xs">
+          {sources.length === 0 && (
+            <p className="p-6 text-center text-xs text-muted-foreground">No sources saved.</p>
+          )}
           {sources.map((src) => (
             <div key={src.id} className="p-4 space-y-2 hover:bg-muted/20 transition-colors">
               <div className="flex items-center justify-between">

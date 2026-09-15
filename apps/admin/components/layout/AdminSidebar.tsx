@@ -131,16 +131,7 @@ export function AdminSidebar() {
               <LogOut className="h-4 w-4" />
               <span>Sign Out</span>
             </span>
-            <span className="text-[9px] font-mono opacity-80 uppercase">JWT</span>
           </button>
-
-          <div className="flex items-center justify-between text-slate-500 font-bold text-[10px] font-mono px-1">
-            <span className="flex items-center gap-1.5 text-emerald-600">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              PROD-US-EAST
-            </span>
-            <span className="text-slate-400">100% OK</span>
-          </div>
         </div>
       </aside>
     </>

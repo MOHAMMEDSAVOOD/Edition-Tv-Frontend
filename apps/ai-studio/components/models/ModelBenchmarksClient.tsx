@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Cpu, Zap, DollarSign, Activity } from "lucide-react";
 
 interface ModelMetric {
@@ -9,14 +12,19 @@ interface ModelMetric {
   status: "ACTIVE" | "STANDBY";
 }
 
-const MODELS: ModelMetric[] = [
-  { name: "GPT-5 Omni", provider: "OpenAI", latencyMs: 24, costPer1k: "$0.003", accuracyScore: "99.4%", status: "ACTIVE" },
-  { name: "Claude 3.7 Sonnet", provider: "Anthropic", latencyMs: 18, costPer1k: "$0.0025", accuracyScore: "99.2%", status: "ACTIVE" },
-  { name: "Gemini 1.5 Pro", provider: "Google DeepMind", latencyMs: 31, costPer1k: "$0.002", accuracyScore: "98.8%", status: "ACTIVE" },
-  { name: "Llama 3 70B", provider: "Meta (Local Edge)", latencyMs: 8, costPer1k: "$0.000", accuracyScore: "97.5%", status: "STANDBY" },
-];
+interface UsageSummary {
+  avgLatency: string;
+  dailyTokens: string;
+  dailyCost: string;
+  activeModels: string;
+}
 
 export function ModelBenchmarksClient() {
+  // TODO: no backend endpoint reports model telemetry yet. Listing models with invented latency,
+  // cost and accuracy numbers would misrepresent what the platform actually runs.
+  const [models] = useState<ModelMetric[]>([]);
+  const [usage] = useState<UsageSummary | null>(null);
+
   return (
     <div className="space-y-6 text-xs">
       {/* Metric Overview Cards */}
@@ -25,28 +33,28 @@ export function ModelBenchmarksClient() {
           <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
             <Zap className="h-3 w-3 text-cyan-400" /> Avg Response Latency
           </span>
-          <div className="text-xl font-bold font-mono text-cyan-400">18.2 ms</div>
+          <div className="text-xl font-bold font-mono text-cyan-400">{usage?.avgLatency ?? "—"}</div>
         </div>
 
         <div className="bg-card border border-border p-4 rounded-md space-y-1 shadow-xs">
           <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
             <Activity className="h-3 w-3 text-purple-400" /> Daily Token Volume
           </span>
-          <div className="text-xl font-bold font-mono text-purple-400">4.82 M</div>
+          <div className="text-xl font-bold font-mono text-purple-400">{usage?.dailyTokens ?? "—"}</div>
         </div>
 
         <div className="bg-card border border-border p-4 rounded-md space-y-1 shadow-xs">
           <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
             <DollarSign className="h-3 w-3 text-emerald-400" /> Est. Daily Cost
           </span>
-          <div className="text-xl font-bold font-mono text-emerald-400">$12.45</div>
+          <div className="text-xl font-bold font-mono text-emerald-400">{usage?.dailyCost ?? "—"}</div>
         </div>
 
         <div className="bg-card border border-border p-4 rounded-md space-y-1 shadow-xs">
           <span className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
             <Cpu className="h-3 w-3 text-amber-400" /> Active Copilot Models
           </span>
-          <div className="text-xl font-bold font-mono text-amber-400">4 Engine Nodes</div>
+          <div className="text-xl font-bold font-mono text-amber-400">{usage?.activeModels ?? "—"}</div>
         </div>
       </div>
 
@@ -68,22 +76,30 @@ export function ModelBenchmarksClient() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {MODELS.map((m) => (
-              <tr key={m.name} className="hover:bg-muted/20 transition-colors">
-                <td className="p-3 font-bold text-foreground">{m.name}</td>
-                <td className="p-3 text-muted-foreground">{m.provider}</td>
-                <td className="p-3 text-cyan-400 font-bold">{m.latencyMs} ms</td>
-                <td className="p-3 text-emerald-400 font-bold">{m.costPer1k}</td>
-                <td className="p-3 text-purple-400 font-bold">{m.accuracyScore}</td>
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold border ${m.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-muted text-muted-foreground border-border"}`}
-                  >
-                    {m.status}
-                  </span>
+            {models.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                  No model telemetry available.
                 </td>
               </tr>
-            ))}
+            ) : (
+              models.map((m) => (
+                <tr key={m.name} className="hover:bg-muted/20 transition-colors">
+                  <td className="p-3 font-bold text-foreground">{m.name}</td>
+                  <td className="p-3 text-muted-foreground">{m.provider}</td>
+                  <td className="p-3 text-cyan-400 font-bold">{m.latencyMs} ms</td>
+                  <td className="p-3 text-emerald-400 font-bold">{m.costPer1k}</td>
+                  <td className="p-3 text-purple-400 font-bold">{m.accuracyScore}</td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold border ${m.status === "ACTIVE" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-muted text-muted-foreground border-border"}`}
+                    >
+                      {m.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

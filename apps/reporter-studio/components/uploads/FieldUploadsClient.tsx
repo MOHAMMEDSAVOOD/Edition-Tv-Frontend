@@ -10,29 +10,16 @@ interface FieldUploadItem {
   timestamp: string;
 }
 
-const INITIAL_UPLOADS: FieldUploadItem[] = [
-  { id: "u-1", name: "geneva-press-conference-mic.wav", type: "audio", size: "12.4 MB", timestamp: "30 mins ago" },
-  { id: "u-2", name: "lab-equipment-photo-1.jpg", type: "photo", size: "4.2 MB", timestamp: "2 hours ago" },
-  { id: "u-3", name: "interview-transcript-raw.txt", type: "notes", size: "128 KB", timestamp: "Yesterday" },
-];
-
 export function FieldUploadsClient() {
-  const [uploads, setUploads] = useState<FieldUploadItem[]>(INITIAL_UPLOADS);
-  const [isUploading, setIsUploading] = useState(false);
+  // TODO: wire uploads to the media backend. Empty until that endpoint is available.
+  const [uploads] = useState<FieldUploadItem[]>([]);
+  const [isUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleSimulatedUpload = () => {
-    setIsUploading(true);
-    setTimeout(() => {
-      const newUpload: FieldUploadItem = {
-        id: `u-${Date.now()}`,
-        name: "mobile-field-interview.wav",
-        type: "audio",
-        size: "8.1 MB",
-        timestamp: "Just now",
-      };
-      setUploads([newUpload, ...uploads]);
-      setIsUploading(false);
-    }, 700);
+  const handleUpload = () => {
+    // The previous version invented a fixed "mobile-field-interview.wav" entry after a timer, so
+    // the list showed assets that were never uploaded anywhere.
+    setUploadError("Field uploads are not connected to the media backend yet.");
   };
 
   return (
@@ -45,12 +32,16 @@ export function FieldUploadsClient() {
           <p className="text-xs text-muted-foreground">Drag and drop files here, or tap to record on mobile devices.</p>
         </div>
         <button
-          onClick={handleSimulatedUpload}
+          onClick={handleUpload}
           disabled={isUploading}
           className="bg-primary text-primary-foreground font-bold text-xs px-5 py-2 rounded-md hover:opacity-90 transition-opacity shadow-xs disabled:opacity-50"
         >
           {isUploading ? "Uploading Field Asset..." : "Select Files to Upload"}
         </button>
+
+        {uploadError && (
+          <p className="text-xs text-red-500 font-mono">{uploadError}</p>
+        )}
       </div>
 
       {/* Uploaded List */}
@@ -60,6 +51,9 @@ export function FieldUploadsClient() {
         </div>
 
         <div className="divide-y divide-border text-xs">
+          {uploads.length === 0 && (
+            <p className="p-6 text-center text-xs text-muted-foreground">No field uploads.</p>
+          )}
           {uploads.map((item) => (
             <div key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
               <div className="flex items-center gap-3">

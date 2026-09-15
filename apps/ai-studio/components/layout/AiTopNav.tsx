@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Cpu, Sparkles } from "lucide-react";
+import { Cpu } from "lucide-react";
 import { useTheme } from "next-themes";
 
 export function AiTopNav() {
@@ -19,16 +19,10 @@ export function AiTopNav() {
             onChange={(e) => setModel(e.target.value)}
             className="bg-transparent text-foreground font-bold focus:outline-none cursor-pointer"
           >
-            <option value="gpt-5-omni">GPT-5 Omni (Default)</option>
-            <option value="claude-3-7-sonnet">Claude 3.7 Sonnet (Thinking)</option>
-            <option value="gemini-1-5-pro">Gemini 1.5 Pro (1M Context)</option>
-            <option value="llama-3-70b">Llama 3 70B (Local Edge)</option>
+            {/* TODO: populate from the configured provider once a model backend is wired. */}
+            <option value="">No model configured</option>
           </select>
         </div>
-
-        <span className="hidden sm:flex items-center gap-1 text-[11px] text-cyan-400 font-mono">
-          <Sparkles className="h-3 w-3" /> Latency: 18ms
-        </span>
       </div>
 
       {/* Right: Actions */}

@@ -22,81 +22,8 @@ export interface ContentEntry {
   version: number;
 }
 
-const INITIAL_ENTRIES: ContentEntry[] = [
-  {
-    id: "entry-1",
-    title: "Global AI Engineering Standard Adopted Across Enterprise Systems",
-    slug: "enterprise-ai-standards",
-    type: "Article",
-    status: "PUBLISHED",
-    authorName: "Elena Rostova",
-    updatedAt: "10 mins ago",
-    version: 4,
-  },
-  {
-    id: "entry-2",
-    title: "Federal Reserve Holds Rates Steady Amid Signs of Cooling Inflation",
-    slug: "fed-rates-decision-august-2026",
-    type: "Article",
-    status: "PUBLISHED",
-    authorName: "Sarah Chen",
-    updatedAt: "45 mins ago",
-    version: 2,
-  },
-  {
-    id: "entry-3",
-    title: "EU Passes Landmark AI Chip Export Controls Targeting Advanced Semiconductors",
-    slug: "ai-chip-regulation-eu-2026",
-    type: "Article",
-    status: "UNDER_REVIEW",
-    authorName: "Marcus Vance",
-    updatedAt: "2 hours ago",
-    version: 3,
-  },
-  {
-    id: "entry-4",
-    title: "Global Tech & Climate Summit Live Stream Updates",
-    slug: "global-tech-summit-live",
-    type: "Live Blog",
-    status: "PUBLISHED",
-    authorName: "Amara Diallo",
-    updatedAt: "3 hours ago",
-    version: 12,
-  },
-  {
-    id: "entry-5",
-    title: "Quantum Computing Breakthrough in Superconducting Qubits",
-    slug: "quantum-computing-breakthrough",
-    type: "Article",
-    status: "DRAFT",
-    authorName: "Priya Nair",
-    updatedAt: "5 hours ago",
-    version: 1,
-  },
-  {
-    id: "entry-6",
-    title: "Automated AI Toxicity Moderation Engine Analysis",
-    slug: "ai-toxicity-moderation-engine",
-    type: "Opinion",
-    status: "APPROVED",
-    authorName: "Elena Rostova",
-    updatedAt: "Yesterday",
-    version: 2,
-  },
-  {
-    id: "entry-7",
-    title: "Emergency Regional Security Escalation Alert",
-    slug: "regional-security-escalation-alert",
-    type: "Breaking Alert",
-    status: "SCHEDULED",
-    authorName: "James Whitfield",
-    updatedAt: "Yesterday",
-    version: 1,
-  },
-];
-
 export function ContentTableClient() {
-  const [entries, setEntries] = useState<ContentEntry[]>(INITIAL_ENTRIES);
+  const [entries, setEntries] = useState<ContentEntry[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");

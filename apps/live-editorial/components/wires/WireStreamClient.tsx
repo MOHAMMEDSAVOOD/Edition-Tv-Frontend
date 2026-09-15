@@ -12,15 +12,10 @@ interface WireRecord {
   triaged: boolean;
 }
 
-const INITIAL_WIRES: WireRecord[] = [
-  { id: "wr-1", source: "REUTERS", time: "18:42:10 UTC", headline: "Zurich Quantum Center confirms 500us qubit coherence benchmark", category: "Science", triaged: false },
-  { id: "wr-2", source: "AP", time: "18:38:05 UTC", headline: "EU parliament approves semiconductor export control package", category: "Technology", triaged: false },
-  { id: "wr-3", source: "AFP", time: "18:25:12 UTC", headline: "Geneva plenary session resumes with methane pledge reading", category: "World", triaged: true },
-  { id: "wr-4", source: "BLOOMBERG", time: "18:12:00 UTC", headline: "Federal Reserve keeps benchmark rate at 5.25%-5.50%", category: "Business", triaged: true },
-];
-
 export function WireStreamClient() {
-  const [wires, setWires] = useState<WireRecord[]>(INITIAL_WIRES);
+  // TODO: load the wire stream from the ingestion backend. Empty rather than seeded with sample
+  // copy attributed to real wire agencies.
+  const [wires, setWires] = useState<WireRecord[]>([]);
   const [sourceFilter, setSourceFilter] = useState("ALL");
 
   const filtered = wires.filter((w) => sourceFilter === "ALL" || w.source === sourceFilter);
@@ -53,6 +48,9 @@ export function WireStreamClient() {
 
       {/* Wire List */}
       <div className="bg-card border border-border divide-y divide-border">
+        {filtered.length === 0 && (
+          <p className="p-6 text-center text-muted-foreground text-[11px]">No wire items.</p>
+        )}
         {filtered.map((wire) => (
           <div key={wire.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
             <div className="space-y-1">

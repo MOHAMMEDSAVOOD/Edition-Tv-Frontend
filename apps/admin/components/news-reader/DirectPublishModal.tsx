@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { WireItem } from "./ArticleList";
-import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw, Upload, Edit2, FolderOpen, X, Instagram } from "lucide-react";
+import { Globe, AlertTriangle, Tag as TagIcon, Image as ImageIcon, CheckCircle2, Lock, Loader2, RefreshCw, Upload, Edit2, FolderOpen, Instagram } from "lucide-react";
 import { MediaLibraryModal, MediaAsset } from "../workspace/MediaLibraryModal";
 
 import { apiClient } from "@/lib/api-client";
@@ -48,28 +48,9 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
   // Section A: Destination & Status
   const [siteId, setSiteId] = useState<string>("edition-tv-public-web");
 
-  // Section B: Category / Section (Default infer from headline/summary)
-  const inferCategory = (title: string, summary?: string): string => {
-    const text = (title + " " + (summary || "")).toLowerCase();
-    if (text.includes("f1") || text.includes("norris") || text.includes("piastri") || text.includes("football") || text.includes("man utd") || text.includes("transfer") || text.includes("sport") || text.includes("match") || text.includes("league")) {
-      return "Sports";
-    }
-    if (text.includes("economic") || text.includes("bank") || text.includes("market") || text.includes("shares") || text.includes("business")) {
-      return "Business";
-    }
-    if (text.includes("ai") || text.includes("cyber") || text.includes("software") || text.includes("digital") || text.includes("tech")) {
-      return "Technology";
-    }
-    if (text.includes("government") || text.includes("parliament") || text.includes("politics")) {
-      return "Politics";
-    }
-    if (text.includes("vaccine") || text.includes("nhs") || text.includes("hospital") || text.includes("health")) {
-      return "Health";
-    }
-    return "World";
-  };
-
-  const [category, setCategory] = useState<string>(inferCategory(item.title, item.summary));
+  // Section B: Category / Section. Selected from the live taxonomy once the config loads —
+  // nothing is guessed from the headline.
+  const [category, setCategory] = useState<string>("");
 
   // Section C: Placement
   const [placement, setPlacement] = useState<string>("standard");
@@ -103,7 +84,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
         // Fetch categories dynamically from backend API
         let categoryList: OptionItem[] = [];
         try {
-          const raw = await apiClient.get<OptionItem[] | { content?: OptionItem[]; data?: OptionItem[] }>('/categories');
+          const raw = await apiClient.get<OptionItem[] | { content?: OptionItem[]; data?: OptionItem[] }>('/cms/categories');
           if (raw) {
             const items = Array.isArray(raw) ? raw : (raw.content || raw.data || []);
             categoryList = items.map((c: OptionItem) => ({
@@ -113,19 +94,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
             }));
           }
         } catch {
-          // ignore
-        }
-
-        if (categoryList.length === 0) {
-          categoryList = [
-            { id: "World", name: "World", enabled: true },
-            { id: "Business", name: "Business", enabled: true },
-            { id: "Technology", name: "Technology", enabled: true },
-            { id: "Politics", name: "Politics", enabled: true },
-            { id: "Sports", name: "Sports", enabled: true },
-            { id: "Health", name: "Health", enabled: true },
-            { id: "General News", name: "General News", enabled: true },
-          ];
+          // Leave the list empty; the category select renders its own empty state.
         }
 
         data = {
@@ -179,7 +148,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
   // Section G: Tags
   const generateInitialTags = (title: string, cat: string): string[] => {
     const tagsSet = new Set<string>();
-    tagsSet.add(cat);
+    if (cat) tagsSet.add(cat);
     const words = title.split(/\s+/).map((w) => w.replace(/[^a-zA-Z0-9]/g, ""));
     words.forEach((w) => {
       if (w.length > 4 && !["about", "after", "again", "their", "there", "where", "which", "would"].includes(w.toLowerCase())) {
@@ -441,11 +410,18 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500 font-sans"
                     >
-                      {config.categories?.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
+                      {!config.categories || config.categories.length === 0 ? (
+                        <option value="">No categories configured</option>
+                      ) : (
+                        <>
+                          <option value="">Select a category…</option>
+                          {config.categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </>
+                      )}
                     </select>
                   </div>
 
@@ -650,7 +626,9 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
                         alt="Custom Preview"
                         className="h-16 w-24 object-cover rounded-lg border border-emerald-300 flex-none"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=300";
+                          // A broken URL is hidden rather than swapped for a stock image, so the
+                          // editor sees that the asset did not load.
+                          (e.target as HTMLImageElement).style.visibility = "hidden";
                         }}
                       />
                       <div className="text-[10px] space-y-1 text-slate-600 overflow-hidden font-mono flex-1">
@@ -718,7 +696,7 @@ export function DirectPublishModal({ item, onClose, onSuccess }: DirectPublishMo
                           type="url"
                           value={customImageUrl}
                           onChange={(e) => setCustomImageUrl(e.target.value)}
-                          placeholder="https://images.unsplash.com/... or paste image URL"
+                          placeholder="Paste image URL (https://...)"
                           className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 focus:outline-none focus:border-red-500"
                         />
                       </div>

@@ -10,36 +10,23 @@ interface GeneratedImage {
   createdAt: string;
 }
 
-const INITIAL_GENERATED: GeneratedImage[] = [
-  { id: "img-1", prompt: "Zurich Quantum Computer dilution refrigerator, sleek editorial photography, cinematic lighting", style: "Editorial Photo", aspectRatio: "16:9", createdAt: "10 mins ago" },
-  { id: "img-2", prompt: "Abstract semiconductor microchip architecture with glowing blue silicon traces, 3D render", style: "3D Render", aspectRatio: "16:9", createdAt: "1 hour ago" },
-  { id: "img-3", prompt: "Geneva climate conference hall with world flags, journalistic style photo", style: "Editorial Photo", aspectRatio: "4:3", createdAt: "Yesterday" },
-];
-
 export function ImageStudioClient() {
-  const [gallery, setGallery] = useState<GeneratedImage[]>(INITIAL_GENERATED);
+  const [gallery] = useState<GeneratedImage[]>([]);
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("Editorial Photo");
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    setIsGenerating(true);
-    setTimeout(() => {
-      const newImg: GeneratedImage = {
-        id: `img-${Date.now()}`,
-        prompt: prompt.trim(),
-        style,
-        aspectRatio,
-        createdAt: "Just now",
-      };
-      setGallery([newImg, ...gallery]);
-      setIsGenerating(false);
-      setPrompt("");
-    }, 1200);
+    // TODO: wire to an image generation backend. The previous version added a gallery entry after
+    // a timer without generating anything, so the studio appeared to produce assets that never
+    // existed.
+    setIsGenerating(false);
+    setError("Image generation is not connected to a provider yet, so no asset can be produced.");
   };
 
   return (
@@ -47,7 +34,7 @@ export function ImageStudioClient() {
       {/* Prompt Form Panel */}
       <form onSubmit={handleGenerate} className="bg-card border border-border p-5 rounded-md space-y-4 shadow-xs">
         <h3 className="font-bold text-sm text-foreground flex items-center gap-2 border-b border-border pb-3">
-          <Sparkles className="h-4 w-4 text-purple-400 font-bold" /> Generate Visual Asset (Fal.ai FLUX.1 / Midjourney)
+          <Sparkles className="h-4 w-4 text-purple-400 font-bold" /> Generate Visual Asset
         </h3>
 
         <div className="space-y-1">
@@ -96,16 +83,27 @@ export function ImageStudioClient() {
           disabled={isGenerating || !prompt.trim()}
           className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-md text-xs transition-colors flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
         >
-          <Sparkles className="h-4 w-4" /> {isGenerating ? "Synthesizing Image with FLUX..." : "Generate AI Image"}
+          <Sparkles className="h-4 w-4" /> {isGenerating ? "Generating..." : "Generate AI Image"}
         </button>
+
+        {error && (
+          <p className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-md text-xs text-rose-400 font-mono">
+            {error}
+          </p>
+        )}
       </form>
 
       {/* Generated Gallery Grid */}
       <div className="space-y-3">
         <h3 className="font-bold text-sm text-foreground flex items-center justify-between border-b border-border pb-2">
           <span>Generated Asset Gallery ({gallery.length})</span>
-          <span className="text-[10px] text-muted-foreground font-mono">Model: FLUX.1 Dev</span>
         </h3>
+
+        {gallery.length === 0 && (
+          <p className="text-muted-foreground font-mono text-[11px] py-8 text-center">
+            No generated assets.
+          </p>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {gallery.map((img) => (

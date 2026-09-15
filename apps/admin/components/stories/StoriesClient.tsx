@@ -250,7 +250,7 @@ export function StoriesClient() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Delete failed";
       if (msg.includes("403") || msg.toLowerCase().includes("denied") || msg.toLowerCase().includes("permission")) {
-        alert("Delete failed: Insufficient permissions. Only users with EDITOR or ADMIN role can delete articles (Current role is READER). Please sign in as admin@editiontv.com / editor@editiontv.com.");
+        alert("Delete failed: insufficient permissions. Deleting an article requires the EDITOR or ADMIN role.");
       } else {
         alert(msg);
       }

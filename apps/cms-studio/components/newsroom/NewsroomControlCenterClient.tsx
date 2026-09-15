@@ -49,81 +49,6 @@ interface Desk {
   priority: number;
 }
 
-const MOCK_CANDIDATES: Candidate[] = [
-  {
-    id: "cand-001",
-    providerConfigId: "prov-001",
-    externalId: "the-guardian/2026/global-ai-summit-bengaluru",
-    headline: "Global AI & Robotics Summit Opens in Bengaluru with Key International Agreements",
-    slug: "global-ai-robotics-summit-opens-in-bengaluru-2026",
-    summary: "Leaders from over 40 nations gather in Bengaluru to establish new safety standards and ethical governance frameworks for autonomous AI systems.",
-    contentBody: "BENGALURU — The 2026 Global AI Summit officially commenced today at the International Exhibition Centre in Bengaluru. Representatives from global tech hubs, research institutes, and sovereign governments signed bilateral treaties on AI safety, model evaluation transparency, and semiconductor supply chain resilience...",
-    canonicalUrl: "https://www.theguardian.com/technology/2026/aug/27/global-ai-summit-bengaluru",
-    author: "Elena Rostova",
-    language: "en",
-    publishedAt: new Date(Date.now() - 3600000).toISOString(),
-    ingestedAt: new Date(Date.now() - 1800000).toISOString(),
-    contentHash: "a1f9c84e20b8364177d540212ab0056f8902c1143890abc",
-    processingStatus: "STAGED",
-    candidateState: "INGESTED",
-    deskId: "desk-008",
-    licensingAttribution: "Powered by The Guardian Open Platform",
-  },
-  {
-    id: "cand-002",
-    providerConfigId: "prov-002",
-    externalId: "gnews/gdp-growth-india-q2-2026",
-    headline: "India's Q2 GDP Growth Surges Past Expectations on Strong Manufacturing & Tech Exports",
-    slug: "indias-q2-gdp-growth-surges-past-expectations-2026",
-    summary: "Reserve Bank data confirms an 8.2% annual growth rate driven by high-tech electronics manufacturing and renewable energy infrastructure investments.",
-    contentBody: "NEW DELHI — India's economic expansion accelerated in the second quarter of 2026, outperforming international forecasts. Key industrial sectors reported double-digit growth, supported by robust domestic consumption and rising export demands...",
-    canonicalUrl: "https://gnews.io/article/indias-q2-gdp-growth-surges-2026",
-    author: "Rajesh Sharma",
-    language: "en",
-    publishedAt: new Date(Date.now() - 7200000).toISOString(),
-    ingestedAt: new Date(Date.now() - 3600000).toISOString(),
-    contentHash: "b8902c1143890abca1f9c84e20b8364177d540212a",
-    processingStatus: "STAGED",
-    candidateState: "TRIAGED",
-    deskId: "desk-007",
-    licensingAttribution: "Data provided by GNews API",
-  },
-  {
-    id: "cand-003",
-    providerConfigId: "prov-005",
-    externalId: "google-rss/isro-moon-base-mission-2026",
-    headline: "ISRO Outlines Chandrayaan-5 Lunar Gateway Blueprint at Space Science Conference",
-    slug: "isro-outlines-chandrayaan-5-lunar-gateway-blueprint-2026",
-    summary: "The Indian Space Research Organisation details autonomous lunar rover deployment and joint international deep-space communications node.",
-    contentBody: "BENGALURU — Scientists at ISRO headquarters presented the technical baseline for Chandrayaan-5, targeting South Pole lunar water ice harvesting and permanent orbital relay infrastructure...",
-    canonicalUrl: "https://news.google.com/rss/articles/isro-chandrayaan-5-lunar-gateway",
-    author: "ISRO Wire Service",
-    language: "en",
-    publishedAt: new Date(Date.now() - 10800000).toISOString(),
-    ingestedAt: new Date(Date.now() - 5400000).toISOString(),
-    contentHash: "c540212ab0056f8902c1143890abca1f9c84e20b836",
-    processingStatus: "STAGED",
-    candidateState: "MONITORED",
-    deskId: "desk-011",
-    licensingAttribution: "Content indexed from Google News RSS",
-  },
-];
-
-const DEFAULT_DESKS: Desk[] = [
-  { id: "desk-001", name: "News", slug: "news", description: "Breaking national news", enabled: true, priority: 1 },
-  { id: "desk-002", name: "Politics", slug: "politics", description: "Government and elections", enabled: true, priority: 2 },
-  { id: "desk-003", name: "World", slug: "world", description: "Global affairs", enabled: true, priority: 3 },
-  { id: "desk-004", name: "India", slug: "india", description: "National coverage", enabled: true, priority: 4 },
-  { id: "desk-005", name: "Karnataka", slug: "karnataka", description: "State coverage", enabled: true, priority: 5 },
-  { id: "desk-006", name: "Bengaluru", slug: "bengaluru", description: "City and tech hub news", enabled: true, priority: 6 },
-  { id: "desk-007", name: "Business", slug: "business", description: "Economy and markets", enabled: true, priority: 7 },
-  { id: "desk-008", name: "Technology", slug: "technology", description: "AI, software, hardware", enabled: true, priority: 8 },
-  { id: "desk-009", name: "Sports", slug: "sports", description: "Cricket and athletics", enabled: true, priority: 9 },
-  { id: "desk-010", name: "Entertainment", slug: "entertainment", description: "Arts and culture", enabled: true, priority: 10 },
-  { id: "desk-011", name: "Science", slug: "science", description: "Space and research", enabled: true, priority: 11 },
-  { id: "desk-012", name: "Features", slug: "features", description: "Longform journalism", enabled: true, priority: 12 },
-];
-
 export function NewsroomControlCenterClient() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [desks, setDesks] = useState<Desk[]>([]);
@@ -133,46 +58,42 @@ export function NewsroomControlCenterClient() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Modals state
   const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
   const [showConvertModal, setShowConvertModal] = useState<boolean>(false);
 
   // Form states
-  const [assignUser, setAssignUser] = useState<string>("reporter.desk@editiontv.com");
-  const [assignDesk, setAssignDesk] = useState<string>("desk-001");
+  const [assignUser, setAssignUser] = useState<string>("");
+  const [assignDesk, setAssignDesk] = useState<string>("");
   const [triageNotes, setTriageNotes] = useState<string>("");
 
   const [convertHeadline, setConvertHeadline] = useState<string>("");
   const [convertSummary, setConvertSummary] = useState<string>("");
   const [convertBody, setConvertBody] = useState<string>("");
-  const [convertDeskId, setConvertDeskId] = useState<string>("desk-001");
-  const [convertReporterId, setConvertReporterId] = useState<string>("reporter.lead@editiontv.com");
+  const [convertDeskId, setConvertDeskId] = useState<string>("");
+  const [convertReporterId, setConvertReporterId] = useState<string>("");
 
+  // Candidates are only ever what the ingestion API returned. Seeding this list with sample wire
+  // copy would let an editor convert a fabricated story into a real one.
   const fetchCandidates = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await apiClient.get<{ content?: Candidate[] } | Candidate[]>("/admin/ingestion/candidates");
-      if (data) {
-        const items = Array.isArray((data as { content?: Candidate[] }).content)
-          ? (data as { content: Candidate[] }).content
-          : Array.isArray(data)
-          ? (data as Candidate[])
-          : [];
-        if (items.length > 0) {
-          setCandidates(items);
-          setSelectedCandidate(items[0]);
-        } else {
-          setCandidates(MOCK_CANDIDATES);
-          setSelectedCandidate(MOCK_CANDIDATES[0]);
-        }
-      } else {
-        setCandidates(MOCK_CANDIDATES);
-        setSelectedCandidate(MOCK_CANDIDATES[0]);
-      }
+      const items = Array.isArray((data as { content?: Candidate[] })?.content)
+        ? (data as { content: Candidate[] }).content
+        : Array.isArray(data)
+        ? (data as Candidate[])
+        : [];
+      setCandidates(items);
+      setSelectedCandidate(items[0] ?? null);
     } catch {
-      setCandidates(MOCK_CANDIDATES);
-      setSelectedCandidate(MOCK_CANDIDATES[0]);
+      setCandidates([]);
+      setSelectedCandidate(null);
+      setLoadError("Failed to load ingestion candidates from the backend.");
     } finally {
       setLoading(false);
     }
@@ -181,13 +102,9 @@ export function NewsroomControlCenterClient() {
   const fetchDesks = useCallback(async () => {
     try {
       const data = await apiClient.get<Desk[]>("/admin/ingestion/desks");
-      if (data) {
-        setDesks(data);
-      } else {
-        setDesks(DEFAULT_DESKS);
-      }
+      setDesks(Array.isArray(data) ? data : []);
     } catch {
-      setDesks(DEFAULT_DESKS);
+      setDesks([]);
     }
   }, []);
 
@@ -199,26 +116,16 @@ export function NewsroomControlCenterClient() {
   const handleStateChange = async (targetState: string) => {
     if (!selectedCandidate) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       const updated = await apiClient.post<Candidate>(`/admin/ingestion/candidates/${selectedCandidate.id}/${targetState.toLowerCase()}`);
-      if (updated) {
-        setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-        setSelectedCandidate(updated);
-      } else {
-        // Fallback optimistic state update for local testing
-        const fallbackUpdated = {
-          ...selectedCandidate,
-          candidateState: targetState,
-          processingStatus: targetState === "REJECTED" ? "REJECTED" : selectedCandidate.processingStatus,
-        };
-        setCandidates((prev) => prev.map((c) => (c.id === fallbackUpdated.id ? fallbackUpdated : c)));
-        setSelectedCandidate(fallbackUpdated);
-      }
-    } catch {
-      // Local fallback
-      const updated = { ...selectedCandidate, candidateState: targetState };
+      if (!updated) throw new Error("empty response");
       setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       setSelectedCandidate(updated);
+    } catch {
+      // No optimistic local update: the candidate's state lives in the backend, and showing it as
+      // moved when the call failed would misreport the newsroom queue.
+      setActionError(`Failed to move candidate to ${targetState}.`);
     } finally {
       setActionLoading(false);
     }
@@ -228,37 +135,19 @@ export function NewsroomControlCenterClient() {
     e.preventDefault();
     if (!selectedCandidate) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       const updated = await apiClient.post<Candidate>(`/admin/ingestion/candidates/${selectedCandidate.id}/assign`, {
         assignedUserId: assignUser, deskId: assignDesk, triageNotes
       });
-      if (updated) {
-        setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-        setSelectedCandidate(updated);
-      } else {
-        const fallbackUpdated = {
-          ...selectedCandidate,
-          candidateState: "ASSIGNED",
-          assignedUserId: assignUser,
-          deskId: assignDesk,
-          triageNotes,
-        };
-        setCandidates((prev) => prev.map((c) => (c.id === fallbackUpdated.id ? fallbackUpdated : c)));
-        setSelectedCandidate(fallbackUpdated);
-      }
-    } catch {
-      const updated = {
-        ...selectedCandidate,
-        candidateState: "ASSIGNED",
-        assignedUserId: assignUser,
-        deskId: assignDesk,
-        triageNotes,
-      };
+      if (!updated) throw new Error("empty response");
       setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       setSelectedCandidate(updated);
+      setShowAssignModal(false);
+    } catch {
+      setActionError("Failed to assign the candidate.");
     } finally {
       setActionLoading(false);
-      setShowAssignModal(false);
     }
   };
 
@@ -266,6 +155,7 @@ export function NewsroomControlCenterClient() {
     e.preventDefault();
     if (!selectedCandidate) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       const updated = await apiClient.post<Candidate>(`/admin/ingestion/candidates/${selectedCandidate.id}/convert`, {
           headline: convertHeadline || selectedCandidate.headline,
@@ -274,29 +164,15 @@ export function NewsroomControlCenterClient() {
           deskId: convertDeskId,
           assignedReporterId: convertReporterId,
       });
-      if (updated) {
-        setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-        setSelectedCandidate(updated);
-      } else {
-        const fallbackUpdated = {
-          ...selectedCandidate,
-          candidateState: "CONVERTED",
-          processingStatus: "CONVERTED",
-        };
-        setCandidates((prev) => prev.map((c) => (c.id === fallbackUpdated.id ? fallbackUpdated : c)));
-        setSelectedCandidate(fallbackUpdated);
-      }
-    } catch {
-      const updated = {
-        ...selectedCandidate,
-        candidateState: "CONVERTED",
-        processingStatus: "CONVERTED",
-      };
+      if (!updated) throw new Error("empty response");
       setCandidates((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       setSelectedCandidate(updated);
+      setShowConvertModal(false);
+    } catch {
+      // Never mark a candidate CONVERTED locally — that would claim a story exists that does not.
+      setActionError("Failed to convert the candidate into a story.");
     } finally {
       setActionLoading(false);
-      setShowConvertModal(false);
     }
   };
 
@@ -321,6 +197,13 @@ export function NewsroomControlCenterClient() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] gap-4">
+      {(loadError || actionError) && (
+        <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl flex items-center gap-2 text-xs font-medium">
+          <XCircle className="h-4 w-4 flex-none" />
+          <span>{actionError ?? loadError}</span>
+        </div>
+      )}
+
       {/* Top Header Control Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 border border-border rounded-xl shadow-xs">
         <div className="flex items-center gap-3">

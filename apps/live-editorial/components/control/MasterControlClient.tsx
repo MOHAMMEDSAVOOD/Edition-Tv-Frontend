@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Send, Pin, Rss, Bell, Radio, AlertTriangle } from "lucide-react";
+import { Send, Pin, Rss, Bell, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface WireItem {
@@ -19,47 +19,27 @@ interface LivePost {
   isPinned: boolean;
 }
 
-const DEMO_WIRES: WireItem[] = [
-  { id: "w-1", source: "REUTERS", time: "18:42:10", headline: "Zurich Quantum Center confirms 500us qubit coherence benchmark", urgent: true },
-  { id: "w-2", source: "AP", time: "18:38:05", headline: "EU parliament approves semiconductor export control package", urgent: false },
-  { id: "w-3", source: "AFP", time: "18:25:12", headline: "Geneva plenary session resumes with methane pledge reading", urgent: false },
-  { id: "w-4", source: "INTERNAL", time: "18:10:45", headline: "Edition TV outbox event relay benchmark complete", urgent: false },
-];
-
-const DEMO_POSTS: LivePost[] = [
-  { id: "p-1", time: "18:45 UTC", headline: "Executive Keynote Concludes with Architecture Roadmap Release", content: "The Edition TV Principal Engineering Council has confirmed 100% verification across all 18 backend subsystems.", isPinned: true },
-  { id: "p-2", time: "18:15 UTC", headline: "Live Stream Initialized Across Global Edge Networks", content: "Low-latency streaming channels are now active in 12 regional edge centers.", isPinned: false },
-];
-
 export function MasterControlClient() {
-  const [wires] = useState<WireItem[]>(DEMO_WIRES);
-  const [posts, setPosts] = useState<LivePost[]>(DEMO_POSTS);
+  // TODO: wire the stream and the live blog to the backend. Both stay empty rather than showing
+  // sample wire copy attributed to Reuters/AP/AFP that never came off a wire.
+  const [wires] = useState<WireItem[]>([]);
+  const [posts] = useState<LivePost[]>([]);
 
   // New Live Post Form State
   const [postHeadline, setPostHeadline] = useState("");
   const [postContent, setPostContent] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
+  const [dispatchError, setDispatchError] = useState<string | null>(null);
 
   const handleDispatchPost = (e: React.FormEvent) => {
     e.preventDefault();
     if (!postHeadline.trim()) return;
 
-    setIsDispatching(true);
-    setTimeout(() => {
-      const newPost: LivePost = {
-        id: `p-${Date.now()}`,
-        time: new Date().toLocaleTimeString("en-US", { hour12: false }) + " UTC",
-        headline: postHeadline.trim(),
-        content: postContent.trim() || "Live update from Master Control Room.",
-        isPinned,
-      };
-      setPosts([newPost, ...posts]);
-      setPostHeadline("");
-      setPostContent("");
-      setIsPinned(false);
-      setIsDispatching(false);
-    }, 400);
+    // A dispatched post must reach the live blog backend. Appending it locally would show the
+    // desk a published update that no reader can see.
+    setIsDispatching(false);
+    setDispatchError("Live dispatch is not connected to the live blog backend yet.");
   };
 
   const handleTriageWire = (wire: WireItem) => {
@@ -79,6 +59,9 @@ export function MasterControlClient() {
         </div>
 
         <div className="flex-1 overflow-y-auto divide-y divide-border no-scrollbar">
+          {wires.length === 0 && (
+            <p className="p-4 text-center text-muted-foreground font-mono text-[11px]">No wire items.</p>
+          )}
           {wires.map((wire) => (
             <div
               key={wire.id}
@@ -155,10 +138,19 @@ export function MasterControlClient() {
               {isDispatching ? "DISPATCHING..." : "DISPATCH UPDATE"}
             </button>
           </div>
+
+          {dispatchError && (
+            <p className="mt-2 p-2.5 bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-[11px]">
+              {dispatchError}
+            </p>
+          )}
         </form>
 
         {/* Active Feed List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
+          {posts.length === 0 && (
+            <p className="p-4 text-center text-muted-foreground font-mono text-[11px]">No live posts.</p>
+          )}
           {posts.map((post) => (
             <div
               key={post.id}
@@ -190,29 +182,23 @@ export function MasterControlClient() {
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto no-scrollbar">
-          <div className="bg-red-500/10 border border-red-500/40 p-3 space-y-2">
-            <span className="text-[10px] font-bold text-red-400 uppercase flex items-center gap-1">
-              <AlertTriangle className="h-3.5 w-3.5" /> High-Priority Push
-            </span>
-            <p className="text-xs font-bold text-foreground">BREAKING: Zurich Quantum Center Coherence Breakthrough</p>
-            <button
-              onClick={() => alert("Mobile push notification dispatched to 1.2M subscribers")}
-              className="w-full bg-red-500 text-white font-bold py-1 text-xs hover:bg-red-600 transition-colors uppercase"
-            >
-              Dispatch Mobile Push
-            </button>
-          </div>
+          {/* TODO: the push composer and outbox telemetry need backend endpoints. The previous
+              version showed a fabricated breaking headline behind a button that only raised an
+              alert() claiming 1.2M subscribers had been notified. */}
+          <p className="text-muted-foreground font-mono text-[11px] py-4 text-center">
+            Push dispatch is not connected yet.
+          </p>
 
           <div className="border-t border-border pt-3 space-y-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase">Outbox Health</span>
             <div className="space-y-1 text-[11px] font-mono">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Queue Lag:</span>
-                <span className="text-emerald-400 font-bold">0 ms</span>
+                <span className="text-muted-foreground font-bold">—</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Outbox Events:</span>
-                <span className="text-primary font-bold">1,420 / sec</span>
+                <span className="text-muted-foreground font-bold">—</span>
               </div>
             </div>
           </div>

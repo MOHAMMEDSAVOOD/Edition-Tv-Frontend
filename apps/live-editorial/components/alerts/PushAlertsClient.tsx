@@ -10,29 +10,20 @@ interface AlertRecord {
   status: "SENT" | "PENDING";
 }
 
-const INITIAL_ALERTS: AlertRecord[] = [
-  { id: "alt-1", headline: "BREAKING: Federal Reserve Keeps Rates Unchanged at 5.25%-5.50%", target: "MOBILE_PUSH", timeSent: "18:00 UTC", status: "SENT" },
-  { id: "alt-2", headline: "Zurich Quantum Lab Coherence Landmark Verified", target: "TV_LOWER_THIRD", timeSent: "18:45 UTC", status: "SENT" },
-];
-
 export function PushAlertsClient() {
-  const [alerts, setAlerts] = useState<AlertRecord[]>(INITIAL_ALERTS);
+  // TODO: load the dispatch history from the notifications backend.
+  const [alerts] = useState<AlertRecord[]>([]);
   const [headline, setHeadline] = useState("");
   const [target, setTarget] = useState<AlertRecord["target"]>("MOBILE_PUSH");
+  const [dispatchError, setDispatchError] = useState<string | null>(null);
 
   const handleDispatch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!headline.trim()) return;
 
-    const newAlert: AlertRecord = {
-      id: `alt-${Date.now()}`,
-      headline: headline.trim(),
-      target,
-      timeSent: new Date().toLocaleTimeString("en-US", { hour12: false }) + " UTC",
-      status: "SENT",
-    };
-    setAlerts([newAlert, ...alerts]);
-    setHeadline("");
+    // Never log an alert as SENT locally: a breaking-news push that only exists in this tab would
+    // have the desk believe readers were notified.
+    setDispatchError("Push dispatch is not connected to the notifications backend yet.");
   };
 
   return (
@@ -46,6 +37,9 @@ export function PushAlertsClient() {
         </div>
 
         <div className="divide-y divide-border">
+          {alerts.length === 0 && (
+            <p className="p-6 text-center text-muted-foreground text-[11px]">No alerts dispatched.</p>
+          )}
           {alerts.map((alt) => (
             <div key={alt.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
               <div className="space-y-1">
@@ -104,6 +98,12 @@ export function PushAlertsClient() {
         >
           Dispatch Alert Now
         </button>
+
+        {dispatchError && (
+          <p className="p-2.5 bg-red-500/10 border border-red-500/30 text-red-400 text-[11px]">
+            {dispatchError}
+          </p>
+        )}
       </form>
     </div>
   );

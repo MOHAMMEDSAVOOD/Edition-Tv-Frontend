@@ -2,7 +2,7 @@ import { ImageStudioClient } from "@/components/images/ImageStudioClient";
 
 export const metadata = {
   title: "AI Image Studio | Edition TV AI Studio",
-  description: "Generate high-resolution editorial photography, infographics, and 3D renders using Fal.ai and Midjourney models.",
+  description: "Generate editorial photography, infographics, and renders for stories.",
 };
 
 export default function ImagesPage() {

@@ -10,10 +10,8 @@ import {
   EyeOff, 
   ArrowRight, 
   Sparkles, 
-  AlertCircle, 
+  AlertCircle,
   CheckCircle2,
-  Activity,
-  Server,
   Tv
 } from "lucide-react";
 import { authService } from "@/services/authService";
@@ -62,7 +60,7 @@ export default function AdminLoginPage() {
           <div className="relative z-10">
             <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 font-mono text-xs px-3.5 py-1.5 rounded-full shadow-xs">
               <span className="h-2 w-2 rounded-full bg-red-600 animate-pulse" />
-              <span className="font-bold tracking-wide">EDITION TV CONTROL CENTER &bull; admin.editiontv.com</span>
+              <span className="font-bold tracking-wide">EDITION TV CONTROL CENTER</span>
             </div>
           </div>
 
@@ -88,30 +86,7 @@ export default function AdminLoginPage() {
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-              
-              {/* Floating Metric Badge 1 */}
-              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-lg border border-slate-100 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-                  <Activity className="h-5 w-5" />
-                </div>
-                <div>
-                  <span className="text-xs text-slate-500 font-mono block">System Health</span>
-                  <span className="text-sm font-extrabold text-slate-900 font-mono">100% Operational</span>
-                </div>
-              </div>
-
-              {/* Floating Metric Badge 2 */}
-              <div className="absolute top-4 right-4 bg-slate-900/90 text-white backdrop-blur-md px-3.5 py-2 rounded-xl shadow-lg border border-slate-800 flex items-center gap-2 font-mono text-xs">
-                <Server className="h-4 w-4 text-red-500 animate-pulse" />
-                <span>Cluster: PROD-US-EAST</span>
-              </div>
             </div>
-          </div>
-
-          {/* Left Footer Info */}
-          <div className="relative z-10 text-xs text-slate-500 font-mono flex items-center justify-between pt-4 border-t border-slate-200/80">
-            <span>TLS 1.3 Strict &bull; Spring Security JWT</span>
-            <span>PostgreSQL & OpenSearch Online</span>
           </div>
         </div>
 
@@ -232,7 +207,7 @@ export default function AdminLoginPage() {
 
           {/* Right Footer */}
           <div className="text-center text-xs text-slate-400 font-sans">
-            Edition TV Platform &copy; 2026 &bull; Secured with Spring Security JWT
+            Edition TV Platform &copy; {new Date().getFullYear()}
           </div>
 
         </div>

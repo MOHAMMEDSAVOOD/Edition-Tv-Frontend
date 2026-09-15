@@ -14,14 +14,6 @@ interface PipelineStory {
   wordCount: number;
 }
 
-const INITIAL_STORIES: PipelineStory[] = [
-  { id: "s-1", title: "Quantum Computing Qubit Coherence Breakthrough", category: "Science", priority: "URGENT", stage: "WRITING", deadline: "Today 17:00", wordCount: 850 },
-  { id: "s-2", title: "EU Semiconductor Export Control Package Audit", category: "Technology", priority: "HIGH", stage: "REPORTING", deadline: "Tomorrow 12:00", wordCount: 420 },
-  { id: "s-3", title: "Central Bank Rate Policy Impact on Real Estate", category: "Business", priority: "MEDIUM", stage: "PITCH", deadline: "Aug 12", wordCount: 0 },
-  { id: "s-4", title: "Global AI Governance Standards Implementation", category: "Technology", priority: "HIGH", stage: "EDITING", deadline: "Today 15:00", wordCount: 1400 },
-  { id: "s-5", title: "Geneva Methane Climate Accord Analysis", category: "World", priority: "LOW", stage: "FILED", deadline: "Filed Aug 06", wordCount: 1100 },
-];
-
 const STAGES: { key: PipelineStory["stage"]; label: string; color: string }[] = [
   { key: "PITCH", label: "Story Pitches", color: "border-amber-500/40 text-amber-500" },
   { key: "REPORTING", label: "Active Reporting", color: "border-blue-500/40 text-blue-500" },
@@ -31,7 +23,8 @@ const STAGES: { key: PipelineStory["stage"]; label: string; color: string }[] = 
 ];
 
 export function StoryPipelineClient() {
-  const [stories, setStories] = useState<PipelineStory[]>(INITIAL_STORIES);
+  // TODO: load the reporter pipeline from the backend. Empty until that endpoint is wired.
+  const [stories, setStories] = useState<PipelineStory[]>([]);
 
   const moveStage = (id: string, nextStage: PipelineStory["stage"]) => {
     setStories((prev) => prev.map((s) => (s.id === id ? { ...s, stage: nextStage } : s)));

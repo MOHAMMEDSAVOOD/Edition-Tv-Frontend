@@ -91,7 +91,6 @@ export function AuditLogsClient() {
             <FileCode2 className="h-4 w-4 text-red-600" /> Immutable Security Log Stream
           </span>
           <div className="flex items-center gap-4">
-            <span className="text-[10px] text-slate-400 font-mono">Retention: 365 Days</span>
             <button
               onClick={() => fetchLogs(page)}
               className="text-slate-400 hover:text-slate-900 transition"

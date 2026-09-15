@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Calendar, Download, Users, RefreshCw } from "lucide-react";
+import { Calendar, Download, RefreshCw } from "lucide-react";
 
 export function AnalyticsTopNav() {
   const [range, setRange] = useState("24h");
@@ -40,13 +40,8 @@ export function AnalyticsTopNav() {
         </button>
       </div>
 
-      {/* Right: Active Readers Counter & Export */}
+      {/* Right: Export */}
       <div className="flex items-center gap-4 text-xs">
-        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-md font-mono text-emerald-400 font-bold">
-          <Users className="h-3.5 w-3.5 animate-pulse" />
-          <span>14,280 ACTIVE READERS RIGHT NOW</span>
-        </div>
-
         <button
           onClick={() => alert("Exporting Executive Telemetry Report (PDF / CSV)...")}
           className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-black font-bold px-3 py-1.5 rounded-md transition-colors text-xs shadow-xs"
