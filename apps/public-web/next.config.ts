@@ -6,6 +6,13 @@ const backendOrigin =
     .replace(/\/api\/v1\/?$/, "");
 
 const nextConfig: NextConfig = {
+  // The container image runs this app with `node server.js`, which exists only
+  // in the standalone bundle. The Cloudflare Worker build (build:cf, OpenNext)
+  // must not have it, so the Dockerfile asks for it by setting the variable
+  // rather than it being on for every build.
+  ...(process.env.BUILD_STANDALONE === "true"
+    ? { output: "standalone" as const, outputFileTracingRoot: path.join(__dirname, "../../") }
+    : {}),
   typescript: {
     ignoreBuildErrors: false,
   },
