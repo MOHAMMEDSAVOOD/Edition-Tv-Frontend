@@ -25,15 +25,15 @@ export function MarketSnapshotTicker() {
   }
 
   return (
-    <div className="bg-background border-y border-border py-2 text-xs font-mono overflow-x-auto scrollbar-none" suppressHydrationWarning>
-      <div className="container mx-auto max-w-[1200px] px-4 md:px-6 flex items-center justify-between gap-6 whitespace-nowrap" suppressHydrationWarning>
-        <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-muted-foreground flex-none pr-4 border-r border-border">
+    <div className="bg-background border-y border-border py-2 text-xs font-mono w-full max-w-full overflow-hidden" suppressHydrationWarning>
+      <div className="container mx-auto max-w-[1200px] px-4 md:px-6 flex items-center justify-between gap-6 whitespace-nowrap min-w-0 relative" suppressHydrationWarning>
+        <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-muted-foreground flex-none pr-4 border-r border-border shrink-0">
           <DollarSign className="h-3.5 w-3.5 text-primary" />
           <span>Markets</span>
         </div>
-        <div className="flex items-center gap-6 overflow-x-auto flex-1 no-scrollbar">
+        <div className="flex items-center gap-6 overflow-x-auto flex-1 min-w-0 scrollbar-none">
           {markets.map((m) => (
-            <div key={m.symbol} className="flex items-center gap-2 text-xs">
+            <div key={m.symbol} className="flex items-center gap-2 text-xs shrink-0">
               <span className="font-bold text-foreground">{m.symbol}</span>
               <span className="text-muted-foreground">{m.value}</span>
               <span

@@ -5,6 +5,8 @@ export interface UserSession {
   username: string;
   token: string;
   roles: string[];
+  email?: string;
+  userId?: string;
 }
 
 export interface RegisterRequest {
@@ -62,6 +64,8 @@ export const authService = {
         username: res.username,
         token: res.token,
         roles: res.roles,
+        email: res.email,
+        userId: res.userId,
       };
       if (typeof window !== "undefined") {
         localStorage.setItem("edition_auth_session", JSON.stringify(session));
@@ -84,6 +88,8 @@ export const authService = {
         username: res.username,
         token: res.token,
         roles: res.roles,
+        email: res.email,
+        userId: res.userId,
       };
       if (typeof window !== "undefined") {
         localStorage.setItem("edition_auth_session", JSON.stringify(session));

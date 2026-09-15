@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Radio, Video, Headphones, Sparkles, Newspaper } from "lucide-react";
+import { Radio, Video, Headphones, Sparkles } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { feedMapper } from "@/mappers/feedMapper";
 import { ArticleFeedItem } from "@/services/feedService";
@@ -247,12 +247,34 @@ export function HomeFeedClient({
         </ClientOnly>
 
         {articles.length === 0 && !isLoading ? (
-          <div className="py-20 text-center border border-dashed border-border rounded-xs my-8 space-y-3" suppressHydrationWarning>
-            <Newspaper className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-            <h2 className="headline-lg text-xl font-bold text-foreground">No Published News Articles Available</h2>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto font-sans">
-              There are currently no published articles in the news feed. News updates published via the API will appear here live.
-            </p>
+          <div className="py-16 px-4 text-center border border-border/80 bg-card/60 backdrop-blur-xs rounded-2xl my-8 space-y-4 max-w-xl mx-auto shadow-xs" suppressHydrationWarning>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-mono font-bold uppercase tracking-widest">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Newsroom Standby</span>
+            </div>
+            <div className="space-y-1.5">
+              <h2 className="headline-lg text-2xl font-bold text-foreground font-headline tracking-tight">
+                Awaiting Live Published Dispatches
+              </h2>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                Edition TV correspondents and wire ingestion pipelines are actively connected. Published breaking stories, analyses, and live blogs will stream here in real time.
+              </p>
+            </div>
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => fetchLiveHomeFeed()}
+                className="px-4 py-2 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wider rounded-lg hover:opacity-90 transition-all shadow-xs"
+              >
+                Refresh Wire Feed
+              </button>
+              <Link
+                href="/topics"
+                className="px-4 py-2 bg-muted text-muted-foreground hover:text-foreground text-xs font-bold uppercase tracking-wider rounded-lg transition-all border border-border"
+              >
+                Explore Topics
+              </Link>
+            </div>
           </div>
         ) : (
           <>

@@ -16,7 +16,7 @@ export function WeatherWidget() {
   const current = cities[activeCityIndex];
 
   return (
-    <div className="hidden xl:flex items-center gap-2 text-xs font-mono text-muted-foreground border-l border-border pl-3">
+    <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground border-l border-border pl-3">
       <div className="flex items-center gap-1.5 font-sans font-semibold text-foreground">
         {current.icon === "sun" && <Sun className="h-3.5 w-3.5 text-amber-500" />}
         {current.icon === "cloud" && <Cloud className="h-3.5 w-3.5 text-slate-400" />}
