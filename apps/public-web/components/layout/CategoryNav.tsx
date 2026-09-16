@@ -3,7 +3,7 @@
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ArrowRight, Layers, Search, Grid, Compass, Clock } from "lucide-react";
+import { ChevronDown, ArrowRight, Layers, Search, Compass, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SafeImage } from "../common/SafeImage";
 import { apiClient } from "@/lib/api-client";
@@ -276,7 +276,6 @@ export function CategoryNav({ items }: { items: NavCategoryItem[] }) {
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-primary/50"
                 )}
               >
-                <Grid className="h-3.5 w-3.5 text-primary" />
                 <span>
                   {activeOverflowItem ? activeOverflowItem.name : "More"}
                 </span>
@@ -546,12 +545,9 @@ export function CategoryNav({ items }: { items: NavCategoryItem[] }) {
               {/* LEFT SIDE: Editorial Taxonomy & News Desks (7 of 12 columns) */}
               <div className="col-span-7 border-r border-border pr-8">
                 <div className="flex items-center justify-between pb-2 mb-4 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <Grid className="h-3.5 w-3.5 text-primary" />
-                    <h3 className="text-xs font-headline font-bold uppercase tracking-wider text-foreground">
-                      Editorial Sections &amp; Desks
-                    </h3>
-                  </div>
+                  <h3 className="text-xs font-headline font-bold uppercase tracking-wider text-foreground">
+                    Editorial Sections &amp; Desks
+                  </h3>
 
                   {/* Subtle Filter Input */}
                   <div className="relative w-48">
