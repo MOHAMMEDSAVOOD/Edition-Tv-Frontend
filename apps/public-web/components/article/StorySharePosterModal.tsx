@@ -600,202 +600,188 @@ export function StorySharePosterModal({
 
   const socialChannels = [
     {
+      name: "WhatsApp",
+      icon: Send,
+      bg: "#25D366",
+      text: "#ffffff",
+      url: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${currentUrl}`)}`,
+    },
+    {
       name: "X (Twitter)",
       icon: Twitter,
-      color: "bg-black text-white hover:bg-zinc-800",
+      bg: "#000000",
+      text: "#ffffff",
       url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`,
     },
     {
       name: "LinkedIn",
       icon: Linkedin,
-      color: "bg-[#0A66C2] text-white hover:bg-[#084e96]",
+      bg: "#0A66C2",
+      text: "#ffffff",
       url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
-    },
-    {
-      name: "Facebook",
-      icon: Facebook,
-      color: "bg-[#1877F2] text-white hover:bg-[#135ab7]",
-      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
-    },
-    {
-      name: "WhatsApp",
-      icon: Send,
-      color: "bg-[#25D366] text-white hover:bg-[#1da851]",
-      url: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${currentUrl}`)}`,
     },
     {
       name: "Telegram",
       icon: Send,
-      color: "bg-[#229ED9] text-white hover:bg-[#1a7cae]",
+      bg: "#229ED9",
+      text: "#ffffff",
       url: `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareTitle)}`,
+    },
+    {
+      name: "Facebook",
+      icon: Facebook,
+      bg: "#1877F2",
+      text: "#ffffff",
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
     },
     {
       name: "Reddit",
       icon: MessageSquare,
-      color: "bg-[#FF4500] text-white hover:bg-[#cc3700]",
+      bg: "#FF4500",
+      text: "#ffffff",
       url: `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(shareTitle)}`,
     },
     {
       name: "Email",
       icon: Mail,
-      color: "bg-slate-700 text-white hover:bg-slate-800",
+      bg: "#6B7280",
+      text: "#ffffff",
       url: `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(`${shareText}\n\n${currentUrl}`)}`,
     },
   ];
-  // SUB-RENDERER: Social Share Links
-  const renderShareControls = () => (
-    <div className="space-y-3.5 sm:space-y-5">
-      {/* Copy Direct Link */}
-      <div className="space-y-1.5 sm:space-y-2">
-        <label className="text-[11px] sm:text-xs font-bold text-slate-300 font-sans uppercase tracking-wider block">
-          Direct Story Link
-        </label>
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <input
-            type="text"
-            readOnly
-            value={currentUrl}
-            className="flex-1 px-3 py-1.5 sm:px-3.5 sm:py-2.5 text-[11px] sm:text-xs border border-slate-800 bg-slate-950 rounded-lg sm:rounded-xl font-mono text-slate-200 focus:outline-none"
-          />
-          <button
-            onClick={copyToClipboard}
-            className="flex items-center gap-1 sm:gap-1.5 bg-red-600 text-white font-bold text-[11px] sm:text-xs py-1.5 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl hover:bg-red-700 transition-colors shrink-0"
-          >
-            {copiedLink ? (
-              <>
-                <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
-                <span>Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span>Copy Link</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Social Channels Grid */}
-      <div className="space-y-1.5 sm:space-y-2">
-        <label className="text-[11px] sm:text-xs font-bold text-slate-300 font-sans uppercase tracking-wider block">
-          Share to Social Networks
-        </label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2.5">
-          {socialChannels.map((channel) => {
-            const Icon = channel.icon;
+  // SUB-RENDERER: Social Share Panel (light theme)
+  const renderSharePanel = () => (
+    <div className="flex flex-col h-full">
+      {/* Section: Share via social */}
+      <div className="mb-4">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Share via</p>
+        <div className="grid grid-cols-2 gap-2">
+          {socialChannels.map((ch) => {
+            const Icon = ch.icon;
             return (
               <a
-                key={channel.name}
-                href={channel.url}
+                key={ch.name}
+                href={ch.url}
                 target="_blank"
                 rel="noreferrer"
-                className={`flex items-center gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all shadow-xs ${channel.color}`}
+                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-md active:scale-[0.97]"
+                style={{ backgroundColor: ch.bg, color: ch.text }}
               >
-                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                <span className="truncate">{channel.name}</span>
+                <span className="w-5 h-5 flex items-center justify-center shrink-0">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="truncate text-[13px]">{ch.name}</span>
               </a>
             );
           })}
         </div>
       </div>
 
-      {/* Mobile Native Share Sheet */}
-      <div className="pt-2 sm:pt-3 border-t border-slate-800 text-center">
-        <button
-          onClick={handleNativeShare}
-          className="w-full flex items-center justify-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-200 font-bold text-[11px] sm:text-xs py-2 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl hover:bg-slate-700 transition-colors border border-slate-700"
-        >
-          <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500" />
-          <span>Open System Share Sheet (Mobile / OS)</span>
-        </button>
+      {/* Section: Copy Link */}
+      <div className="mb-4">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Copy Link</p>
+        <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-xl overflow-hidden px-3 py-2">
+          <span className="flex-1 text-[12px] font-mono text-gray-500 truncate">{currentUrl}</span>
+          <button
+            onClick={copyToClipboard}
+            className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all ${
+              copiedLink
+                ? "bg-green-500 text-white"
+                : "bg-[#E4002B] text-white hover:bg-red-700"
+            }`}
+          >
+            {copiedLink ? (
+              <><Check className="h-3.5 w-3.5" /><span>Copied!</span></>
+            ) : (
+              <><Copy className="h-3.5 w-3.5" /><span>Copy</span></>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Section: System Share */}
+      <button
+        onClick={handleNativeShare}
+        className="w-full flex items-center justify-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-sm py-2.5 px-4 rounded-xl transition-colors mb-4"
+      >
+        <Share2 className="h-4 w-4 text-[#E4002B]" />
+        <span>More sharing options…</span>
+      </button>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-1.5 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl bg-slate-950 text-white rounded-xl sm:rounded-2xl shadow-2xl border border-slate-800 overflow-hidden my-auto flex flex-col max-h-[92dvh] sm:max-h-[94vh]">
-        {/* Modal Top Header Bar */}
-        <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 border-b border-slate-800 bg-slate-900/90 shrink-0">
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            <div className="p-1.5 sm:p-2 bg-red-600 text-white rounded-md sm:rounded-lg shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+      <div className="relative w-full sm:max-w-4xl bg-white text-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden my-0 sm:my-auto flex flex-col max-h-[96dvh] sm:max-h-[90vh]">
+
+        {/* ── HEADER ─────────────────────────────────── */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-gray-100 bg-white shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#E4002B] rounded-lg flex items-center justify-center shadow-sm">
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <h3 className="text-xs sm:text-sm font-bold text-slate-100 font-serif">
-                  Edition TV Poster Studio
-                </h3>
-                <span className="text-[9px] sm:text-[10px] font-mono px-1.5 sm:px-2 py-0.5 rounded bg-red-600/20 text-red-400 border border-red-500/30">
-                  {currentFormat.badge} · {currentFormat.width}×{currentFormat.height}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-sans hidden sm:block">
-                HD Export with camera-scannable QR code & dynamic branding
-              </p>
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Share Story</h2>
+              <p className="text-[11px] text-gray-400 leading-tight hidden sm:block">Download poster · Share with your audience</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 sm:p-1.5 rounded-full text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Mobile Navigation Segmented Tabs (< md) */}
-        <div className="flex md:hidden border-b border-slate-800 bg-slate-900/60 p-1 px-2.5 justify-between items-center shrink-0">
-          <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-800 w-full gap-0.5">
-            <button
-              type="button"
-              onClick={() => setActiveTab("preview")}
-              className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-md text-[11px] font-bold transition-all ${
-                activeTab === "preview"
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <Eye className="h-3 w-3" />
-              <span>Preview</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("share")}
-              className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-md text-[11px] font-bold transition-all ${
-                activeTab === "share"
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <Share2 className="h-3 w-3" />
-              <span>Share</span>
-            </button>
-          </div>
+        {/* ── MOBILE TABS ────────────────────────────── */}
+        <div className="flex md:hidden border-b border-gray-100 bg-gray-50 px-3 pt-2 pb-0 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveTab("preview")}
+            className={`flex-1 flex items-center justify-center gap-1.5 pb-2 text-[12px] font-bold border-b-2 transition-all ${
+              activeTab === "preview"
+                ? "border-[#E4002B] text-[#E4002B]"
+                : "border-transparent text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            Poster Preview
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("share")}
+            className={`flex-1 flex items-center justify-center gap-1.5 pb-2 text-[12px] font-bold border-b-2 transition-all ${
+              activeTab === "share"
+                ? "border-[#E4002B] text-[#E4002B]"
+                : "border-transparent text-gray-400 hover:text-gray-600"
+            }`}
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            Share & Download
+          </button>
         </div>
 
-        {/* Modal Studio Body: 2-Column Desktop / Responsive Mobile View */}
+        {/* ── BODY ───────────────────────────────────── */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          {/* LEFT COLUMN: POSTER CANVAS PREVIEW & PRIMARY ACTIONS */}
+
+          {/* LEFT: Poster Canvas */}
           <div
-            className={`w-full md:w-[48%] lg:w-[45%] p-2.5 sm:p-5 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-slate-800/80 bg-slate-950/70 overflow-y-auto ${
+            className={`md:w-[42%] bg-gray-50 border-r border-gray-100 flex flex-col items-center justify-between p-4 sm:p-6 overflow-y-auto ${
               activeTab === "share" ? "hidden md:flex" : "flex"
             }`}
           >
-            {/* Live Preview Wrapper */}
-            <div className="w-full flex flex-col items-center justify-center py-0.5 sm:py-1">
+            {/* Poster preview */}
+            <div className="w-full flex flex-col items-center justify-center flex-1">
               <div
                 ref={previewWrapperRef}
-                className={`relative w-full ${
+                className={`relative ${
                   selectedFormat === "9:16"
-                    ? "max-w-[185px] sm:max-w-[230px] md:max-w-[270px] lg:max-w-[290px]"
-                    : "max-w-[205px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[330px]"
-                } rounded-xl overflow-hidden shadow-2xl border border-slate-800 transition-all duration-200 shrink-0`}
-                style={{
-                  height: `${wrapperHeight}px`,
-                }}
+                    ? "max-w-[160px] sm:max-w-[200px] md:max-w-[240px]"
+                    : "max-w-[200px] sm:max-w-[240px] md:max-w-[280px]"
+                } w-full rounded-xl overflow-hidden shadow-xl border border-gray-200`}
+                style={{ height: `${wrapperHeight}px` }}
               >
-                {/* Scaled view of the exact Canonical Poster */}
+                {/* Scaled canonical poster */}
                 <div
                   style={{
                     transform: `scale(${previewScale})`,
@@ -804,7 +790,7 @@ export function StorySharePosterModal({
                     height: `${currentFormat.height}px`,
                   }}
                 >
-                  {/* CANONICAL RENDERER (SINGLE SOURCE OF TRUTH FOR PREVIEW & EXPORT) */}
+                  {/* CANONICAL POSTER (single source of truth for preview & export) */}
                   <div
                     ref={canonicalPosterRef}
                     style={{
@@ -817,7 +803,7 @@ export function StorySharePosterModal({
                       userSelect: "none",
                     }}
                   >
-                    {/* LAYER 1: Real CMS Article Image Background (or Custom Uploaded Photo) (z-0) */}
+                    {/* LAYER 1: Background image */}
                     {(optimizedImageDataUrl || article.featuredImageUrl) ? (
                       <div
                         style={{
@@ -830,9 +816,8 @@ export function StorySharePosterModal({
                           backgroundColor: "#000000",
                         }}
                       >
-                        {/* 1A: Ambient Backdrop Layer (smooth ambient color glow matching the image) */}
                         {ambientBackdropDataUrl ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={ambientBackdropDataUrl}
                             alt=""
@@ -852,13 +837,10 @@ export function StorySharePosterModal({
                             style={{
                               position: "absolute",
                               inset: 0,
-                              background:
-                                "linear-gradient(135deg, #180206 0%, #0a0103 50%, #000000 100%)",
+                              background: "linear-gradient(135deg, #180206 0%, #0a0103 50%, #000000 100%)",
                             }}
                           />
                         )}
-
-                        {/* 1B: Exact Original Foreground Image (Pixel-perfect, zero distortion, exact aspect ratio) */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={optimizedImageDataUrl || article.featuredImageUrl}
@@ -884,13 +866,8 @@ export function StorySharePosterModal({
                             maxHeight: "none",
                             transform: bgZoom !== 100 ? `scale(${bgZoom / 100})` : "none",
                             transformOrigin: "center center",
-                            filter: `brightness(${
-                              bgBrightness / 100
-                            }) contrast(${bgContrast / 100})`,
-                            boxShadow:
-                              imageFitMode === "original"
-                                ? "0 14px 48px rgba(0,0,0,0.85)"
-                                : "none",
+                            filter: `brightness(${bgBrightness / 100}) contrast(${bgContrast / 100})`,
+                            boxShadow: imageFitMode === "original" ? "0 14px 48px rgba(0,0,0,0.85)" : "none",
                           }}
                         />
                       </div>
@@ -899,45 +876,19 @@ export function StorySharePosterModal({
                         style={{
                           position: "absolute",
                           inset: 0,
-                          background:
-                            "linear-gradient(135deg, #2a010a 0%, #090104 50%, #000000 100%)",
+                          background: "linear-gradient(135deg, #2a010a 0%, #090104 50%, #000000 100%)",
                           zIndex: 0,
                         }}
                       />
                     )}
 
-                    {/* LAYER 2A: Crimson Brand Glow (z-5) */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: currentFormat.topGlowHeight,
-                        background:
-                          "linear-gradient(to bottom, rgba(228, 0, 43, 0.50) 0%, rgba(228, 0, 43, 0.18) 55%, transparent 100%)",
-                        filter: "blur(20px)",
-                        pointerEvents: "none",
-                        zIndex: 5,
-                      }}
-                    />
+                    {/* LAYER 2A: Brand glow */}
+                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: currentFormat.topGlowHeight, background: "linear-gradient(to bottom, rgba(228, 0, 43, 0.50) 0%, rgba(228, 0, 43, 0.18) 55%, transparent 100%)", filter: "blur(20px)", pointerEvents: "none", zIndex: 5 }} />
 
-                    {/* LAYER 2B: Readability Dark Gradient (z-10) */}
-                    <div
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: currentFormat.bottomGlowHeight,
-                        background:
-                          "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.80) 60%, transparent 100%)",
-                        pointerEvents: "none",
-                        zIndex: 10,
-                      }}
-                    />
+                    {/* LAYER 2B: Readability gradient */}
+                    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: currentFormat.bottomGlowHeight, background: "linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.80) 60%, transparent 100%)", pointerEvents: "none", zIndex: 10 }} />
 
-                    {/* LAYER 2C: Dynamic Category Name in Top Ribbon (z-40) */}
+                    {/* LAYER 2C: Category ribbon */}
                     <div
                       style={{
                         position: "absolute",
@@ -949,27 +900,19 @@ export function StorySharePosterModal({
                         alignItems: "center",
                         justifyContent: "center",
                         color: "#FFFFFF",
-                        fontSize:
-                          categoryDisplayName.length > 14
-                            ? "36px"
-                            : categoryDisplayName.length > 10
-                              ? "42px"
-                              : currentFormat.ribbon.fontSize,
+                        fontSize: categoryDisplayName.length > 14 ? "36px" : categoryDisplayName.length > 10 ? "42px" : currentFormat.ribbon.fontSize,
                         fontWeight: 700,
-                        fontFamily:
-                          "'Roboto Slab', serif",
+                        fontFamily: "'Roboto Slab', serif",
                         letterSpacing: "0.08em",
                         textTransform: "uppercase",
                         textAlign: "center",
                         zIndex: 40,
                       }}
                     >
-                      <span className="whitespace-nowrap px-1" style={{ marginTop: "-8px" }}>
-                        {categoryDisplayName}
-                      </span>
+                      <span className="whitespace-nowrap px-1" style={{ marginTop: "-8px" }}>{categoryDisplayName}</span>
                     </div>
 
-                    {/* LAYER 3 & 4: Headline & Description Container (z-20) */}
+                    {/* LAYER 3: Headline & description */}
                     <div
                       style={{
                         position: "absolute",
@@ -985,9 +928,7 @@ export function StorySharePosterModal({
                           fontSize: getHeadlineFontSize(headlineText),
                           fontWeight: 700,
                           color: "#FFFFFF",
-                          fontFamily:
-                            "'Georgia', 'Times New Roman', 'Merriweather', serif",
-                          fontStyle: "normal",
+                          fontFamily: "'Georgia', 'Times New Roman', 'Merriweather', serif",
                           lineHeight: 1.2,
                           letterSpacing: "-0.015em",
                           margin: 0,
@@ -999,7 +940,6 @@ export function StorySharePosterModal({
                       >
                         {headlineText}
                       </h1>
-
                       {descriptionText && (
                         <p
                           style={{
@@ -1007,10 +947,8 @@ export function StorySharePosterModal({
                             fontSize: "25px",
                             lineHeight: 1.35,
                             color: "#F8FAFC",
-                            fontFamily:
-                              "'Inter', 'Helvetica Neue', 'Arial', sans-serif",
+                            fontFamily: "'Inter', 'Helvetica Neue', 'Arial', sans-serif",
                             fontWeight: 600,
-                            fontStyle: "normal",
                             margin: "14px 0 0 0",
                             padding: 0,
                             display: "block",
@@ -1023,7 +961,7 @@ export function StorySharePosterModal({
                       )}
                     </div>
 
-                    {/* LAYER 5: Dynamic Scannable QR Code Scanner (z-20) */}
+                    {/* LAYER 5: QR Code */}
                     <div
                       style={{
                         position: "absolute",
@@ -1041,15 +979,10 @@ export function StorySharePosterModal({
                         zIndex: 20,
                       }}
                     >
-                      <QRCodeSVG
-                        value={currentUrl}
-                        size={currentFormat.qrCode.size}
-                        bgColor="#FFFFFF"
-                        fgColor="#000000"
-                      />
+                      <QRCodeSVG value={currentUrl} size={currentFormat.qrCode.size} bgColor="#FFFFFF" fgColor="#000000" />
                     </div>
 
-                    {/* LAYER 5B: Contact Phone Number (z-20) */}
+                    {/* LAYER 5B: Contact phone */}
                     <div
                       style={{
                         position: "absolute",
@@ -1065,190 +998,146 @@ export function StorySharePosterModal({
                         textShadow: "0 2px 8px rgba(0,0,0,0.6)",
                       }}
                     >
-                      <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#F8FAFC", marginBottom: "-2px" }}>
-                        Contact Us
-                      </span>
-                      <span style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
-                        +91 72041 17779
-                      </span>
+                      <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#F8FAFC", marginBottom: "-2px" }}>Contact Us</span>
+                      <span style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>+91 72041 17779</span>
                     </div>
 
-
-                    {/* LAYER 6: OFFICIAL UNIFIED TRANSPARENT PNG FRAME OVERLAY (z-30) */}
+                    {/* LAYER 6: Frame overlay */}
                     {activePosterFrame ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={activePosterFrame}
                         alt={`Edition TV Share Poster Frame (${currentFormat.aspectRatioLabel})`}
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          width: `${currentFormat.width}px`,
-                          height: `${currentFormat.height}px`,
-                          objectFit: "cover",
-                          pointerEvents: "none",
-                          zIndex: 30,
-                          opacity: 1,
-                        }}
+                        style={{ position: "absolute", inset: 0, width: `${currentFormat.width}px`, height: `${currentFormat.height}px`, objectFit: "cover", pointerEvents: "none", zIndex: 30, opacity: 1 }}
                       />
                     ) : null}
                   </div>
                 </div>
 
-                {/* Motion Reel Overlay when in Video Mode */}
+                {/* Video mode badge */}
                 {mediaMode === "video" && (
-                  <>
-                    <div className="absolute top-2.5 left-2.5 z-40 pointer-events-none flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur-md border border-slate-700 shadow-lg">
-                      <Film className="h-3 w-3 text-red-500" />
-                      <span className="text-[10px] font-bold text-white tracking-wide uppercase">Video Mode (MP4)</span>
-                    </div>
-                  </>
+                  <div className="absolute top-2 left-2 z-40 pointer-events-none flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/80 border border-white/20">
+                    <Film className="h-3 w-3 text-red-400" />
+                    <span className="text-[9px] font-bold text-white uppercase tracking-wide">Video</span>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Media Mode Toggle: Static Poster (PNG) vs Video Format (MP4) */}
-            <div className="w-full max-w-xs sm:max-w-sm mt-2 sm:mt-2.5 bg-slate-950/90 p-1 rounded-xl border border-slate-800/80 flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => setMediaMode("image")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
-                  mediaMode === "image"
-                    ? "bg-slate-800 text-white shadow-sm border border-slate-700"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <ImageIcon className="h-3.5 w-3.5 text-blue-400" />
-                <span>Poster (PNG)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMediaMode("video")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
-                  mediaMode === "video"
-                    ? "bg-red-600 text-white shadow-md"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Film className="h-3.5 w-3.5 text-amber-300" />
-                <span>Video (MP4)</span>
-              </button>
-            </div>
-
-            {/* Poster Format Toggle: 2:3 Feed vs 9:16 Story */}
-            <div className="w-full max-w-xs sm:max-w-sm mt-1.5 sm:mt-2 bg-slate-900/90 p-1 sm:p-1.5 rounded-xl border border-slate-800 flex items-center gap-1 sm:gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setSelectedFormat("2:3")}
-                className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
-                  selectedFormat === "2:3"
-                    ? "bg-red-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                }`}
-              >
-                <Layers className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span>2:3 Feed</span>
-                <span className="text-[9px] sm:text-[10px] opacity-75 font-mono">(1024×1536)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedFormat("9:16")}
-                className={`flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
-                  selectedFormat === "9:16"
-                    ? "bg-red-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                }`}
-              >
-                <Smartphone className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                <span>9:16 Story</span>
-                <span className="text-[9px] sm:text-[10px] opacity-75 font-mono">(941×1672)</span>
-              </button>
-            </div>
-
-            {/* In Preview Mode: Download and Copy Action Buttons */}
-            {activeTab === "preview" && (
-              <div className="w-full max-w-xs sm:max-w-sm mt-2 sm:mt-3 space-y-1.5 sm:space-y-2 shrink-0">
-                {mediaMode === "video" ? (
-                  <div className="space-y-2">
-                    <button
-                      onClick={handleDownloadVideo}
-                      disabled={videoGenerating || generating}
-                      className="w-full relative overflow-hidden flex items-center justify-center gap-2 bg-[#E50914] text-white font-bold text-xs sm:text-sm py-3 sm:py-3.5 px-4 rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all shadow-lg disabled:opacity-60"
-                    >
-                      {videoGenerating ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin text-white" />
-                          <span>{videoStatusText || `Exporting Video (${videoProgress}%)`}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Film className="h-4 w-4 text-white" />
-                          <span>Download as Video ({selectedFormat === "2:3" ? "Feed MP4" : "Story MP4"})</span>
-                        </>
-                      )}
-                      {videoGenerating && (
-                        <div
-                          className="absolute bottom-0 left-0 h-1 bg-amber-400 transition-all duration-150"
-                          style={{ width: `${videoProgress}%` }}
-                        />
-                      )}
-                    </button>
-                    <div className="flex items-center justify-between px-2 text-[10px] text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Check className="h-3 w-3 text-emerald-400" />
-                        Exact 1:1 Poster in Video Format
-                      </span>
-                      <span className="font-mono text-slate-500">1080p MP4</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-                    <button
-                      onClick={handleDownloadPoster}
-                      disabled={generating || videoGenerating}
-                      className="flex items-center justify-center gap-1.5 sm:gap-2 bg-[#E50914] text-white font-bold text-[11px] sm:text-xs py-2.5 sm:py-3 px-2 sm:px-3 rounded-lg sm:rounded-xl hover:bg-red-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50"
-                    >
-                      <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="truncate">
-                        {generating
-                          ? "Exporting..."
-                          : `Download ${currentFormat.badge}`}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={handleCopyPosterImage}
-                      disabled={generating || videoGenerating}
-                      className="flex items-center justify-center gap-1.5 sm:gap-2 bg-slate-800 text-slate-100 font-bold text-[11px] sm:text-xs py-2.5 sm:py-3 px-2 sm:px-3 rounded-lg sm:rounded-xl hover:bg-slate-700 active:scale-[0.98] transition-all shadow-md disabled:opacity-50 border border-slate-700"
-                    >
-                      {copiedImage ? (
-                        <>
-                          <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400" />
-                          <span className="text-emerald-400 truncate">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-300" />
-                          <span className="truncate">Copy Image</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-
+            {/* Format + media toggles */}
+            <div className="w-full mt-4 space-y-2">
+              {/* Media mode */}
+              <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMediaMode("image")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                    mediaMode === "image"
+                      ? "bg-white text-gray-800 shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-blue-500" />
+                  Poster (PNG)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMediaMode("video")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                    mediaMode === "video"
+                      ? "bg-[#E4002B] text-white shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <Film className="h-3.5 w-3.5" />
+                  Video (MP4)
+                </button>
               </div>
-            )}
+
+              {/* Format selector */}
+              <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedFormat("2:3")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                    selectedFormat === "2:3"
+                      ? "bg-white text-gray-800 shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <Layers className="h-3 w-3" />
+                  2:3 Feed
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedFormat("9:16")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                    selectedFormat === "9:16"
+                      ? "bg-white text-gray-800 shadow-sm"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <Smartphone className="h-3 w-3" />
+                  9:16 Story
+                </button>
+              </div>
+
+              {/* Download CTA */}
+              {mediaMode === "video" ? (
+                <button
+                  onClick={handleDownloadVideo}
+                  disabled={videoGenerating || generating}
+                  className="w-full flex items-center justify-center gap-2 bg-[#E4002B] hover:bg-red-700 text-white font-bold text-sm py-3 px-4 rounded-xl transition-all shadow-md disabled:opacity-60 active:scale-[0.98] relative overflow-hidden"
+                >
+                  {videoGenerating ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" /><span>{videoStatusText || `Exporting… ${videoProgress}%`}</span></>
+                  ) : (
+                    <><Film className="h-4 w-4" /><span>Download Video Reel</span></>
+                  )}
+                  {videoGenerating && (
+                    <div className="absolute bottom-0 left-0 h-1 bg-white/40 transition-all" style={{ width: `${videoProgress}%` }} />
+                  )}
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDownloadPoster}
+                    disabled={generating || videoGenerating}
+                    className="flex-1 flex items-center justify-center gap-2 bg-[#E4002B] hover:bg-red-700 text-white font-bold text-[13px] py-3 rounded-xl transition-all shadow-md disabled:opacity-50 active:scale-[0.98]"
+                  >
+                    <Download className="h-4 w-4" />
+                    {generating ? "Exporting…" : `Download ${currentFormat.badge}`}
+                  </button>
+                  <button
+                    onClick={handleCopyPosterImage}
+                    disabled={generating || videoGenerating}
+                    className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-bold text-[13px] py-3 px-3 rounded-xl border border-gray-200 transition-all disabled:opacity-50 active:scale-[0.98]"
+                  >
+                    {copiedImage ? (
+                      <><Check className="h-4 w-4 text-green-500" /></>
+                    ) : (
+                      <><Copy className="h-4 w-4 text-gray-500" /></>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* RIGHT COLUMN: STUDIO CONTROLS (DESKTOP TABS & TOOLS, OR MOBILE SHARE) */}
+          {/* RIGHT: Share panel */}
           <div
-            className={`w-full md:w-[52%] lg:w-[55%] p-3 sm:p-6 flex flex-col overflow-y-auto bg-slate-900/30 ${
+            className={`flex-1 flex flex-col p-4 sm:p-6 overflow-y-auto bg-white ${
               activeTab === "share" ? "flex" : "hidden md:flex"
             }`}
           >
-            {/* Desktop / Mobile Tool Content — Share Only (editing is admin/CMS only) */}
-            {renderShareControls()}
+            {/* Article headline preview */}
+            <div className="mb-5 pb-4 border-b border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">You&apos;re sharing</p>
+              <p className="text-sm font-bold text-gray-800 leading-snug line-clamp-2">{headlineText}</p>
+            </div>
+
+            {/* Social share grid */}
+            {renderSharePanel()}
           </div>
         </div>
       </div>
