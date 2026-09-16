@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { feedService } from "@/services/feedService";
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://edition.tv";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://editiontv.com";
 
   try {
     const feed = await feedService.getPublicFeed(1, 20);
@@ -18,7 +18,7 @@ export async function GET() {
     </item>`).join("");
 
     const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="${baseUrl}/rss.xsl"?>
+<?xml-stylesheet type="text/xsl" href="/rss.xsl"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Edition TV — Live Global News &amp; Editorial Intelligence</title>

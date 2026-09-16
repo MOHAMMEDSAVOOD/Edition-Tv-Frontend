@@ -50,7 +50,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const relatedFeed = await feedService.getPublicFeed(1, 4);
   const relatedArticles = relatedFeed.items.filter((a) => a.slug !== slug).slice(0, 3);
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://edition.tv";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://editiontv.com";
   const jsonLdArticle = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
