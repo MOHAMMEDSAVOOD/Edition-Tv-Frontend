@@ -20,6 +20,7 @@ import {
   Sparkles,
   Film,
   Loader2,
+  FileText,
 } from "lucide-react";
 import { ArticleDetail } from "@/services/articleService";
 import { QRCodeSVG } from "./QRCodeSVG";
@@ -42,6 +43,9 @@ export function StorySharePosterModal({
 }: StorySharePosterModalProps) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+  const [sharingPoster, setSharingPoster] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState<"preview" | "share">("preview");
   const [selectedFormat, setSelectedFormat] = useState<PosterAspectRatio>("2:3");
@@ -255,11 +259,23 @@ export function StorySharePosterModal({
 
   const currentUrl = `https://editiontv.com${articlePath}`;
 
-  const shareTitle = article.headline || article.title;
-  const shareText = `${shareTitle}\n\nRead full story on Edition TV:`;
-
   const headlineText = article.headline || article.title || "";
   const descriptionText = article.subtitle || article.summary || "";
+
+  // Full informative social post formatted for X, Instagram, LinkedIn, and messaging
+  const socialPostText = [
+    `🔴 ${headlineText}`,
+    "",
+    descriptionText,
+    "",
+    `📖 Read full story on Edition TV:`,
+    currentUrl,
+    "",
+    `✨ Follow @EditionTV for 24/7 verified global journalism.`,
+    `#EditionTV #News #BreakingNews #WorldNews`,
+  ]
+    .filter((line) => line !== undefined)
+    .join("\n");
 
   // Dynamic Headline Font Sizing
   const getHeadlineFontSize = (text: string) => {
@@ -272,6 +288,16 @@ export function StorySharePosterModal({
     navigator.clipboard.writeText(currentUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const copyPostText = async () => {
+    try {
+      await navigator.clipboard.writeText(socialPostText);
+      setCopiedText(true);
+      setTimeout(() => setCopiedText(false), 2500);
+    } catch {
+      // Fallback
+    }
   };
 
   // Single Source of Truth HTML2Canvas Capture with onclone transform stripping
@@ -582,11 +608,95 @@ export function StorySharePosterModal({
     }
   };
 
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
+  // Share poster directly via Web Share API with attached image file, or fallback to download & clipboard
+  const handleDirectSharePoster = async () => {
+    setSharingPoster(true);
+    try {
+      const canvas = await captureCanonicalPoster();
+      if (!canvas) return;
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png")
+      );
+      if (!blob) return;
+
+      const file = new File(
+        [blob],
+        `${article.slug || "edition-tv"}-${currentFormat.downloadFilenameSuffix}.png`,
+        { type: "image/png" }
+      );
+
+      // Mobile / modern browser native share sheet with the attached image file
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
         await navigator.share({
-          title: shareTitle,
+          title: headlineText,
+          text: socialPostText,
+          files: [file],
+        });
+        return;
+      }
+
+      // Desktop fallback: copy poster to clipboard so user can Cmd+V/Ctrl+V into apps, and download
+      let copiedToClip = false;
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob }),
+        ]);
+        copiedToClip = true;
+      } catch {
+        // clipboard item image not supported or denied
+      }
+
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `${article.slug || "edition-tv"}-${currentFormat.downloadFilenameSuffix}.png`;
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.click();
+      setTimeout(() => URL.revokeObjectURL(downloadLink.href), 5000);
+
+      setShareToast(
+        copiedToClip
+          ? "Poster copied to clipboard & downloaded! Paste directly into your post."
+          : "Poster downloaded to your device! Attach it to your post."
+      );
+      setTimeout(() => setShareToast(null), 6000);
+    } catch (err) {
+      console.error("Error in handleDirectSharePoster:", err);
+    } finally {
+      setSharingPoster(false);
+    }
+  };
+
+  // Enhanced native share that attaches the poster file whenever possible
+  const handleNativeShare = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        const canvas = await captureCanonicalPoster();
+        if (canvas) {
+          const blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob(resolve, "image/png")
+          );
+          if (blob) {
+            const file = new File(
+              [blob],
+              `${article.slug || "edition-tv"}-${currentFormat.downloadFilenameSuffix}.png`,
+              { type: "image/png" }
+            );
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                title: headlineText,
+                text: socialPostText,
+                files: [file],
+              });
+              return;
+            }
+          }
+        }
+        await navigator.share({
+          title: headlineText,
           text: descriptionText,
           url: currentUrl,
         });
@@ -598,20 +708,91 @@ export function StorySharePosterModal({
     }
   };
 
+  // Handle sharing to specific social channels with poster image attached or copied
+  const handleShareToChannel = async (channel: (typeof socialChannels)[number]) => {
+    setSharingPoster(true);
+    try {
+      const canvas = await captureCanonicalPoster();
+      if (!canvas) {
+        window.open(channel.url, "_blank");
+        return;
+      }
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png")
+      );
+      if (!blob) {
+        window.open(channel.url, "_blank");
+        return;
+      }
+
+      const file = new File(
+        [blob],
+        `${article.slug || "edition-tv"}-${currentFormat.downloadFilenameSuffix}.png`,
+        { type: "image/png" }
+      );
+
+      // On mobile browsers supporting file sharing, open native share with poster attached
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          title: headlineText,
+          text: socialPostText,
+          files: [file],
+        });
+        return;
+      }
+
+      // On desktop: copy poster image to clipboard, trigger download, then open web channel
+      let copiedToClip = false;
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": blob }),
+        ]);
+        copiedToClip = true;
+      } catch {
+        // clipboard image not supported
+      }
+
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `${article.slug || "edition-tv"}-${currentFormat.downloadFilenameSuffix}.png`;
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.click();
+      setTimeout(() => URL.revokeObjectURL(downloadLink.href), 5000);
+
+      setShareToast(
+        copiedToClip
+          ? `Poster copied to clipboard & downloaded! Paste it into ${channel.name}.`
+          : `Poster downloaded! Attach it to your ${channel.name} post.`
+      );
+      setTimeout(() => setShareToast(null), 6000);
+
+      window.open(channel.url, "_blank");
+    } catch (err) {
+      console.error("Error sharing with poster:", err);
+      window.open(channel.url, "_blank");
+    } finally {
+      setSharingPoster(false);
+    }
+  };
+
   const socialChannels = [
     {
       name: "WhatsApp",
       icon: Send,
       bg: "#25D366",
       text: "#ffffff",
-      url: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText} ${currentUrl}`)}`,
+      url: `https://api.whatsapp.com/send?text=${encodeURIComponent(socialPostText)}`,
     },
     {
       name: "X (Twitter)",
       icon: Twitter,
       bg: "#000000",
       text: "#ffffff",
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(currentUrl)}`,
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔴 ${headlineText}\n\n${descriptionText}\n\nVia @EditionTV:`)}&url=${encodeURIComponent(currentUrl)}`,
     },
     {
       name: "LinkedIn",
@@ -625,7 +806,7 @@ export function StorySharePosterModal({
       icon: Send,
       bg: "#229ED9",
       text: "#ffffff",
-      url: `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareTitle)}`,
+      url: `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(socialPostText)}`,
     },
     {
       name: "Facebook",
@@ -639,61 +820,149 @@ export function StorySharePosterModal({
       icon: MessageSquare,
       bg: "#FF4500",
       text: "#ffffff",
-      url: `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(shareTitle)}`,
+      url: `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(headlineText)}`,
     },
     {
       name: "Email",
       icon: Mail,
       bg: "#6B7280",
       text: "#ffffff",
-      url: `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(`${shareText}\n\n${currentUrl}`)}`,
+      url: `mailto:?subject=${encodeURIComponent(headlineText)}&body=${encodeURIComponent(socialPostText)}`,
     },
   ];
+
   // SUB-RENDERER: Social Share Panel (light theme)
   const renderSharePanel = () => (
-    <div className="flex flex-col h-full">
-      {/* Section: Share via social */}
-      <div className="mb-4">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5">Share via</p>
+    <div className="flex flex-col h-full space-y-4">
+      {/* Toast feedback notification */}
+      {shareToast && (
+        <div className="px-3.5 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2 animate-in fade-in duration-200 shadow-sm">
+          <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span className="font-medium text-[12px]">{shareToast}</span>
+        </div>
+      )}
+
+      {/* Primary: Share Poster with Image Button */}
+      <div>
+        <button
+          type="button"
+          onClick={handleDirectSharePoster}
+          disabled={sharingPoster || generating}
+          className="w-full flex items-center justify-center gap-2 bg-[#E4002B] hover:bg-red-700 text-white font-bold text-[13px] py-3 px-4 rounded-xl transition-all shadow-md active:scale-[0.98] disabled:opacity-60"
+        >
+          {sharingPoster ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Preparing Poster for Sharing…</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              <span>Share Poster (Image + Story Details)</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Section: Share via Social Channels (Poster included) */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            Share via (Includes Poster)
+          </p>
+          <span className="text-[10px] text-gray-400">Attached image</span>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           {socialChannels.map((ch) => {
             const Icon = ch.icon;
             return (
-              <a
+              <button
                 key={ch.name}
-                href={ch.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-md active:scale-[0.97]"
+                type="button"
+                onClick={() => handleShareToChannel(ch)}
+                disabled={sharingPoster}
+                className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all hover:opacity-90 hover:shadow-md active:scale-[0.97] text-left disabled:opacity-50"
                 style={{ backgroundColor: ch.bg, color: ch.text }}
               >
                 <span className="w-5 h-5 flex items-center justify-center shrink-0">
                   <Icon className="h-4 w-4" />
                 </span>
                 <span className="truncate text-[13px]">{ch.name}</span>
-              </a>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Section: Copy Link */}
-      <div className="mb-4">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Copy Link</p>
-        <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-xl overflow-hidden px-3 py-2">
-          <span className="flex-1 text-[12px] font-mono text-gray-500 truncate">{currentUrl}</span>
+      {/* Section: Copy Formatted Post (Headline, Summary, Link, CTA) */}
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-3.5 text-left">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            Social Post / Caption
+          </p>
+          <span className="text-[10px] font-semibold text-[#E4002B] bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
+            Ready for X / Instagram
+          </span>
+        </div>
+
+        {/* Informative Preview Card */}
+        <div className="bg-white border border-gray-200 rounded-lg p-2.5 mb-2.5 text-left text-gray-700 space-y-1.5">
+          <p className="text-[12px] font-bold text-gray-900 line-clamp-1">
+            🔴 {headlineText}
+          </p>
+          <p className="text-[11px] text-gray-600 line-clamp-2 leading-relaxed">
+            {descriptionText}
+          </p>
+          <div className="text-[10px] font-mono text-gray-400 truncate">
+            📖 {currentUrl}
+          </div>
+          <p className="text-[10px] text-gray-400 italic">
+            ✨ Follow @EditionTV · #EditionTV #News
+          </p>
+        </div>
+
+        {/* Copy Post Text Action Button */}
+        <button
+          type="button"
+          onClick={copyPostText}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-[12px] font-bold border transition-all ${
+            copiedText
+              ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+              : "bg-white hover:bg-gray-100 border-gray-300 text-gray-800 shadow-sm active:scale-[0.98]"
+          }`}
+        >
+          {copiedText ? (
+            <>
+              <Check className="h-4 w-4" />
+              <span>Full Post Text Copied to Clipboard!</span>
+            </>
+          ) : (
+            <>
+              <FileText className="h-4 w-4 text-[#E4002B]" />
+              <span>Copy Post Text (Headline + Summary + CTA)</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Section: Copy Link Only */}
+      <div>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Direct Article Link</p>
+        <div className="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-xl overflow-hidden px-3 py-1.5">
+          <span className="flex-1 text-[11px] font-mono text-gray-500 truncate">{currentUrl}</span>
           <button
+            type="button"
             onClick={copyToClipboard}
-            className={`flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-bold transition-all ${
+            className={`flex items-center gap-1.5 shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
               copiedLink
-                ? "bg-green-500 text-white"
-                : "bg-[#E4002B] text-white hover:bg-red-700"
+                ? "bg-emerald-500 text-white"
+                : "bg-gray-800 hover:bg-black text-white"
             }`}
           >
             {copiedLink ? (
-              <><Check className="h-3.5 w-3.5" /><span>Copied!</span></>
+              <><Check className="h-3 w-3" /><span>Copied!</span></>
             ) : (
-              <><Copy className="h-3.5 w-3.5" /><span>Copy</span></>
+              <><Copy className="h-3 w-3" /><span>Copy Link</span></>
             )}
           </button>
         </div>
@@ -701,11 +970,13 @@ export function StorySharePosterModal({
 
       {/* Section: System Share */}
       <button
+        type="button"
         onClick={handleNativeShare}
-        className="w-full flex items-center justify-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-sm py-2.5 px-4 rounded-xl transition-colors mb-4"
+        disabled={sharingPoster}
+        className="w-full flex items-center justify-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-xs py-2.5 px-3 rounded-xl transition-colors"
       >
-        <Share2 className="h-4 w-4 text-[#E4002B]" />
-        <span>More sharing options…</span>
+        <Share2 className="h-3.5 w-3.5 text-gray-500" />
+        <span>More device sharing options…</span>
       </button>
     </div>
   );
