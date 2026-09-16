@@ -1,34 +1,18 @@
 import type { NextConfig } from "next";
 import path from "path";
-import fs from "fs";
 
-// Automatically load root .env if present and variables not set
-const rootEnvPath = path.resolve(__dirname, "../../.env");
-if (fs.existsSync(rootEnvPath)) {
-  try {
-    if (typeof (process as any).loadEnvFile === "function") {
-      (process as any).loadEnvFile(rootEnvPath);
-    }
-  } catch {
-    // Ignore if syntax difference or already loaded
-  }
-}
-
-const DEFAULT_BACKEND_URL = "https://api1.editiontv.com";
-
-const rawApiUrl =
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.INTERNAL_API_URL ||
-  DEFAULT_BACKEND_URL;
-
-const backendOrigin = rawApiUrl.replace(/\/api\/v1\/?$/, "");
+const backendOrigin =
+  (process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.editiontv.com/api/v1")
+    .replace(/\/api\/v1\/?$/, "");
 
 const nextConfig: NextConfig = {
-  // The Dockerfile's `runner` stage copies .next/standalone; without this the
-  // image build fails ("/app/apps/public-web/.next/standalone: not found").
-  output: "standalone",
-  outputFileTracingRoot: path.join(__dirname, "../../"),
+  // The container image runs this app with `node server.js`, which exists only
+  // in the standalone bundle. The Cloudflare Worker build (build:cf, OpenNext)
+  // must not have it, so the Dockerfile asks for it by setting the variable
+  // rather than it being on for every build.
+  ...(process.env.BUILD_STANDALONE === "true"
+    ? { output: "standalone" as const, outputFileTracingRoot: path.join(__dirname, "../../") }
+    : {}),
   typescript: {
     ignoreBuildErrors: false,
   },
@@ -52,14 +36,47 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    if (!backendOrigin) return [];
     return [
       {
         source: "/api/v1/:path*",
         destination: `${backendOrigin}/api/v1/:path*`,
       },
+      {
+        source: "/newsroom/:path*",
+        destination: `${backendOrigin}/api/v1/newsroom/:path*`,
+      },
+      {
+        source: "/articles/:path*",
+        destination: `${backendOrigin}/api/v1/articles/:path*`,
+      },
+      {
+        source: "/cms/:path*",
+        destination: `${backendOrigin}/api/v1/cms/:path*`,
+      },
+      {
+        source: "/auth/:path*",
+        destination: `${backendOrigin}/api/v1/auth/:path*`,
+      },
+      {
+        source: "/users/:path*",
+        destination: `${backendOrigin}/api/v1/users/:path*`,
+      },
+      {
+        source: "/audit/:path*",
+        destination: `${backendOrigin}/api/v1/audit/:path*`,
+      },
+      {
+        source: "/media/:path*",
+        destination: `${backendOrigin}/api/v1/media/:path*`,
+      },
+      {
+        source: "/admin/:path*",
+        destination: `${backendOrigin}/api/v1/admin/:path*`,
+      },
     ];
   },
+
 };
+
 
 export default nextConfig;

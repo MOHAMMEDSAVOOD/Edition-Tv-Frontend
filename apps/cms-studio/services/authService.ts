@@ -1,65 +1,43 @@
-import { apiClient } from "@/lib/api-client";
+/**
+ * CMS Studio auth — thin wrapper over the shared Firebase client.
+ * `login` = Firebase sign-in → `/auth/me` → editorial-role check.
+ */
+import {
+  STAFF_ROLES,
+  authService as sharedAuth,
+  ensureAppAccess,
+  type LoginResult,
+  type MeProfile,
+} from "@edition/auth";
 
-export interface LoginResponse {
-  accessToken: string;
-  refreshToken?: string;
-  tokenType?: string;
-  expiresIn?: number;
-  username?: string;
-  role?: string;
-}
+export const CMS_APP_NAME = "CMS Studio";
+export const CMS_REQUIRED_ROLES = STAFF_ROLES;
+
+export type { LoginResult, MeProfile };
 
 export const authService = {
-  async login(usernameOrEmail: string, password: string): Promise<LoginResponse> {
-    try {
-      apiClient.setAccessToken(null);
-      const trimmed = usernameOrEmail.trim();
-      const data = await apiClient.post<LoginResponse>("/auth/login", {
-        usernameOrEmail: trimmed,
-        password,
-      });
-      if (data.accessToken) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("edition_access_token", data.accessToken);
-          localStorage.setItem("edition_username", trimmed);
-          localStorage.setItem(
-            "edition_auth_session",
-            JSON.stringify({ username: trimmed, token: data.accessToken, roles: data.role ? [data.role] : [] })
-          );
-          document.cookie = `edition_access_token=${data.accessToken}; path=/; max-age=86400; SameSite=Lax`;
-          apiClient.setAccessToken(data.accessToken);
-        }
-      }
-      return data;
-    } catch (err: any) {
-      const errData = err.details || {};
-      throw new Error(
-        errData.detail || errData.message || errData.title || "Invalid credentials. Please check your username and password."
-      );
-    }
+  async login(email: string, password: string): Promise<LoginResult> {
+    const result = await sharedAuth.login(email, password);
+    await ensureAppAccess(result.profile, CMS_REQUIRED_ROLES, CMS_APP_NAME);
+    return result;
   },
 
-  getToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem("edition_access_token");
+  async loginWithGoogle(): Promise<LoginResult> {
+    const result = await sharedAuth.loginWithGoogle();
+    await ensureAppAccess(result.profile, CMS_REQUIRED_ROLES, CMS_APP_NAME);
+    return result;
   },
 
-  getUsername(): string {
-    if (typeof window === "undefined") return "Editor";
-    return localStorage.getItem("edition_username") || "Editor";
+  me(): Promise<MeProfile | null> {
+    return sharedAuth.me();
   },
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    return sharedAuth.isAuthenticated();
   },
 
-  logout() {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("edition_access_token");
-      localStorage.removeItem("edition_username");
-      localStorage.removeItem("edition_user_role");
-      document.cookie = "edition_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      window.location.href = "/login";
-    }
+  /** Sign out of Firebase and return to the login page. */
+  logout(): Promise<void> {
+    return sharedAuth.logout("/login");
   },
 };

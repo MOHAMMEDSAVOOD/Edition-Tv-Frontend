@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@edition/auth";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { ReporterAuthGuard } from "@/components/auth/ReporterAuthGuard";
 
@@ -13,7 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className="h-full">
       <body className="h-full bg-background text-foreground flex overflow-hidden">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <ReporterAuthGuard>{children}</ReporterAuthGuard>
+          <AuthProvider>
+            <ReporterAuthGuard>{children}</ReporterAuthGuard>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

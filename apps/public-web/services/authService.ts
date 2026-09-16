@@ -1,126 +1,82 @@
-import { authRepository, AuthResponseDto } from "@/repositories/authRepository";
-import { apiClient } from "@/lib/api-client";
+/**
+ * Public web auth service — thin facade over `@edition/auth` (Firebase).
+ * No tokens are stored by us; Firebase persists the session itself.
+ */
+import {
+  authService as sharedAuth,
+  fetchMe,
+  getCurrentUser,
+  type MeProfile,
+  type Role,
+  type User,
+} from "@edition/auth";
+import { authRepository, type AuthResponseDto } from "@/repositories/authRepository";
 
 export interface UserSession {
+  uid: string;
   username: string;
-  token: string;
-  roles: string[];
+  email: string;
+  roles: Role[];
+  profile: MeProfile;
 }
 
 export interface RegisterRequest {
-  username?: string;
-  fullName?: string;
+  fullName: string;
   email: string;
-  password?: string;
-  passwordHash?: string;
+  password: string;
 }
 
 export interface LoginRequest {
-  email?: string;
-  username?: string;
-  password?: string;
-  passwordHash?: string;
+  email: string;
+  password: string;
 }
 
-function notifyAuthChange(): void {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("edition_auth_changed"));
-  }
-}
-
-function sanitizeUsername(input?: string, fallbackEmail = ""): string {
-  let user = (input || "").trim().toLowerCase().replace(/[^a-zA-Z0-9_-]/g, "");
-  if (!user && fallbackEmail) {
-    user = fallbackEmail.split("@")[0].toLowerCase().replace(/[^a-zA-Z0-9_-]/g, "");
-  }
-  if (user.length < 3) {
-    user = (user + "usr").slice(0, 3);
-  }
-  if (user.length > 50) {
-    user = user.slice(0, 50);
-  }
-  return user;
+function toSession(dto: AuthResponseDto): UserSession {
+  return { uid: dto.uid, username: dto.username, email: dto.email, roles: dto.roles, profile: dto.profile };
 }
 
 export const authService = {
-  async login(payload: LoginRequest | string, passwordParam?: string): Promise<UserSession> {
-    let usernameStr = "";
-    let passStr = "";
+  async login(req: LoginRequest): Promise<UserSession> {
+    return toSession(await authRepository.login(req.email, req.password));
+  },
 
-    if (typeof payload === "string") {
-      usernameStr = payload.trim();
-      passStr = passwordParam || "";
-    } else {
-      usernameStr = (payload.username || payload.email || "").trim();
-      passStr = payload.password || payload.passwordHash || "";
-    }
-
-    const res: AuthResponseDto = await authRepository.login(usernameStr, passStr);
-    if (res && res.token) {
-      apiClient.setAccessToken(res.token);
-      const session: UserSession = {
-        username: res.username,
-        token: res.token,
-        roles: res.roles,
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("edition_auth_session", JSON.stringify(session));
-        localStorage.setItem("edition_access_token", res.token);
-      }
-      notifyAuthChange();
-      return session;
-    }
-
-    throw new Error("Invalid credentials");
+  async loginWithGoogle(): Promise<UserSession> {
+    return toSession(await authRepository.loginWithGoogle());
   },
 
   async register(req: RegisterRequest): Promise<UserSession> {
-    const username = sanitizeUsername(req.username || req.fullName, req.email);
-    const passStr = req.password || req.passwordHash || "";
-    const res: AuthResponseDto = await authRepository.register(username, req.email.trim(), passStr);
-    if (res && res.token) {
-      apiClient.setAccessToken(res.token);
-      const session: UserSession = {
-        username: res.username,
-        token: res.token,
-        roles: res.roles,
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem("edition_auth_session", JSON.stringify(session));
-        localStorage.setItem("edition_access_token", res.token);
-      }
-      notifyAuthChange();
-      return session;
-    }
-
-    throw new Error("Registration failed");
+    return toSession(await authRepository.register(req.fullName, req.email, req.password));
   },
 
-  getCurrentSession(): UserSession | null {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("edition_auth_session");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.token) {
-            apiClient.setAccessToken(parsed.token);
-            return parsed;
-          }
-        } catch {
-          // Parse error
-        }
-      }
-    }
-    return null;
+  /** Send the Firebase password-reset email (the hosted page handles the reset link). */
+  forgotPassword(email: string): Promise<void> {
+    return sharedAuth.forgotPassword(email);
   },
 
-  logout(): void {
-    apiClient.setAccessToken(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("edition_auth_session");
-      localStorage.removeItem("edition_access_token");
-      document.cookie = "edition_access_token=; path=/; max-age=0; SameSite=Lax";
-      notifyAuthChange();
-    }
+  /** Firebase user currently signed in (null when signed out or on the server). */
+  getCurrentUser(): User | null {
+    return getCurrentUser();
+  },
+
+  /** `/auth/me` profile for the signed-in user, or null when signed out. */
+  async getCurrentSession(): Promise<UserSession | null> {
+    const user = getCurrentUser();
+    if (!user) return null;
+    const profile = await fetchMe();
+    return {
+      uid: user.uid,
+      username: profile.username || user.email || "",
+      email: profile.email || user.email || "",
+      roles: profile.roles,
+      profile,
+    };
+  },
+
+  isAuthenticated(): boolean {
+    return getCurrentUser() !== null;
+  },
+
+  logout(): Promise<void> {
+    return sharedAuth.logout();
   },
 };

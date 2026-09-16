@@ -18,6 +18,7 @@
     "paths": {
       "@/*": ["./*"],
       "@edition/ui": ["../../packages/ui"],
+      "@edition/ui/*": ["../../packages/ui/*"],
       "@edition/api": ["../../packages/api"],
       "@edition/auth": ["../../packages/auth"],
       "@edition/config": ["../../packages/config"],

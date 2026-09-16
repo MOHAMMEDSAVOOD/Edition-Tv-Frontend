@@ -1,3 +1,5 @@
+import { getCurrentUser, getIdToken } from "@edition/auth";
+
 export interface ApiErrorResponse {
   type: string;
   title: string;
@@ -20,74 +22,49 @@ export class ApiError extends Error {
   }
 }
 
-function getApiBaseUrl(): string {
-  const envUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.INTERNAL_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.editiontv.com/api/v1";
 
-  if (envUrl) {
-    return envUrl;
-  }
-  // Production Base URL:
-  return "https://api1.editiontv.com/api/v1";
-}
+/** Backend origin without the `/api/v1` suffix (for endpoints mounted at the root, e.g. `/internal/**`). */
+export const API_ORIGIN = API_BASE_URL.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
 
-
+/**
+ * Browser API client. Attaches `Authorization: Bearer <Firebase ID token>`
+ * whenever a user is signed in; on a 401 it force-refreshes the token once and
+ * retries once. Server-side callers have no browser user and go unauthenticated.
+ */
 class ApiClient {
-  private accessToken: string | null = null;
-
-  public setAccessToken(token: string | null) {
-    this.accessToken = token;
+  /** Firebase ID token for the signed-in user, or null. */
+  public getAccessToken(forceRefresh = false): Promise<string | null> {
+    return getIdToken(forceRefresh);
   }
 
-  public getAccessToken(): string | null {
-    if (!this.accessToken && typeof window !== "undefined") {
-      this.accessToken = localStorage.getItem("edition_access_token");
-      if (!this.accessToken) {
-        try {
-          const sessionRaw = localStorage.getItem("edition_auth_session");
-          if (sessionRaw) {
-            const session = JSON.parse(sessionRaw);
-            if (session?.token) this.accessToken = session.token;
-          }
-        } catch {}
-      }
-    }
-    return this.accessToken;
+  /** Synchronous check: is a Firebase user currently signed in? */
+  public isAuthenticated(): boolean {
+    return getCurrentUser() !== null;
   }
 
   public async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+
+    const buildHeaders = (token: string | null): Record<string, string> => {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string>),
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
     };
 
-    const isPublicAuthEndpoint =
-      endpoint.startsWith("/auth/login") ||
-      endpoint.startsWith("/auth/register") ||
-      endpoint.startsWith("/auth/forgot-password") ||
-      endpoint.startsWith("/auth/verify-otp") ||
-      endpoint.startsWith("/auth/reset-password");
+    let token = await this.getAccessToken();
+    let response = await fetch(url, { ...options, headers: buildHeaders(token) });
 
-    const token = this.getAccessToken();
-    if (token && !isPublicAuthEndpoint) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (response.status === 401 && token) {
+      const fresh = await this.getAccessToken(true);
+      if (fresh) {
+        token = fresh;
+        response = await fetch(url, { ...options, headers: buildHeaders(token) });
+      }
     }
-
-    const baseUrl = getApiBaseUrl();
-    const cleanBase = baseUrl.replace(/\/+$/, "");
-    const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-    const url = endpoint.startsWith('http')
-      ? endpoint
-      : cleanBase.endsWith("/api/v1") && cleanEndpoint.startsWith("/api/v1")
-      ? `${cleanBase.slice(0, -7)}${cleanEndpoint}`
-      : `${cleanBase}${cleanEndpoint}`;
-
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
 
     if (!response.ok) {
       let errorData: ApiErrorResponse;

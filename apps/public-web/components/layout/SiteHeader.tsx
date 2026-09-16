@@ -4,7 +4,8 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Search, User, Bookmark, Menu, ArrowLeft, Globe } from "lucide-react";
 import { savedArticlesService } from "@/services/savedArticlesService";
-import { authService, UserSession } from "@/services/authService";
+import { authService } from "@/services/authService";
+import { useAuth } from "@edition/auth";
 import { CategoryNav, NavCategoryItem } from "./CategoryNav";
 import { NotificationPopover } from "./NotificationPopover";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
@@ -28,16 +29,13 @@ export function SiteHeader() {
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [navCategories, setNavCategories] = useState<NavCategoryItem[]>([]);
   const [expandedMobileCategories, setExpandedMobileCategories] = useState<Record<string, boolean>>({});
-  const [session, setSession] = useState<UserSession | null>(null);
+  // AuthProvider (app/layout.tsx) owns the Firebase subscription and caches /auth/me,
+  // so the header reads the shared state instead of fetching the session itself.
+  const { user, profile } = useAuth();
+  const handle = profile?.username || user?.email?.split("@")[0] || user?.uid || "";
 
   useEffect(() => {
     setMounted(true);
-
-    const updateSession = () => {
-      setSession(authService.getCurrentSession());
-    };
-    updateSession();
-    window.addEventListener("edition_auth_changed", updateSession);
 
     const updateBookmarks = () => {
       savedArticlesService
@@ -91,7 +89,6 @@ export function SiteHeader() {
 
     return () => {
       window.removeEventListener("edition_bookmark_changed", updateBookmarks);
-      window.removeEventListener("edition_auth_changed", updateSession);
     };
   }, []);
 
@@ -168,18 +165,18 @@ export function SiteHeader() {
                   )}
                 </Link>
 
-                {mounted && session ? (
+                {mounted && user ? (
                   <Link
                     href="/account"
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-muted transition-colors text-xs font-semibold text-foreground group border border-border/60 bg-muted/20"
-                    title={`Reader Account (@${session.username})`}
+                    title={`Reader Account (@${handle})`}
                   >
                     <div className="relative">
                       <User className="h-3.5 w-3.5" />
                       <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
                     </div>
                     <span className="font-mono text-xs hidden lg:inline-block max-w-[110px] truncate">
-                      @{session.username}
+                      @{handle}
                     </span>
                   </Link>
                 ) : (
@@ -250,14 +247,14 @@ export function SiteHeader() {
         </div>
 
         {/* Drawer Account Block */}
-        {mounted && session ? (
+        {mounted && user ? (
           <div className="p-4 border-b border-border bg-muted/30">
             <div className="flex items-center gap-3 mb-3">
               <div className="h-10 w-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold font-mono text-sm uppercase">
-                {session.username.slice(0, 2)}
+                {handle.slice(0, 2)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold truncate font-mono">@{session.username}</p>
+                <p className="text-xs font-bold truncate font-mono">@{handle}</p>
                 <span className="inline-block px-1.5 py-0.2 text-[9px] font-semibold uppercase bg-emerald-500/10 text-emerald-600 rounded-xs">
                   Active Subscriber
                 </span>

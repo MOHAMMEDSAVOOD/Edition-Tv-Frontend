@@ -10,10 +10,13 @@
  *    - Accepts Next.js cache options (revalidate, tags)
  *
  * 2. `apiClient` singleton — for Client Components ('use client') only
- *    - Reads JWT from localStorage
- *    - Used for auth-gated mutations (login, bookmark, profile, etc.)
+ *    - Sends the signed-in user's Firebase ID token as `Authorization: Bearer`
+ *      (force-refreshes once and retries once on a 401)
+ *    - Used for auth-gated mutations (bookmark, profile, etc.)
  *    - NEVER import apiClient in a Server Component
  */
+
+import { getCurrentUser, getIdToken } from "@edition/auth";
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -50,38 +53,19 @@ export class ApiError extends Error {
  * falls back to NEXT_PUBLIC_API_BASE_URL for local development.
  * Never exposed to the browser.
  */
-// Production Base URL:
-const DEFAULT_API_BASE_URL = "https://api1.editiontv.com/api/v1";
-// Alternative production URL:
-// const DEFAULT_API_BASE_URL = "https://api.editiontv.com/api/v1";
-// const DEFAULT_API_BASE_URL = "https://api1.edition.tv/api/v1";
-// Local Backend for testing:
-// const DEFAULT_API_BASE_URL = "http://localhost:8080/api/v1";
-
-function getClientApiBaseUrl(): string {
-  const envUrl =
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.INTERNAL_API_URL;
-
-  if (envUrl) {
-    return envUrl;
-  }
-  return DEFAULT_API_BASE_URL;
-}
-
 function getServerApiBaseUrl(): string {
-  const envUrl =
+  return (
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL;
-
-  if (envUrl) {
-    return envUrl;
-  }
-  return DEFAULT_API_BASE_URL;
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://api.editiontv.com/api/v1"
+  );
 }
 
+const CLIENT_API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://api.editiontv.com/api/v1";
 
 
 // ---------------------------------------------------------------------------
@@ -119,15 +103,6 @@ export async function serverFetch<T>(
   const baseUrl = getServerApiBaseUrl();
   const url = formatUrl(baseUrl, endpoint);
 
-  // If executing in Node.js server without an absolute HTTP URL, return null gracefully during static build
-  if (!url.startsWith("http")) {
-    // Avoid relative fetch hang during next build if no server is running
-    if (typeof window === "undefined" && !process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_BASE_URL) {
-      return null;
-    }
-  }
-
-
   const nextCache: RequestInit["next"] = {};
   if (revalidate !== undefined) {
     nextCache.revalidate = revalidate;
@@ -141,24 +116,18 @@ export async function serverFetch<T>(
   const cacheMode: RequestInit["cache"] =
     revalidate === 0 || revalidate === false ? "no-store" : fetchOptions.cache;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-
   try {
     const response = await fetch(url, {
       ...fetchOptions,
       cache: cacheMode,
-      signal: fetchOptions.signal || controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...(fetchOptions.headers as Record<string, string>),
       },
       next: Object.keys(nextCache).length > 0 ? nextCache : undefined,
     });
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
-
       // 404s and other expected errors: log and return null gracefully
       if (process.env.NODE_ENV !== "production") {
         console.warn(
@@ -173,7 +142,7 @@ export async function serverFetch<T>(
     }
 
     return (await response.json()) as T;
-  } catch {
+  } catch (error) {
     // Network failures (backend down, DNS failure, etc.) — never crash the page, fall back to default UI
     if (process.env.NODE_ENV !== "production") {
       console.warn(`[serverFetch] Service unreachable — ${url}`);
@@ -187,65 +156,50 @@ export async function serverFetch<T>(
 // ---------------------------------------------------------------------------
 
 class ApiClient {
-  private accessToken: string | null = null;
-
-  public setAccessToken(token: string | null) {
-    this.accessToken = token;
+  /** Firebase ID token for the signed-in user, or null. */
+  public getAccessToken(forceRefresh = false): Promise<string | null> {
+    return getIdToken(forceRefresh);
   }
 
-  public getAccessToken(): string | null {
-    if (!this.accessToken && typeof window !== "undefined") {
-      try {
-        const sessionRaw = localStorage.getItem("edition_auth_session");
-        if (sessionRaw) {
-          const session = JSON.parse(sessionRaw);
-          if (session?.token) {
-            this.accessToken = session.token;
-          }
-        }
-        if (!this.accessToken) {
-          const directToken = localStorage.getItem("edition_access_token") || localStorage.getItem("accessToken");
-          if (directToken) {
-            this.accessToken = directToken;
-          }
-        }
-      } catch {
-        // Ignored — localStorage may be unavailable (private mode etc.)
-      }
-    }
-    return this.accessToken;
+  /** Synchronous check: is a Firebase user currently signed in? */
+  public isAuthenticated(): boolean {
+    return getCurrentUser() !== null;
   }
 
   public async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...(options.headers as Record<string, string>),
+    const url = formatUrl(CLIENT_API_BASE_URL, endpoint);
+
+    const buildHeaders = (token: string | null): Record<string, string> => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(options.headers as Record<string, string>),
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      return headers;
     };
 
-    const isPublicAuthEndpoint =
-      endpoint.startsWith("/auth/login") ||
-      endpoint.startsWith("/auth/register") ||
-      endpoint.startsWith("/auth/forgot-password") ||
-      endpoint.startsWith("/auth/verify-otp") ||
-      endpoint.startsWith("/auth/reset-password");
+    const doFetch = async (token: string | null): Promise<Response> => {
+      try {
+        return await fetch(url, { ...options, headers: buildHeaders(token) });
+      } catch (error) {
+        throw new Error(
+          `Network error: unable to reach ${url}. Is the backend running? (${String(error)})`
+        );
+      }
+    };
 
-    const token = this.getAccessToken();
-    if (token && !isPublicAuthEndpoint) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    const token = await this.getAccessToken();
+    let response = await doFetch(token);
 
-    const url = formatUrl(getClientApiBaseUrl(), endpoint);
-
-    let response: Response;
-    try {
-      response = await fetch(url, { ...options, headers });
-    } catch (error) {
-      throw new Error(
-        `Network error: unable to reach ${url}. Is the backend running? (${String(error)})`
-      );
+    // Expired/invalid ID token: force-refresh once and retry once.
+    if (response.status === 401 && token) {
+      const fresh = await this.getAccessToken(true);
+      if (fresh) {
+        response = await doFetch(fresh);
+      }
     }
 
     if (!response.ok) {

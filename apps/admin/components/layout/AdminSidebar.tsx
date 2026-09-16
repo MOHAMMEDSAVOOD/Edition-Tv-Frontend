@@ -19,6 +19,7 @@ import {
   Tag,
   LayoutGrid,
   LogOut,
+  Tv,
   Menu,
   X
 } from "lucide-react";
