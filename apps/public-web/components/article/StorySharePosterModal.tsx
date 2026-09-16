@@ -37,6 +37,7 @@ function TelegramIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+import html2canvas from "html2canvas";
 import { ArticleDetail } from "@/services/articleService";
 import { QRCodeSVG } from "./QRCodeSVG";
 import { getPosterTheme } from "./CategoryPosterTheme";
@@ -329,45 +330,52 @@ export function StorySharePosterModal({
     const element = canonicalPosterRef.current;
     if (!element) return null;
 
-    const html2canvasModule = await import("html2canvas");
-    const html2canvasFn = html2canvasModule.default;
+    try {
+      const html2canvasFn =
+        typeof html2canvas === "function"
+          ? html2canvas
+          : ((html2canvas as unknown as { default?: typeof html2canvas }).default || html2canvas);
 
-    const targetWidth = currentFormat.width;
-    const targetHeight = currentFormat.height;
+      const targetWidth = currentFormat.width;
+      const targetHeight = currentFormat.height;
 
-    // Use 2x supersampling scale for ultra-crisp studio quality (2048x3072 / 2160x3840)
-    const exportScale = 2;
+      // Use 2x supersampling scale for ultra-crisp studio quality (2048x3072 / 2160x3840)
+      const exportScale = 2;
 
-    return await html2canvasFn(element, {
-      useCORS: true,
-      allowTaint: true,
-      scale: exportScale,
-      width: targetWidth,
-      height: targetHeight,
-      windowWidth: targetWidth,
-      windowHeight: targetHeight,
-      backgroundColor: "#000000",
-      imageTimeout: 15000,
-      logging: false,
-      onclone: (clonedDoc, clonedElement) => {
-        // Strip preview CSS scale transform from cloned element and parents in the cloned document
-        clonedElement.style.transform = "none";
-        clonedElement.style.position = "relative";
-        clonedElement.style.left = "0px";
-        clonedElement.style.top = "0px";
-        clonedElement.style.margin = "0px";
+      return await html2canvasFn(element, {
+        useCORS: true,
+        allowTaint: false,
+        scale: exportScale,
+        width: targetWidth,
+        height: targetHeight,
+        windowWidth: targetWidth,
+        windowHeight: targetHeight,
+        backgroundColor: "#000000",
+        imageTimeout: 15000,
+        logging: false,
+        onclone: (clonedDoc, clonedElement) => {
+          // Strip preview CSS scale transform from cloned element and parents in the cloned document
+          clonedElement.style.transform = "none";
+          clonedElement.style.position = "relative";
+          clonedElement.style.left = "0px";
+          clonedElement.style.top = "0px";
+          clonedElement.style.margin = "0px";
 
-        let parent = clonedElement.parentElement;
-        while (parent) {
-          parent.style.transform = "none";
-          parent.style.width = `${targetWidth}px`;
-          parent.style.height = `${targetHeight}px`;
-          parent.style.margin = "0px";
-          parent.style.padding = "0px";
-          parent = parent.parentElement;
-        }
-      },
-    });
+          let parent = clonedElement.parentElement;
+          while (parent) {
+            parent.style.transform = "none";
+            parent.style.width = `${targetWidth}px`;
+            parent.style.height = `${targetHeight}px`;
+            parent.style.margin = "0px";
+            parent.style.padding = "0px";
+            parent = parent.parentElement;
+          }
+        },
+      });
+    } catch (err) {
+      console.error("Failed to capture canonical poster:", err);
+      return null;
+    }
   };
 
   const handleDownloadPoster = async () => {
