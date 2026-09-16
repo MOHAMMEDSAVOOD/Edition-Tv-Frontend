@@ -13,19 +13,11 @@ import {
   Send,
   Mail,
   MessageSquare,
-  Sliders,
-  RotateCcw,
-  Upload,
-  Sun,
-  Contrast,
-  Move,
-  ZoomIn,
   Image as ImageIcon,
   Smartphone,
   Layers,
   Eye,
   Sparkles,
-  Link2,
   Film,
   Loader2,
 } from "lucide-react";
@@ -51,8 +43,7 @@ export function StorySharePosterModal({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState<"preview" | "edit" | "share">("preview");
-  const [desktopTab, setDesktopTab] = useState<"edit" | "share">("edit");
+  const [activeTab, setActiveTab] = useState<"preview" | "share">("preview");
   const [selectedFormat, setSelectedFormat] = useState<PosterAspectRatio>("2:3");
   const [previewScale, setPreviewScale] = useState(0.32);
   const [wrapperHeight, setWrapperHeight] = useState(480);
@@ -66,59 +57,26 @@ export function StorySharePosterModal({
   // Selected format configuration
   const currentFormat = POSTER_FORMATS[selectedFormat];
 
-  // Background Image Customization Controls State
-  const [customImageUrl, setCustomImageUrl] = useState("");
-  const [imageUrlInput, setImageUrlInput] = useState("");
+  // Image state (read-only from article, no customization in public web)
   const [optimizedImageDataUrl, setOptimizedImageDataUrl] = useState<string>("");
   const [ambientBackdropDataUrl, setAmbientBackdropDataUrl] = useState<string>("");
-  const [imageFitMode, setImageFitMode] = useState<"original" | "cover">("original");
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number; ratio: number }>({
     width: 1200,
     height: 675,
     ratio: 1200 / 675,
   });
-  const [bgPosY, setBgPosY] = useState(22);
-  const [bgPosX, setBgPosX] = useState(50);
-  const [bgZoom, setBgZoom] = useState(100);
-  const [bgBrightness, setBgBrightness] = useState(92);
-  const [bgContrast, setBgContrast] = useState(108);
+  // Fixed display values — no user editing in public web
+  const bgPosY = 22;
+  const bgPosX = 50;
+  const bgZoom = 100;
+  const bgBrightness = 92;
+  const bgContrast = 108;
+  const imageFitMode = "original" as const;
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleResetBg = () => {
-    setCustomImageUrl("");
-    setImageUrlInput("");
-    setImageFitMode("original");
-    setBgPosY(22);
-    setBgPosX(50);
-    setBgZoom(100);
-    setBgBrightness(92);
-    setBgContrast(108);
-  };
-
-  const handleApplyImageUrl = () => {
-    if (imageUrlInput.trim()) {
-      setCustomImageUrl(imageUrlInput.trim());
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setCustomImageUrl(event.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Convert any image URL (CORS, external, or local) to a lossless Data URL for pixel-perfect html2canvas rendering
+  // Convert article featured image URL to a lossless Data URL for pixel-perfect html2canvas rendering
   useEffect(() => {
     let isMounted = true;
-    const targetUrl = customImageUrl || article.featuredImageUrl;
+    const targetUrl = article.featuredImageUrl;
     if (!targetUrl) {
       setOptimizedImageDataUrl("");
       setAmbientBackdropDataUrl("");
@@ -192,7 +150,8 @@ export function StorySharePosterModal({
     return () => {
       isMounted = false;
     };
-  }, [customImageUrl, article.featuredImageUrl, currentFormat.width, currentFormat.height]);
+  }, [article.featuredImageUrl, currentFormat.width, currentFormat.height]);
+
 
   const canonicalPosterRef = useRef<HTMLDivElement>(null);
   const previewWrapperRef = useRef<HTMLDivElement>(null);
@@ -683,320 +642,6 @@ export function StorySharePosterModal({
       url: `mailto:?subject=${encodeURIComponent(shareTitle)}&body=${encodeURIComponent(`${shareText}\n\n${currentUrl}`)}`,
     },
   ];
-
-  // SUB-RENDERER: Photo Editing Controls
-  const renderEditControls = (isMobile = false) => (
-    <div className="space-y-2.5 sm:space-y-4">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 sm:pb-2.5">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <Sliders className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-500" />
-          <h4 className="text-[11px] sm:text-xs font-bold text-slate-100 uppercase tracking-wider font-sans">
-            Customize Photo
-          </h4>
-        </div>
-        <button
-          onClick={handleResetBg}
-          className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-slate-400 hover:text-red-400 transition-colors bg-slate-800/80 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg border border-slate-700/60"
-          title="Reset background adjustments to defaults"
-        >
-          <RotateCcw className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-          <span>Reset</span>
-        </button>
-      </div>
-
-      {/* Position Presets & Photo Replacement */}
-      <div className="space-y-2 sm:space-y-3">
-        {/* Quick Position Presets */}
-        <div className="space-y-1 sm:space-y-1.5">
-          <label className="text-[10px] sm:text-[11px] font-bold text-slate-400 flex items-center gap-1">
-            <Move className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-            <span>Position Presets</span>
-          </label>
-          <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                setBgPosY(10);
-                setBgPosX(50);
-              }}
-              className={`py-1 sm:py-1.5 px-1.5 sm:px-2 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-bold border transition-all ${
-                bgPosY === 10
-                  ? "bg-red-600 text-white border-red-500 shadow-sm"
-                  : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-              }`}
-            >
-              Top Focus
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setBgPosY(50);
-                setBgPosX(50);
-              }}
-              className={`py-1 sm:py-1.5 px-1.5 sm:px-2 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-bold border transition-all ${
-                bgPosY === 50
-                  ? "bg-red-600 text-white border-red-500 shadow-sm"
-                  : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-              }`}
-            >
-              Center
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setBgPosY(80);
-                setBgPosX(50);
-              }}
-              className={`py-1 sm:py-1.5 px-1.5 sm:px-2 rounded-md sm:rounded-lg text-[11px] sm:text-xs font-bold border transition-all ${
-                bgPosY === 80
-                  ? "bg-red-600 text-white border-red-500 shadow-sm"
-                  : "bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800"
-              }`}
-            >
-              Bottom Focus
-            </button>
-          </div>
-        </div>
-
-        {/* Upload Custom Photo */}
-        <div className="space-y-1 sm:space-y-1.5">
-          <label className="text-[10px] sm:text-[11px] font-bold text-slate-400 flex items-center gap-1">
-            <ImageIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-            <span>Replace Background Image</span>
-          </label>
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              accept="image/*"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 px-2.5 sm:px-3 bg-slate-950 hover:bg-slate-800 text-slate-200 text-[11px] sm:text-xs font-bold rounded-md sm:rounded-lg border border-slate-800 transition-colors"
-            >
-              <Upload className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
-              <span>
-                {customImageUrl ? "Change Photo" : "Upload Custom Photo"}
-              </span>
-            </button>
-            {customImageUrl && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomImageUrl("");
-                  setImageUrlInput("");
-                }}
-                className="py-1 sm:py-1.5 px-2 sm:px-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 text-[11px] sm:text-xs font-bold rounded-md sm:rounded-lg border border-red-800 transition-colors shrink-0"
-                title="Restore original article image"
-              >
-                Restore
-              </button>
-            )}
-          </div>
-
-          {/* Paste Image URL Input with Instant High-Res Preview */}
-          <div className="pt-2">
-            <label className="text-[10px] sm:text-[11px] font-semibold text-slate-300 flex items-center gap-1 mb-1">
-              <Link2 className="h-3 w-3 text-red-500" />
-              <span>Or Paste Image Link (URL)</span>
-            </label>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="url"
-                placeholder="https://... direct image link"
-                value={imageUrlInput}
-                onChange={(e) => setImageUrlInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleApplyImageUrl();
-                  }
-                }}
-                className="flex-1 bg-slate-950 text-slate-100 placeholder-slate-500 text-[11px] sm:text-xs px-2.5 py-1.5 rounded-md sm:rounded-lg border border-slate-800 focus:outline-none focus:border-red-500 font-sans"
-              />
-              <button
-                type="button"
-                onClick={handleApplyImageUrl}
-                className="px-2.5 sm:px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] sm:text-xs font-bold rounded-md sm:rounded-lg transition-colors shrink-0"
-              >
-                Apply
-              </button>
-            </div>
-            <p className="text-[9px] sm:text-[10px] text-slate-400 mt-1 font-sans">
-              Supports any image link (JPG, PNG, WebP) with automatic high-res enhancement & CORS preloading.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Sliders Grid */}
-      <div className="space-y-2 sm:space-y-3 pt-1.5 sm:pt-2 border-t border-slate-800/60">
-        {/* Fit Mode Toggle: Original (Exact) vs Cover */}
-        <div className="space-y-1 sm:space-y-1.5">
-          <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
-            <span className="text-slate-300 font-medium flex items-center gap-1">
-              <ImageIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-red-500" />
-              <span>Image Display Mode</span>
-            </span>
-            <span className="font-mono text-red-400 font-bold text-[10px]">
-              {imageFitMode === "original" ? "Original (Exact, No Expansion)" : "Fill Poster (Cover)"}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => setImageFitMode("original")}
-              className={`py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
-                imageFitMode === "original"
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800"
-              }`}
-            >
-              Original (Exact)
-            </button>
-            <button
-              type="button"
-              onClick={() => setImageFitMode("cover")}
-              className={`py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${
-                imageFitMode === "cover"
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800"
-              }`}
-            >
-              Fill Poster (Cover)
-            </button>
-          </div>
-          <p className="text-[9px] sm:text-[10px] text-slate-400 font-sans">
-            {imageFitMode === "original"
-              ? "Shows exact original image without expanding, cropping, or stretching."
-              : "Expands image to cover the entire vertical poster frame."}
-          </p>
-        </div>
-
-        {/* Vertical Y Position Slider */}
-        <div className="space-y-0.5 sm:space-y-1">
-          <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
-            <span className="text-slate-300 font-medium flex items-center gap-1">
-              <Move className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-              <span>Vertical Position (Y)</span>
-            </span>
-            <span className="font-mono text-red-400 font-bold">{bgPosY}%</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={bgPosY}
-            onChange={(e) => setBgPosY(Number(e.target.value))}
-            className="w-full h-1 sm:h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
-          />
-        </div>
-
-        {/* Horizontal X Position Slider */}
-        <div className="space-y-0.5 sm:space-y-1">
-          <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
-            <span className="text-slate-300 font-medium flex items-center gap-1">
-              <Move className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-              <span>Horizontal Position (X)</span>
-            </span>
-            <span className="font-mono text-red-400 font-bold">{bgPosX}%</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={bgPosX}
-            onChange={(e) => setBgPosX(Number(e.target.value))}
-            className="w-full h-1 sm:h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
-          />
-        </div>
-
-        {/* Zoom / Scale Slider */}
-        <div className="space-y-0.5 sm:space-y-1">
-          <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
-            <span className="text-slate-300 font-medium flex items-center gap-1">
-              <ZoomIn className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-              <span>Image Zoom / Scale</span>
-            </span>
-            <span className="font-mono text-red-400 font-bold">{bgZoom}%</span>
-          </div>
-          <input
-            type="range"
-            min="100"
-            max="250"
-            step="5"
-            value={bgZoom}
-            onChange={(e) => setBgZoom(Number(e.target.value))}
-            className="w-full h-1 sm:h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
-          />
-        </div>
-
-        {/* Brightness & Contrast in 2 columns */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          {/* Brightness */}
-          <div className="space-y-0.5 sm:space-y-1">
-            <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
-              <span className="text-slate-300 font-medium flex items-center gap-1">
-                <Sun className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-                <span>Brightness</span>
-              </span>
-              <span className="font-mono text-red-400 font-bold">
-                {bgBrightness}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="50"
-              max="150"
-              step="2"
-              value={bgBrightness}
-              onChange={(e) => setBgBrightness(Number(e.target.value))}
-              className="w-full h-1 sm:h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
-            />
-          </div>
-
-          {/* Contrast */}
-          <div className="space-y-0.5 sm:space-y-1">
-            <div className="flex justify-between items-center text-[10px] sm:text-[11px]">
-              <span className="text-slate-300 font-medium flex items-center gap-1">
-                <Contrast className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-slate-400" />
-                <span>Contrast</span>
-              </span>
-              <span className="font-mono text-red-400 font-bold">
-                {bgContrast}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="50"
-              max="150"
-              step="2"
-              value={bgContrast}
-              onChange={(e) => setBgContrast(Number(e.target.value))}
-              className="w-full h-1 sm:h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-red-600"
-            />
-          </div>
-        </div>
-      </div>
-
-      {isMobile && (
-        <div className="pt-1.5 sm:pt-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("preview")}
-            className="w-full py-2 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] sm:text-xs rounded-lg sm:rounded-xl shadow-md transition-colors flex items-center justify-center gap-1.5"
-          >
-            <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span>Done - View Full Poster</span>
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
   // SUB-RENDERER: Social Share Links
   const renderShareControls = () => (
     <div className="space-y-3.5 sm:space-y-5">
@@ -1116,18 +761,6 @@ export function StorySharePosterModal({
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("edit")}
-              className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-md text-[11px] font-bold transition-all ${
-                activeTab === "edit"
-                  ? "bg-red-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <Sliders className="h-3 w-3" />
-              <span>Edit Photo</span>
-            </button>
-            <button
-              type="button"
               onClick={() => setActiveTab("share")}
               className={`flex-1 flex items-center justify-center gap-1 py-1 px-2 rounded-md text-[11px] font-bold transition-all ${
                 activeTab === "share"
@@ -1155,12 +788,8 @@ export function StorySharePosterModal({
                 ref={previewWrapperRef}
                 className={`relative w-full ${
                   selectedFormat === "9:16"
-                    ? activeTab === "edit"
-                      ? "max-w-[130px] sm:max-w-[170px] md:max-w-[270px] lg:max-w-[290px]"
-                      : "max-w-[185px] sm:max-w-[230px] md:max-w-[270px] lg:max-w-[290px]"
-                    : activeTab === "edit"
-                      ? "max-w-[145px] sm:max-w-[185px] md:max-w-[300px] lg:max-w-[330px]"
-                      : "max-w-[205px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[330px]"
+                    ? "max-w-[185px] sm:max-w-[230px] md:max-w-[270px] lg:max-w-[290px]"
+                    : "max-w-[205px] sm:max-w-[250px] md:max-w-[300px] lg:max-w-[330px]"
                 } rounded-xl overflow-hidden shadow-2xl border border-slate-800 transition-all duration-200 shrink-0`}
                 style={{
                   height: `${wrapperHeight}px`,
@@ -1189,7 +818,7 @@ export function StorySharePosterModal({
                     }}
                   >
                     {/* LAYER 1: Real CMS Article Image Background (or Custom Uploaded Photo) (z-0) */}
-                    {(optimizedImageDataUrl || customImageUrl || article.featuredImageUrl) ? (
+                    {(optimizedImageDataUrl || article.featuredImageUrl) ? (
                       <div
                         style={{
                           position: "absolute",
@@ -1232,7 +861,7 @@ export function StorySharePosterModal({
                         {/* 1B: Exact Original Foreground Image (Pixel-perfect, zero distortion, exact aspect ratio) */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={optimizedImageDataUrl || customImageUrl || article.featuredImageUrl}
+                          src={optimizedImageDataUrl || article.featuredImageUrl}
                           crossOrigin="anonymous"
                           alt="Story Visual Background"
                           onLoad={(e) => {
@@ -1536,13 +1165,6 @@ export function StorySharePosterModal({
               </button>
             </div>
 
-            {/* Mobile View: Show Edit Controls right beneath compact preview when in Edit Mode */}
-            {activeTab === "edit" && (
-              <div className="w-full max-w-xs sm:max-w-sm mt-2 sm:mt-4 md:hidden">
-                {renderEditControls(true)}
-              </div>
-            )}
-
             {/* In Preview Mode: Download and Copy Action Buttons */}
             {activeTab === "preview" && (
               <div className="w-full max-w-xs sm:max-w-sm mt-2 sm:mt-3 space-y-1.5 sm:space-y-2 shrink-0">
@@ -1614,15 +1236,7 @@ export function StorySharePosterModal({
                   </div>
                 )}
 
-                {/* Mobile Shortcut to Edit Photo */}
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("edit")}
-                  className="w-full md:hidden flex items-center justify-center gap-1.5 sm:gap-2 py-1.5 sm:py-2.5 px-2.5 sm:px-3 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold border border-slate-800 transition-colors"
-                >
-                  <Sliders className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-red-500" />
-                  <span>Customize Photo Position & Zoom</span>
-                </button>
+
               </div>
             )}
           </div>
@@ -1633,42 +1247,8 @@ export function StorySharePosterModal({
               activeTab === "share" ? "flex" : "hidden md:flex"
             }`}
           >
-            {/* Desktop Navigation Tabs: [ Customize Photo ] | [ Social Share Links ] */}
-            <div className="hidden md:flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setDesktopTab("edit")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold font-sans transition-all ${
-                  desktopTab === "edit"
-                    ? "bg-red-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Sliders className="h-3.5 w-3.5" />
-                <span>Customize Photo</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setDesktopTab("share")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold font-sans transition-all ${
-                  desktopTab === "share"
-                    ? "bg-red-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Share2 className="h-3.5 w-3.5" />
-                <span>Social Share Links</span>
-              </button>
-            </div>
-
-            {/* Desktop / Mobile Tool Content */}
-            {activeTab === "share" ? (
-              renderShareControls()
-            ) : desktopTab === "edit" ? (
-              renderEditControls(false)
-            ) : (
-              renderShareControls()
-            )}
+            {/* Desktop / Mobile Tool Content — Share Only (editing is admin/CMS only) */}
+            {renderShareControls()}
           </div>
         </div>
       </div>
