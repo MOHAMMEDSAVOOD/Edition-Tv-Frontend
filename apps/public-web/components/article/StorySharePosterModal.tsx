@@ -7,21 +7,36 @@ import {
   Copy,
   Check,
   Share2,
-  Twitter,
   Linkedin,
   Facebook,
-  Send,
   Mail,
   MessageSquare,
-  Image as ImageIcon,
-  Smartphone,
-  Layers,
-  Eye,
-  Sparkles,
-  Film,
   Loader2,
-  FileText,
 } from "lucide-react";
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.19.53-1.11 1.04-1.53 1.07-.41.04-.94.15-2.83-.6-1.62-.64-2.68-2.28-2.76-2.39-.08-.11-.64-.85-.64-1.62 0-.77.4-1.15.54-1.31.14-.16.31-.2.42-.2.11 0 .21 0 .3.01.1.01.24-.04.37.28.14.34.48 1.17.52 1.25.04.08.07.18.01.29-.05.11-.08.18-.16.27-.08.1-.17.21-.24.28-.08.08-.17.17-.07.34.1.17.43.71.93 1.15.64.57 1.18.75 1.35.83.17.08.27.07.37-.05.1-.11.43-.5.54-.67.11-.18.22-.15.37-.09.15.05.97.46 1.14.54.17.09.28.13.32.2.04.08.04.47-.15 1" />
+    </svg>
+  );
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function TelegramIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z" />
+    </svg>
+  );
+}
 import { ArticleDetail } from "@/services/articleService";
 import { QRCodeSVG } from "./QRCodeSVG";
 import { getPosterTheme } from "./CategoryPosterTheme";
@@ -782,17 +797,17 @@ export function StorySharePosterModal({
   const socialChannels = [
     {
       name: "WhatsApp",
-      icon: Send,
+      icon: WhatsAppIcon,
       bg: "#25D366",
       text: "#ffffff",
       url: `https://api.whatsapp.com/send?text=${encodeURIComponent(socialPostText)}`,
     },
     {
-      name: "X (Twitter)",
-      icon: Twitter,
+      name: "X",
+      icon: XIcon,
       bg: "#000000",
       text: "#ffffff",
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🔴 ${headlineText}\n\n${descriptionText}\n\nVia @EditionTV:`)}&url=${encodeURIComponent(currentUrl)}`,
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`${headlineText}\n\n${descriptionText}\n\nVia @EditionTV:`)}&url=${encodeURIComponent(currentUrl)}`,
     },
     {
       name: "LinkedIn",
@@ -803,7 +818,7 @@ export function StorySharePosterModal({
     },
     {
       name: "Telegram",
-      icon: Send,
+      icon: TelegramIcon,
       bg: "#229ED9",
       text: "#ffffff",
       url: `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(socialPostText)}`,
@@ -825,7 +840,7 @@ export function StorySharePosterModal({
     {
       name: "Email",
       icon: Mail,
-      bg: "#6B7280",
+      bg: "#4B5563",
       text: "#ffffff",
       url: `mailto:?subject=${encodeURIComponent(headlineText)}&body=${encodeURIComponent(socialPostText)}`,
     },
@@ -857,8 +872,8 @@ export function StorySharePosterModal({
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4" />
-              <span>Share Poster (Image + Story Details)</span>
+              <Share2 className="h-4 w-4" />
+              <span>Share Poster with Image</span>
             </>
           )}
         </button>
@@ -868,9 +883,9 @@ export function StorySharePosterModal({
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            Share via (Includes Poster)
+            Share via
           </p>
-          <span className="text-[10px] text-gray-400">Attached image</span>
+          <span className="text-[10px] text-gray-400">Includes poster</span>
         </div>
         <div className="grid grid-cols-2 gap-2">
           {socialChannels.map((ch) => {
@@ -906,18 +921,18 @@ export function StorySharePosterModal({
         </div>
 
         {/* Informative Preview Card */}
-        <div className="bg-white border border-gray-200 rounded-lg p-2.5 mb-2.5 text-left text-gray-700 space-y-1.5">
+        <div className="bg-white border border-gray-200 rounded-lg p-3 mb-2.5 text-left text-gray-700 space-y-1.5">
           <p className="text-[12px] font-bold text-gray-900 line-clamp-1">
-            🔴 {headlineText}
+            {headlineText}
           </p>
           <p className="text-[11px] text-gray-600 line-clamp-2 leading-relaxed">
             {descriptionText}
           </p>
           <div className="text-[10px] font-mono text-gray-400 truncate">
-            📖 {currentUrl}
+            {currentUrl}
           </div>
-          <p className="text-[10px] text-gray-400 italic">
-            ✨ Follow @EditionTV · #EditionTV #News
+          <p className="text-[10px] text-gray-400">
+            Follow @EditionTV · #EditionTV #News
           </p>
         </div>
 
@@ -933,13 +948,13 @@ export function StorySharePosterModal({
         >
           {copiedText ? (
             <>
-              <Check className="h-4 w-4" />
-              <span>Full Post Text Copied to Clipboard!</span>
+              <Check className="h-3.5 w-3.5" />
+              <span>Post Text Copied to Clipboard!</span>
             </>
           ) : (
             <>
-              <FileText className="h-4 w-4 text-[#E4002B]" />
-              <span>Copy Post Text (Headline + Summary + CTA)</span>
+              <Copy className="h-3.5 w-3.5 text-gray-600" />
+              <span>Copy Full Post Text</span>
             </>
           )}
         </button>
@@ -986,19 +1001,15 @@ export function StorySharePosterModal({
       <div className="relative w-full sm:max-w-4xl bg-white text-gray-900 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden my-0 sm:my-auto flex flex-col max-h-[96dvh] sm:max-h-[90vh]">
 
         {/* ── HEADER ─────────────────────────────────── */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-gray-100 bg-white shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#E4002B] rounded-lg flex items-center justify-center shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
-            </div>
-            <div>
-              <h2 className="text-sm sm:text-base font-bold text-gray-900 leading-tight">Share Story</h2>
-              <p className="text-[11px] text-gray-400 leading-tight hidden sm:block">Download poster · Share with your audience</p>
-            </div>
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Share Story</h2>
+            <p className="text-[12px] text-gray-400 leading-tight mt-0.5">Download branded poster or share directly to social media</p>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
@@ -1009,26 +1020,24 @@ export function StorySharePosterModal({
           <button
             type="button"
             onClick={() => setActiveTab("preview")}
-            className={`flex-1 flex items-center justify-center gap-1.5 pb-2 text-[12px] font-bold border-b-2 transition-all ${
+            className={`flex-1 flex items-center justify-center pb-2 text-[12px] font-bold border-b-2 transition-all ${
               activeTab === "preview"
                 ? "border-[#E4002B] text-[#E4002B]"
                 : "border-transparent text-gray-400 hover:text-gray-600"
             }`}
           >
-            <Eye className="h-3.5 w-3.5" />
             Poster Preview
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("share")}
-            className={`flex-1 flex items-center justify-center gap-1.5 pb-2 text-[12px] font-bold border-b-2 transition-all ${
+            className={`flex-1 flex items-center justify-center pb-2 text-[12px] font-bold border-b-2 transition-all ${
               activeTab === "share"
                 ? "border-[#E4002B] text-[#E4002B]"
                 : "border-transparent text-gray-400 hover:text-gray-600"
             }`}
           >
-            <Share2 className="h-3.5 w-3.5" />
-            Share & Download
+            Share &amp; Download
           </button>
         </div>
 
@@ -1287,9 +1296,9 @@ export function StorySharePosterModal({
 
                 {/* Video mode badge */}
                 {mediaMode === "video" && (
-                  <div className="absolute top-2 left-2 z-40 pointer-events-none flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/80 border border-white/20">
-                    <Film className="h-3 w-3 text-red-400" />
-                    <span className="text-[9px] font-bold text-white uppercase tracking-wide">Video</span>
+                  <div className="absolute top-2 left-2 z-40 pointer-events-none flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/75 border border-white/15">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    <span className="text-[9px] font-bold text-white uppercase tracking-wider">Video</span>
                   </div>
                 )}
               </div>
@@ -1302,26 +1311,24 @@ export function StorySharePosterModal({
                 <button
                   type="button"
                   onClick={() => setMediaMode("image")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all text-center ${
                     mediaMode === "image"
                       ? "bg-white text-gray-800 shadow-sm"
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  <ImageIcon className="h-3.5 w-3.5 text-blue-500" />
                   Poster (PNG)
                 </button>
                 <button
                   type="button"
                   onClick={() => setMediaMode("video")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all text-center ${
                     mediaMode === "video"
                       ? "bg-[#E4002B] text-white shadow-sm"
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  <Film className="h-3.5 w-3.5" />
-                  Video (MP4)
+                  Video Reel (MP4)
                 </button>
               </div>
 
@@ -1330,25 +1337,23 @@ export function StorySharePosterModal({
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("2:3")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all text-center ${
                     selectedFormat === "2:3"
                       ? "bg-white text-gray-800 shadow-sm"
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  <Layers className="h-3 w-3" />
                   2:3 Feed
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedFormat("9:16")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-all text-center ${
                     selectedFormat === "9:16"
                       ? "bg-white text-gray-800 shadow-sm"
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  <Smartphone className="h-3 w-3" />
                   9:16 Story
                 </button>
               </div>
@@ -1363,7 +1368,7 @@ export function StorySharePosterModal({
                   {videoGenerating ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /><span>{videoStatusText || `Exporting… ${videoProgress}%`}</span></>
                   ) : (
-                    <><Film className="h-4 w-4" /><span>Download Video Reel</span></>
+                    <><Download className="h-4 w-4" /><span>Download Video Reel</span></>
                   )}
                   {videoGenerating && (
                     <div className="absolute bottom-0 left-0 h-1 bg-white/40 transition-all" style={{ width: `${videoProgress}%` }} />
