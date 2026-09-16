@@ -76,7 +76,9 @@ export function StorySharePosterModal({
   // Selected format configuration
   const currentFormat = POSTER_FORMATS[selectedFormat];
 
-  // Image state (read-only from article, no customization in public web)
+  // Image state (article image or replaced custom image link)
+  const [customImageUrl, setCustomImageUrl] = useState<string>("");
+  const [imageUrlInput, setImageUrlInput] = useState<string>("");
   const [optimizedImageDataUrl, setOptimizedImageDataUrl] = useState<string>("");
   const [ambientBackdropDataUrl, setAmbientBackdropDataUrl] = useState<string>("");
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number; ratio: number }>({
@@ -84,7 +86,7 @@ export function StorySharePosterModal({
     height: 675,
     ratio: 1200 / 675,
   });
-  // Fixed display values — no user editing in public web
+  // Fixed display values
   const bgPosY = 22;
   const bgPosX = 50;
   const bgZoom = 100;
@@ -92,10 +94,17 @@ export function StorySharePosterModal({
   const bgContrast = 108;
   const imageFitMode = "original" as const;
 
-  // Convert article featured image URL to a lossless Data URL for pixel-perfect html2canvas rendering
+  const handleApplyImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (trimmed) {
+      setCustomImageUrl(trimmed);
+    }
+  };
+
+  // Convert article featured image (or replaced image) URL to a lossless Data URL for pixel-perfect html2canvas rendering
   useEffect(() => {
     let isMounted = true;
-    const targetUrl = article.featuredImageUrl;
+    const targetUrl = customImageUrl || article.featuredImageUrl;
     if (!targetUrl) {
       setOptimizedImageDataUrl("");
       setAmbientBackdropDataUrl("");
@@ -169,7 +178,7 @@ export function StorySharePosterModal({
     return () => {
       isMounted = false;
     };
-  }, [article.featuredImageUrl, currentFormat.width, currentFormat.height]);
+  }, [customImageUrl, article.featuredImageUrl, currentFormat.width, currentFormat.height]);
 
 
   const canonicalPosterRef = useRef<HTMLDivElement>(null);
@@ -1084,7 +1093,7 @@ export function StorySharePosterModal({
                     }}
                   >
                     {/* LAYER 1: Background image */}
-                    {(optimizedImageDataUrl || article.featuredImageUrl) ? (
+                    {(optimizedImageDataUrl || customImageUrl || article.featuredImageUrl) ? (
                       <div
                         style={{
                           position: "absolute",
@@ -1123,7 +1132,7 @@ export function StorySharePosterModal({
                         )}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={optimizedImageDataUrl || article.featuredImageUrl}
+                          src={optimizedImageDataUrl || customImageUrl || article.featuredImageUrl}
                           crossOrigin="anonymous"
                           alt="Story Visual Background"
                           onLoad={(e) => {
@@ -1356,6 +1365,50 @@ export function StorySharePosterModal({
                 >
                   9:16 Story
                 </button>
+              </div>
+
+              {/* Replace Image Link */}
+              <div className="bg-gray-100 p-2 rounded-xl">
+                <div className="flex items-center justify-between mb-1.5 px-0.5">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                    Replace Image
+                  </span>
+                  {customImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomImageUrl("");
+                        setImageUrlInput("");
+                      }}
+                      className="text-[10px] font-bold text-[#E4002B] hover:underline"
+                    >
+                      Restore Default
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-1.5">
+                  <input
+                    type="url"
+                    placeholder="Paste image link (https://...)"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleApplyImageUrl();
+                      }
+                    }}
+                    className="flex-1 min-w-0 px-2.5 py-1.5 text-[11px] bg-white border border-gray-200 rounded-lg text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 font-sans"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyImageUrl}
+                    disabled={!imageUrlInput.trim()}
+                    className="px-2.5 py-1.5 bg-gray-900 hover:bg-black text-white text-[11px] font-bold rounded-lg transition-colors disabled:opacity-40 shrink-0"
+                  >
+                    Apply
+                  </button>
+                </div>
               </div>
 
               {/* Download CTA */}
