@@ -26,7 +26,7 @@ export function StoryNewClient() {
   const [isFeatured, setIsFeatured] = useState(false);
 
   useEffect(() => {
-    apiClient.get<any>(`/cms/categories`)
+    apiClient.get<CategoryItem[]>(`/cms/categories`)
       .then((data) => setCategories(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, []);
@@ -39,7 +39,7 @@ export function StoryNewClient() {
     setSubmitting(true);
     setError(null);
     try {
-      const created = await apiClient.post<any>(`/articles`, {
+      const created = await apiClient.post<{ id: string }>(`/articles`, {
         headline: headline.trim(),
         summary: summary.trim() || null,
         contentBody: contentBody.trim(),
