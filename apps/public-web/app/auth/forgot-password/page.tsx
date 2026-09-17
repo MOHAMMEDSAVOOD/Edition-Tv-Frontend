@@ -14,6 +14,8 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) return;
+
     setLoading(true);
     setErrorMsg("");
 
@@ -28,12 +30,12 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-16 sm:px-6 lg:px-8 font-sans select-none">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0b0d] flex flex-col justify-center py-16 sm:px-6 lg:px-8 font-sans select-none">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center mb-6">
-          <Image src="/logo.png" alt="Edition TV Logo" width={180} height={60} className="h-12 w-auto object-contain" />
+          <Image src="/logo.png" alt="Edition TV Logo" width={180} height={60} className="h-10 w-auto object-contain dark:invert" priority />
         </Link>
-        <h2 className="text-center text-3xl font-serif font-bold text-slate-900">
+        <h2 className="text-center text-2xl md:text-3xl font-serif font-bold text-foreground">
           Reset Your Password
         </h2>
         <p className="mt-2 text-center text-sm text-slate-600">
@@ -41,11 +43,11 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-md sm:rounded-xl border border-slate-200 sm:px-10">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white dark:bg-[#12141a] py-8 px-5 shadow-lg sm:rounded-xl border border-border sm:px-10">
           {errorMsg && (
-            <div className="mb-6 p-3.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-lg flex items-start gap-2 font-mono">
-              <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+            <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/30 text-red-500 text-xs rounded-lg flex items-start gap-2.5 font-mono">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
           )}

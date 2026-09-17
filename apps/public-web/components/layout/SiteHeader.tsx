@@ -52,10 +52,13 @@ export function SiteHeader() {
         const data = await apiClient.get<ApiCategory[]>("/cms/categories");
         if (Array.isArray(data)) {
           const visible = data.filter((cat) => cat.showInNav !== false);
+
+          // Top-level parents have no parentId (or parentId is null / empty)
           const parents = visible
             .filter((cat) => !cat.parentId)
             .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
+          // Subcategories are all items where parentId matches parent.id
           const formatted: NavCategoryItem[] = parents.map((parent) => {
             const children = visible
               .filter((cat) => cat.parentId === parent.id)
@@ -72,7 +75,7 @@ export function SiteHeader() {
               id: parent.id,
               name: parent.name,
               slug: parent.slug,
-              href: `/categories/${parent.slug}`,
+              href: parent.slug === "home" ? "/" : `/categories/${parent.slug}`,
               description: parent.description,
               subcategories: children,
             };
@@ -80,8 +83,8 @@ export function SiteHeader() {
 
           setNavCategories(formatted);
         }
-      } catch {
-        // Pure API mode: no fallback mock data
+      } catch (err) {
+        console.error("Failed to load navigation categories:", err);
       }
     };
     
@@ -106,7 +109,7 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-background border-b border-border shadow-xs max-w-full">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border shadow-xs w-full max-w-full overflow-x-clip">
         {/* Top bar: logo + date + weather + utilities */}
         <div className="container mx-auto max-w-[1200px] px-4 md:px-6">
           <div className="flex items-center justify-between h-14 relative">

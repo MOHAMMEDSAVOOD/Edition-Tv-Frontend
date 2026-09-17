@@ -1,3 +1,4 @@
+import { useAuthStore } from "../store/authStore";
 /**
  * API Client — Edition Platform Public Web
  *
@@ -214,6 +215,21 @@ class ApiClient {
           detail: `HTTP ${response.status} from ${endpoint}`,
         };
       }
+      
+      // Global Interceptors
+      if (typeof window !== "undefined") {
+        if (response.status === 401) {
+          useAuthStore.getState().clearSession();
+          window.dispatchEvent(new CustomEvent("edition_auth_changed"));
+          window.location.href = "/auth/login?expired=true";
+        } else if (response.status === 403) {
+          console.error("403 Forbidden");
+          // Components should handle 403 or error boundary will catch the ApiError
+        } else if (response.status === 404) {
+          // Components should handle 404 or boundary will catch
+        }
+      }
+
       throw new ApiError(response.status, errorData);
     }
 

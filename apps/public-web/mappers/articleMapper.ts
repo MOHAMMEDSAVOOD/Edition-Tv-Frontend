@@ -1,6 +1,34 @@
 import { ArticleResponseDto } from "@/dtos/article.dto";
 import { ArticleDetail } from "@/services/articleService";
 
+const ALLOWED_TAGS = new Set(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'strong', 'em', 'blockquote', 'a', 'ul', 'ol', 'li', 'figure', 'img', 'figcaption', 'cite', 'div', 'span', 'br', 'b', 'i', 'code']);
+const ALLOWED_ATTR = new Set(['class', 'className', 'href', 'src', 'alt', 'title', 'target', 'rel']);
+
+/**
+ * Pure-JS HTML sanitizer — zero native dependencies, safe on Node/Edge/browser.
+ * Strips all tags not in ALLOWED_TAGS and all attributes not in ALLOWED_ATTR.
+ * Does NOT require jsdom or isomorphic-dompurify.
+ */
+function sanitizeHtml(html: string): string {
+  if (!html) return "";
+  // Remove script/style/iframe blocks including their content entirely
+  let out = html.replace(/<(script|style|iframe|noscript|object|embed|form)[^>]*>[\s\S]*?<\/\1>/gi, "");
+  // Remove any event handlers (on*)
+  out = out.replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  // Remove disallowed tags (keep content)
+  out = out.replace(/<\/?([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>/g, (match, tagName) => {
+    if (ALLOWED_TAGS.has(tagName.toLowerCase())) {
+      // Strip disallowed attributes from allowed tags
+      return match.replace(/\s+([a-zA-Z-:]+)\s*(?:=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?/g, (attrMatch, attrName) => {
+        return ALLOWED_ATTR.has(attrName.toLowerCase()) ? attrMatch : "";
+      });
+    }
+    return "";
+  });
+  return out;
+}
+
+
 function getHighResImageUrl(url?: string): string | undefined {
   if (!url || url.trim() === "") return undefined;
   if (url.includes("ichef.bbci.co.uk")) {
@@ -100,7 +128,8 @@ export const articleMapper = {
     const summaryText = dto.summary || dto.subtitle || "";
 
     const parsedHtml = parseContentBodyToHtml(dto.contentBody || (dto as any).bodyHtml);
-    const bodyHtml = parsedHtml || (summaryText ? `<p className="text-base text-slate-900 leading-relaxed font-sans mb-6">${summaryText}</p>` : "");
+    const rawBodyHtml = parsedHtml || (summaryText ? `<p className="text-base text-slate-900 leading-relaxed font-sans mb-6">${summaryText}</p>` : "");
+    const bodyHtml = sanitizeHtml(rawBodyHtml);
 
     const summaryPoints = (dto.summaryPoints && dto.summaryPoints.length > 0)
       ? dto.summaryPoints

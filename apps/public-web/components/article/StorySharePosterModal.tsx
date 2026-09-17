@@ -1327,18 +1327,15 @@ export function StorySharePosterModal({
                               ? "42px"
                               : currentFormat.ribbon.fontSize,
                         fontWeight: 700,
-                        fontStyle: "italic",
                         fontFamily:
-                          "'Agency FB Bold', 'Agency FB', 'AgencyFB', sans-serif",
+                          "'Roboto Slab', serif",
                         letterSpacing: "0.08em",
                         textTransform: "uppercase",
                         textAlign: "center",
-                        textShadow: "0 2px 10px rgba(0,0,0,0.9)",
-                        filter: "drop-shadow(0 2px 6px rgba(0,0,0,0.85))",
                         zIndex: 40,
                       }}
                     >
-                      <span className="whitespace-nowrap px-1">
+                      <span className="whitespace-nowrap px-1" style={{ marginTop: "-8px" }}>
                         {categoryDisplayName}
                       </span>
                     </div>
@@ -1422,6 +1419,31 @@ export function StorySharePosterModal({
                         fgColor="#000000"
                       />
                     </div>
+
+                    {/* LAYER 5B: Contact Phone Number (z-20) */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: `calc(${currentFormat.qrCode.right} + ${currentFormat.qrCode.boxSize} + 20px)`,
+                        bottom: `calc(${currentFormat.qrCode.bottom} + 14px)`,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        justifyContent: "center",
+                        zIndex: 20,
+                        color: "#FFFFFF",
+                        fontFamily: "'Inter', sans-serif",
+                        textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+                      }}
+                    >
+                      <span style={{ fontSize: "12px", fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "#F8FAFC", marginBottom: "-2px" }}>
+                        Contact Us
+                      </span>
+                      <span style={{ fontSize: "22px", fontWeight: 700, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
+                        +91 72041 17779
+                      </span>
+                    </div>
+
 
                     {/* LAYER 6: OFFICIAL UNIFIED TRANSPARENT PNG FRAME OVERLAY (z-30) */}
                     {activePosterFrame ? (

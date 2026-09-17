@@ -5,3 +5,4 @@ export * from "./commentsService";
 export * from "./feedService";
 export * from "./liveBlogService";
 export * from "./searchService";
+export type * from "./schema";

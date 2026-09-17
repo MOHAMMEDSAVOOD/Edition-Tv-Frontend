@@ -40,6 +40,15 @@
     "lint": "npm run lint:public-web && npm run lint:cms && npm run lint:admin",
     "format": "npx -y prettier --write \"**/*.{js,jsx,ts,tsx,json,md,css}\"",
     "build:all": "npm run build:public-web && npm run build:cms && npm run build:reporter && npm run build:live && npm run build:ai && npm run build:analytics && npm run build:admin",
-    "lint:all": "npm run lint:public-web && npm run lint:cms && npm run lint:reporter && npm run lint:live && npm run lint:ai && npm run lint:analytics && npm run lint:admin"
+    "lint:all": "npm run lint:public-web && npm run lint:cms && npm run lint:reporter && npm run lint:live && npm run lint:ai && npm run lint:analytics && npm run lint:admin",
+    "swagger:validate": "swagger-cli validate",
+    "swagger:bundle": "swagger-cli bundle",
+    "swagger:types": "openapi-typescript",
+    "api:types": "openapi-typescript https://swagger.editiontv.com/v3/api-docs -o packages/api/schema.d.ts",
+    "api:types:local": "openapi-typescript openapi.json -o packages/api/schema.d.ts"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-cli": "^4.0.4",
+    "openapi-typescript": "^7.13.0"
   }
 }

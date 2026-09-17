@@ -2,7 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, Sparkles, TrendingUp, Clock, FileText, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
@@ -27,7 +34,13 @@ export function QuickSearchModal({ isOpen, onClose }: QuickSearchModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden border-border">
+      <DialogContent aria-describedby="quick-search-desc" className="sm:max-w-2xl p-0 gap-0 overflow-hidden border-border">
+        <VisuallyHidden>
+          <DialogTitle>Quick Search</DialogTitle>
+          <DialogDescription id="quick-search-desc">
+            Search for news, topics, or authors across Edition TV.
+          </DialogDescription>
+        </VisuallyHidden>
         <DialogHeader className="p-4 border-b">
           <div className="flex items-center gap-3">
             <Search className="h-5 w-5 text-muted-foreground shrink-0" />

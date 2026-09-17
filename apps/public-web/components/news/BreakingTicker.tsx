@@ -22,19 +22,19 @@ export function BreakingTicker() {
   const doubled = [...items, ...items];
 
   return (
-    <div className="breaking-ticker py-1 sm:py-1.5 text-xs font-semibold tracking-wide bg-primary text-black max-w-full overflow-x-hidden" suppressHydrationWarning>
-      <div className="container mx-auto max-w-[1200px] px-3 sm:px-4 md:px-6 flex items-center gap-2 sm:gap-3 overflow-hidden" suppressHydrationWarning>
-        <span className="flex-none flex items-center gap-1 sm:gap-1.5 pr-2.5 sm:pr-4 border-r border-black/30 uppercase tracking-widest text-[9px] sm:text-[10px] font-mono font-extrabold">
+    <div className="breaking-ticker py-1 sm:py-1.5 text-xs font-semibold tracking-wide bg-primary text-black w-full max-w-full overflow-hidden" suppressHydrationWarning>
+      <div className="container mx-auto max-w-[1200px] px-3 sm:px-4 md:px-6 flex items-center gap-2 sm:gap-3 overflow-hidden min-w-0" suppressHydrationWarning>
+        <span className="flex-none flex items-center gap-1 sm:gap-1.5 pr-2.5 sm:pr-4 border-r border-black/30 uppercase tracking-widest text-[9px] sm:text-[10px] font-mono font-extrabold shrink-0">
           <span className="live-dot inline-block h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-red-600 animate-ping" />
           Breaking
         </span>
 
-        <div className="overflow-hidden flex-1 relative" suppressHydrationWarning>
-          <div className="ticker-track" suppressHydrationWarning>
+        <div className="overflow-hidden flex-1 relative min-w-0" suppressHydrationWarning>
+          <div className="ticker-track flex items-center whitespace-nowrap" suppressHydrationWarning>
             {doubled.map((item, i) => (
-              <span key={i} className="inline-flex items-center">
+              <span key={i} className="inline-flex items-center shrink-0">
                 <span className="mx-3 sm:mx-6 text-black/40 select-none">◆</span>
-                <Link href={`/articles/${item.slug}`} className="text-black font-bold hover:underline text-[11px] sm:text-xs">
+                <Link href={`/articles/${item.slug}`} className="text-black font-bold hover:underline text-[11px] sm:text-xs whitespace-nowrap">
                   {item.text}
                 </Link>
               </span>
