@@ -11,16 +11,19 @@ import { FeedItemResponseDto, BreakingNewsTickerResponseDto, FeedItemResponseSch
 
 const REVALIDATE = 0;
 
-function unwrapArray(val: any): any[] {
+/** Pull the array out of whichever envelope shape the feed API used. */
+function toArray(val: any): any[] {
   if (!val) return [];
-  let items: any[] = [];
-  if (Array.isArray(val)) items = val;
-  else if (Array.isArray(val.content)) items = val.content;
-  else if (Array.isArray(val.data)) items = val.data;
-  else if (Array.isArray(val.articles)) items = val.articles;
-  else if (Array.isArray(val.items)) items = val.items;
-  
-  return items.map((item) => {
+  if (Array.isArray(val)) return val;
+  if (Array.isArray(val.content)) return val.content;
+  if (Array.isArray(val.data)) return val.data;
+  if (Array.isArray(val.articles)) return val.articles;
+  if (Array.isArray(val.items)) return val.items;
+  return [];
+}
+
+function unwrapArray(val: any): any[] {
+  return toArray(val).map((item) => {
     const parsed = FeedItemResponseSchema.safeParse(item);
     if (parsed.success) return parsed.data;
     console.warn("Feed item schema validation failed", parsed.error);
@@ -125,7 +128,10 @@ export const feedRepository = {
       revalidate: 300,
       tags: ["feed", "topics"],
     });
-    return unwrapArray(res);
+    // Topics come back as plain strings (e.g. ["General"]), not feed items, so
+    // they must not go through FeedItemResponseSchema — it rejects every one of
+    // them and getTopics silently returns an empty list.
+    return toArray(res).filter((topic): topic is string => typeof topic === "string");
   },
 
   async getTopicFeed(topic: string, limit = 10): Promise<FeedItemResponseDto[]> {
