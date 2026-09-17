@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const backendOrigin =
-  (process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.editiontv.com/api/v1")
+  (process.env.NEXT_PUBLIC_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api1.editiontv.com/api/v1")
     .replace(/\/api\/v1\/?$/, "");
 
 const nextConfig: NextConfig = {

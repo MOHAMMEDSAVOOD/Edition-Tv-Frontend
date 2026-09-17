@@ -779,7 +779,7 @@ export function NewsSourcesClient() {
                   Use this REST endpoint URL within external newsroom tools to trigger instant feed registration.
                 </p>
                 <code className="block p-3 bg-white rounded-xl text-xs font-mono text-red-600 border border-slate-200 break-all font-bold">
-                  https://api.editiontv.com/api/v1/newsroom/wire-items/bookmarklet?url=%s
+                  https://api1.editiontv.com/api/v1/newsroom/wire-items/bookmarklet?url=%s
                 </code>
               </div>
             </div>
