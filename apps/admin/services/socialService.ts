@@ -8,11 +8,23 @@ import { apiClient } from "@/lib/api-client";
  * records the share against the article on the way through.
  */
 
-export type SocialShareStatus = "PENDING" | "SCHEDULED" | "PUBLISHED" | "FAILED";
+export type SocialShareStatus =
+  "PENDING" | "SCHEDULED" | "PUBLISHED" | "FAILED";
+
+/** The networks the newsroom can publish to, as the API spells them. */
+export type SocialPlatform = "instagram" | "facebook" | "youtube";
+
+export const SOCIAL_PLATFORMS: SocialPlatform[] = [
+  "instagram",
+  "facebook",
+  "youtube",
+];
 
 export interface SocialAccount {
+  /** The network's own id: an Instagram user id, a Page id, a channel id. */
   id: string;
   username: string | null;
+  platform: SocialPlatform;
   /** False when the module holds no usable access token for the account. */
   ready: boolean;
 }
@@ -28,7 +40,7 @@ export interface SocialMediaStatus {
 export interface SocialShare {
   id: string;
   articleId: string;
-  platform: "INSTAGRAM";
+  platform: "INSTAGRAM" | "FACEBOOK" | "YOUTUBE";
   status: SocialShareStatus;
   caption: string;
   mediaUrl: string | null;
@@ -67,6 +79,28 @@ export interface ShareToInstagramRequest {
   force?: boolean;
 }
 
+export interface ShareArticleRequest {
+  articleId: string;
+  /** Networks to post to; each one comes back as its own share. */
+  platforms: SocialPlatform[];
+  caption: string;
+  /** The poster. Also YouTube's thumbnail. */
+  imageUrl: string;
+  /**
+   * The file YouTube uploads. Required when youtube is among the platforms: an article carries no
+   * video of its own, so the editor names one.
+   */
+  videoUrl?: string;
+  youtubeTitle?: string;
+  link?: string;
+  instagramAccountId?: string;
+  facebookPageId?: string;
+  youtubeChannelId?: string;
+  idempotencyKey?: string;
+  /** Post even though this article is already out on that network. */
+  force?: boolean;
+}
+
 export const socialService = {
   /** Whether this environment can share at all, and which accounts it can post as. */
   getStatus(): Promise<SocialMediaStatus> {
@@ -75,7 +109,9 @@ export const socialService = {
 
   /** Caption, poster image and share history for one article, prepared by the backend. */
   getDraft(articleId: string): Promise<SocialShareDraft> {
-    return apiClient.get<SocialShareDraft>(`/social/articles/${articleId}/draft`);
+    return apiClient.get<SocialShareDraft>(
+      `/social/articles/${articleId}/draft`,
+    );
   },
 
   getShares(articleId: string): Promise<SocialShare[]> {
@@ -84,6 +120,11 @@ export const socialService = {
 
   shareToInstagram(request: ShareToInstagramRequest): Promise<SocialShare> {
     return apiClient.post<SocialShare>("/social/shares/instagram", request);
+  },
+
+  /** Publishes to every named network; one share comes back per network, in the order asked. */
+  share(request: ShareArticleRequest): Promise<SocialShare[]> {
+    return apiClient.post<SocialShare[]>("/social/shares", request);
   },
 };
 
@@ -109,7 +150,9 @@ export const posterService = {
    * PNG export fail. A data URI has no origin, so it taints nothing.
    */
   fetchRemoteImage(url: string): Promise<RemoteImage> {
-    return apiClient.get<RemoteImage>(`/media/remote-image?url=${encodeURIComponent(url)}`);
+    return apiClient.get<RemoteImage>(
+      `/media/remote-image?url=${encodeURIComponent(url)}`,
+    );
   },
 
   /** Stores the rendered poster and returns the public URL Instagram will fetch. */
