@@ -16,7 +16,7 @@ const spec = {
   },
   servers: [
     {
-      url: "https://api.editiontv.com",
+      url: "https://api1.editiontv.com",
       description: "Production API Server"
     },
     {
