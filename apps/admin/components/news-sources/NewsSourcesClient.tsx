@@ -325,7 +325,7 @@ export function NewsSourcesClient() {
 
   const handleExportOpml = async () => {
     try {
-      const token = apiClient.getAccessToken();
+      const token = await apiClient.getAccessToken();
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
       
@@ -349,7 +349,7 @@ export function NewsSourcesClient() {
 
   const handleDownloadDatabase = async () => {
     try {
-      const token = apiClient.getAccessToken();
+      const token = await apiClient.getAccessToken();
       const headers: Record<string, string> = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
       

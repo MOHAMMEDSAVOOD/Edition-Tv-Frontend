@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev:public-web",
+    "env:pull": "bash scripts/env-from-openbao.sh",
     "build": "npm run build:public-web",
     "dev:public-web": "npm run dev --prefix apps/public-web",
     "dev:cms": "npm run dev --prefix apps/cms-studio",

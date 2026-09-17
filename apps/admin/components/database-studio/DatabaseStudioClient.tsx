@@ -1,9 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { authService } from "@edition/auth";
+import Link from "next/link";
+import { useAuth } from "@edition/auth";
 import { Table, Search, Database, ChevronRight, ChevronLeft, Trash2, AlertCircle } from "lucide-react";
-import { apiClient } from "@/lib/api-client";
+import { apiClient, ApiError, API_ORIGIN } from "@/lib/api-client";
+
+/**
+ * The backend's DatabaseStudioController is mounted at the server root
+ * (`/internal/database-studio/**`, ROLE_ADMIN, non-prod profiles only) — not
+ * under `/api/v1` — so we address it via the API origin.
+ */
+const DB_STUDIO_BASE = `${API_ORIGIN}/internal/database-studio`;
 
 interface DBTable {
   tableName: string;
@@ -27,23 +35,22 @@ export default function DatabaseStudioClient() {
   const [records, setRecords] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
+  const [forbidden, setForbidden] = useState(false);
+  const { user, loading: authLoading, hasRole } = useAuth();
+  const isAdmin = hasRole("ROLE_ADMIN");
 
   const [page, setPage] = useState(0);
   const pageSize = 50;
-  
+
   useEffect(() => {
-    authService.initAccessToken();
-    if (!localStorage.getItem("edition_access_token")) {
-      setShowLogin(true);
+    if (authLoading) return;
+    if (!user) {
       setLoading(false);
-    } else {
-      fetchTables();
+      return;
     }
-  }, []);
+    fetchTables();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.uid]);
 
   useEffect(() => {
     if (selectedTable) {
@@ -57,33 +64,20 @@ export default function DatabaseStudioClient() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.get<{ table_name: string }[]>("/db-studio/tables");
+      const data = await apiClient.get<{ table_name: string }[]>(`${DB_STUDIO_BASE}/tables`);
       if (!data) throw new Error("Failed to fetch tables");
       // map { table_name: 'xyz' } to DBTable format used in UI
       setTables(data.map((t) => ({ tableName: t.table_name, tableType: 'BASE TABLE' })));
     } catch (err: unknown) {
-      const msg = (err as Error).message || "";
-      if (msg.includes('403') || msg.includes('401') || msg.includes('Unauthorized') || msg.includes('Invalid token')) {
-        setShowLogin(true);
+      if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+        setForbidden(true);
+      } else if (err instanceof ApiError && err.status === 404) {
+        setError("Database Studio is not available on this backend (it is only enabled outside the prod profile).");
       } else {
-        setError("Failed to fetch tables: " + msg);
+        setError("Failed to fetch tables: " + ((err as Error).message || ""));
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError('');
-    try {
-      const res = await authService.login({ email, passwordHash: password });
-      if (res.accessToken) {
-        setShowLogin(false);
-        fetchTables();
-      }
-    } catch {
-      setLoginError('Login failed. Please check your credentials.');
     }
   };
 
@@ -92,7 +86,7 @@ export default function DatabaseStudioClient() {
       const data = await apiClient.get<{
         columns: { column_name: string; data_type: string; is_nullable: string }[];
         primaryKeys: { column_name: string }[];
-      }>(`/db-studio/tables/${tableName}/schema`);
+      }>(`${DB_STUDIO_BASE}/tables/${encodeURIComponent(tableName)}/schema`);
       
       if (!data) throw new Error("Failed to fetch metadata");
       
@@ -116,7 +110,7 @@ export default function DatabaseStudioClient() {
   const fetchRecords = async (tableName: string, pageNum: number) => {
     try {
       setLoading(true);
-      const data = await apiClient.get<{ records: Record<string, unknown>[] }>(`/db-studio/tables/${tableName}/records?page=${pageNum + 1}&size=${pageSize}`);
+      const data = await apiClient.get<{ records: Record<string, unknown>[] }>(`${DB_STUDIO_BASE}/tables/${encodeURIComponent(tableName)}/records?page=${pageNum + 1}&size=${pageSize}`);
       if (!data) throw new Error("Failed to fetch records");
       setRecords(data.records);
       setPage(pageNum);
@@ -132,7 +126,7 @@ export default function DatabaseStudioClient() {
     if (!confirm(`Are you sure you want to delete record with ${pkColumn} = ${pkValue}?`)) return;
     
     try {
-      await apiClient.delete<unknown>(`/db-studio/tables/${selectedTable}/records?pkColumn=${pkColumn}&pkValue=${pkValue}`);
+      await apiClient.delete<unknown>(`${DB_STUDIO_BASE}/tables/${encodeURIComponent(selectedTable)}/records?pkColumn=${encodeURIComponent(pkColumn)}&pkValue=${encodeURIComponent(pkValue)}`);
       // Refresh
       fetchRecords(selectedTable, page);
     } catch (err: unknown) {
@@ -143,23 +137,19 @@ export default function DatabaseStudioClient() {
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden text-sm relative">
 
-      {/* Login Overlay */}
-      {showLogin && (
+      {/* Access Overlay: not signed in, or backend rejected the Firebase token / role */}
+      {!authLoading && (!user || forbidden || !isAdmin) && (
         <div className="absolute inset-0 bg-gray-900/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-96">
-            <h2 className="text-xl font-bold mb-4">Admin Login Required</h2>
-            {loginError && <div className="text-red-500 text-sm mb-4">{loginError}</div>}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full mt-1 px-3 py-2 border rounded-md" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full mt-1 px-3 py-2 border rounded-md" required />
-              </div>
-              <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">Log In</button>
-            </form>
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96 space-y-3">
+            <h2 className="text-xl font-bold">Admin Access Required</h2>
+            <p className="text-sm text-gray-600">
+              {!user
+                ? "Sign in with an administrator account to open Database Studio."
+                : "Database Studio requires ROLE_ADMIN. The backend rejected this account's Firebase token."}
+            </p>
+            <Link href="/login" className="block w-full text-center bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">
+              Go to Sign In
+            </Link>
           </div>
         </div>
       )}

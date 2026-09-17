@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@edition/auth";
 import { AdminAuthGuard } from "@/components/auth/AdminAuthGuard";
 
 export const metadata: Metadata = {
@@ -9,11 +10,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className="h-full bg-background text-foreground flex overflow-hidden font-sans" suppressHydrationWarning>
-        <AdminAuthGuard>{children}</AdminAuthGuard>
+    <html lang="en" className="h-full">
+      <body className="h-full bg-background text-foreground flex overflow-hidden font-sans">
+        <AuthProvider>
+          <AdminAuthGuard>{children}</AdminAuthGuard>
+        </AuthProvider>
       </body>
     </html>
   );
 }
-

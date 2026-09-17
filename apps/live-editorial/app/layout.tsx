@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@edition/auth";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { LiveAuthGuard } from "@/components/auth/LiveAuthGuard";
 
@@ -13,7 +14,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark" suppressHydrationWarning style={{ colorScheme: "dark" }}>
       <body className="h-full bg-background text-foreground flex overflow-hidden font-mono">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <LiveAuthGuard>{children}</LiveAuthGuard>
+          <AuthProvider>
+            <LiveAuthGuard>{children}</LiveAuthGuard>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

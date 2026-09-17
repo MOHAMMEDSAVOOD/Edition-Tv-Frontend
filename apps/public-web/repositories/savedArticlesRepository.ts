@@ -14,17 +14,8 @@ export interface BookmarkStatusDto {
 export const savedArticlesRepository = {
   async getSavedArticles(): Promise<SavedArticleEntityDto[]> {
     try {
-      if (!apiClient.getAccessToken()) return [];
-      const raw = await apiClient.get<any>("/bookmarks");
-      if (!raw) return [];
-      if (Array.isArray(raw)) return raw;
-      if (Array.isArray(raw.content)) return raw.content;
-      if (Array.isArray(raw.data)) return raw.data;
-      if (Array.isArray(raw.items)) return raw.items;
-      if (typeof raw === "object" && (raw.articleId || raw.id)) {
-        return [raw as SavedArticleEntityDto];
-      }
-      return [];
+      if (!apiClient.isAuthenticated()) return [];
+      return await apiClient.get<SavedArticleEntityDto[]>("/bookmarks");
     } catch {
       return [];
     }
@@ -40,16 +31,9 @@ export const savedArticlesRepository = {
 
   async checkIsSaved(articleId: string): Promise<boolean> {
     try {
-      if (!apiClient.getAccessToken()) return false;
-      try {
-        const res = await apiClient.get<BookmarkStatusDto>(`/bookmarks/check/${articleId}`);
-        if (typeof res?.saved === "boolean") return res.saved;
-      } catch {
-        // Fallback: check bookmarks list directly
-        const list = await this.getSavedArticles();
-        return list.some((b) => b.articleId === articleId);
-      }
-      return false;
+      if (!apiClient.isAuthenticated()) return false;
+      const res = await apiClient.get<BookmarkStatusDto>(`/bookmarks/check/${articleId}`);
+      return res?.saved || false;
     } catch {
       return false;
     }
