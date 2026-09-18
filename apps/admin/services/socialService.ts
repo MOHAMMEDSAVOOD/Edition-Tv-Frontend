@@ -101,10 +101,51 @@ export interface ShareArticleRequest {
   force?: boolean;
 }
 
+/** Where one article stands on one network, as a list row needs it. */
+export interface PlatformShareStatus {
+  platform: "INSTAGRAM" | "FACEBOOK" | "YOUTUBE";
+  status: SocialShareStatus;
+  permalink: string | null;
+  publishedAt: string | null;
+}
+
+/**
+ * Where one article stands across every network it has been sent to.
+ *
+ * Articles that have never been shared are absent from the response rather than present and empty,
+ * so a missing entry means "not posted".
+ */
+export interface ArticleShareSummary {
+  articleId: string;
+  platforms: PlatformShareStatus[];
+}
+
+/** The backend refuses a larger page in one call; keep list fetches at or under this. */
+export const MAX_SUMMARY_ARTICLES = 200;
+
 export const socialService = {
   /** Whether this environment can share at all, and which accounts it can post as. */
   getStatus(): Promise<SocialMediaStatus> {
     return apiClient.get<SocialMediaStatus>("/social/status");
+  },
+
+  /**
+   * Social state for a page of articles in one call, for badging a list.
+   *
+   * One request per list page rather than one per row: asking `/articles/{id}/shares` for every
+   * row turns a fifty-story page into fifty requests.
+   */
+  getShareSummaries(articleIds: string[]): Promise<ArticleShareSummary[]> {
+    const ids = Array.from(new Set(articleIds.filter(Boolean)));
+    if (ids.length === 0) {
+      return Promise.resolve([]);
+    }
+    return apiClient.get<ArticleShareSummary[]>(
+      `/social/shares/summary?articleIds=${ids
+        .slice(0, MAX_SUMMARY_ARTICLES)
+        .map(encodeURIComponent)
+        .join(",")}`,
+    );
   },
 
   /** Caption, poster image and share history for one article, prepared by the backend. */
