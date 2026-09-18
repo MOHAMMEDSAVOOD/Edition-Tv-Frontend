@@ -57,7 +57,7 @@ export default function DatabaseStudioClient() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.get<{ table_name: string }[]>("/db-studio/tables");
+      const data = await apiClient.get<{ table_name: string }[]>("/internal/database-studio/tables");
       if (!data) throw new Error("Failed to fetch tables");
       // map { table_name: 'xyz' } to DBTable format used in UI
       setTables(data.map((t) => ({ tableName: t.table_name, tableType: 'BASE TABLE' })));
@@ -92,7 +92,7 @@ export default function DatabaseStudioClient() {
       const data = await apiClient.get<{
         columns: { column_name: string; data_type: string; is_nullable: string }[];
         primaryKeys: { column_name: string }[];
-      }>(`/db-studio/tables/${tableName}/schema`);
+      }>(`/internal/database-studio/tables/${tableName}/schema`);
       
       if (!data) throw new Error("Failed to fetch metadata");
       
@@ -116,7 +116,7 @@ export default function DatabaseStudioClient() {
   const fetchRecords = async (tableName: string, pageNum: number) => {
     try {
       setLoading(true);
-      const data = await apiClient.get<{ records: Record<string, unknown>[] }>(`/db-studio/tables/${tableName}/records?page=${pageNum + 1}&size=${pageSize}`);
+      const data = await apiClient.get<{ records: Record<string, unknown>[] }>(`/internal/database-studio/tables/${tableName}/records?page=${pageNum + 1}&size=${pageSize}`);
       if (!data) throw new Error("Failed to fetch records");
       setRecords(data.records);
       setPage(pageNum);
@@ -132,7 +132,7 @@ export default function DatabaseStudioClient() {
     if (!confirm(`Are you sure you want to delete record with ${pkColumn} = ${pkValue}?`)) return;
     
     try {
-      await apiClient.delete<unknown>(`/db-studio/tables/${selectedTable}/records?pkColumn=${pkColumn}&pkValue=${pkValue}`);
+      await apiClient.delete<unknown>(`/internal/database-studio/tables/${selectedTable}/records?pkColumn=${pkColumn}&pkValue=${pkValue}`);
       // Refresh
       fetchRecords(selectedTable, page);
     } catch (err: unknown) {

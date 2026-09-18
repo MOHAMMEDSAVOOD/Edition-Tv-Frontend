@@ -4,6 +4,7 @@ import { CommentItem, commentsService } from "@/services/commentsService";
 import { MessageSquare, ThumbsUp, Send, ShieldCheck } from "lucide-react";
 import { SectionDivider } from "@/components/news/SectionDivider";
 import { TimeAgo } from "@/components/common/TimeAgo";
+import { useAuthStore } from "@/store/authStore";
 
 interface CommentsSectionProps {
   articleId: string;
@@ -12,24 +13,30 @@ interface CommentsSectionProps {
 
 export function CommentsSection({ articleId, initialComments }: CommentsSectionProps) {
   const [comments, setComments] = useState<CommentItem[]>(initialComments);
+  const { session } = useAuthStore();
   const [newComment, setNewComment] = useState("");
   const [authorName, setAuthorName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
     setIsSubmitting(true);
+    setError(null);
+    const finalAuthorName = session?.username || authorName.trim() || "Verified Reader";
+    const finalAuthorId = session?.userId || "anonymous";
+
     try {
-      const created = await commentsService.postComment(articleId, newComment);
+      const created = await commentsService.postComment(articleId, newComment, finalAuthorId, finalAuthorName);
       if (created && created.content) {
         setComments((prev) => [created, ...prev]);
       } else {
         const optimistic: CommentItem = {
           id: `c-opt-${Date.now()}`,
           articleId,
-          authorName: authorName.trim() || "Verified Reader",
+          authorName: finalAuthorName,
           content: newComment,
           createdAt: new Date().toISOString(),
           likesCount: 0,
@@ -39,19 +46,13 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
         setComments((prev) => [optimistic, ...prev]);
       }
       setNewComment("");
-    } catch {
-      const optimistic: CommentItem = {
-        id: `c-opt-${Date.now()}`,
-        articleId,
-        authorName: authorName.trim() || "Verified Reader",
-        content: newComment,
-        createdAt: new Date().toISOString(),
-        likesCount: 0,
-        status: "APPROVED",
-        toxicityScore: 0.0,
-      };
-      setComments((prev) => [optimistic, ...prev]);
-      setNewComment("");
+    } catch (err: any) {
+      console.error("Failed to post comment:", err);
+      if (err?.status === 401 || err?.response?.status === 401) {
+        setError("You must be signed in to post a comment.");
+      } else {
+        setError("Failed to post comment. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -79,13 +80,15 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
           </span>
         </div>
 
-        <input
-          type="text"
-          placeholder="Your Name (Optional)"
-          value={authorName}
-          onChange={(e) => setAuthorName(e.target.value)}
-          className="w-full sm:w-64 px-3 py-1.5 text-xs border border-border bg-background rounded-sm focus:outline-none focus:ring-1 focus:ring-primary"
-        />
+        {!session && (
+          <input
+            type="text"
+            placeholder="Your Name (Optional)"
+            value={authorName}
+            onChange={(e) => setAuthorName(e.target.value)}
+            className="w-full sm:w-64 px-3 py-1.5 text-xs border border-border bg-background rounded-sm focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        )}
 
         <textarea
           rows={3}
@@ -95,6 +98,10 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
           onChange={(e) => setNewComment(e.target.value)}
           className="w-full p-3 text-sm border border-border bg-background rounded-sm focus:outline-none focus:ring-1 focus:ring-primary resize-y"
         />
+
+        {error && (
+          <div className="text-red-500 text-xs mt-1">{error}</div>
+        )}
 
         <div className="flex justify-end">
           <button

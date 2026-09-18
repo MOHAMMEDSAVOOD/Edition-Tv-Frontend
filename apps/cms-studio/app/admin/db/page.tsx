@@ -21,21 +21,17 @@ export default function DatabaseStudioPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<TableInfo[]>("/admin/db/tables").catch(() => []);
-      const list = Array.isArray(data) ? data : [
-        { tableName: "articles", rowCount: 12 },
-        { tableName: "candidates", rowCount: 45 },
-        { tableName: "users", rowCount: 8 },
-        { tableName: "audit_logs", rowCount: 142 },
-        { tableName: "curation_slots", rowCount: 15 },
-        { tableName: "publishing_jobs", rowCount: 9 },
-      ];
+      const data = await apiClient.get<Array<{ table_name: string }>>("/internal/database-studio/tables");
+      const list: TableInfo[] = Array.isArray(data)
+        ? data.map((t) => ({ tableName: t.table_name, rowCount: 0 }))
+        : [];
       setTables(list);
       if (list.length > 0) {
         fetchRows(list[0].tableName);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load database tables");
+      setError(err instanceof Error ? err.message : "Failed to load database tables from backend");
+      setTables([]);
     } finally {
       setLoading(false);
     }
@@ -44,8 +40,10 @@ export default function DatabaseStudioPage() {
   const fetchRows = async (table: string) => {
     setSelectedTable(table);
     try {
-      const data = await apiClient.get<Record<string, unknown>[]>(`/admin/db/tables/${table}/rows`).catch(() => []);
-      setRows(Array.isArray(data) ? data : []);
+      const data = await apiClient.get<{ records: Record<string, unknown>[] }>(
+        `/internal/database-studio/tables/${table}/records?page=1&size=50`
+      );
+      setRows(data && Array.isArray(data.records) ? data.records : []);
     } catch {
       setRows([]);
     }

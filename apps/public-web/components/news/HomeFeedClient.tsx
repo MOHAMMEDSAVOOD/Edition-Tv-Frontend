@@ -216,8 +216,9 @@ export function HomeFeedClient({
   }, []);
 
   useEffect(() => {
+    if (initialArticles.length > 0) return;
     fetchLiveHomeFeed();
-  }, [fetchLiveHomeFeed]);
+  }, [fetchLiveHomeFeed, initialArticles.length]);
 
   const leadStory = articles.find((a) => a.isFeatured) || articles[0];
   const secondary = articles.filter((a) => a.id !== leadStory?.id).slice(0, 3);

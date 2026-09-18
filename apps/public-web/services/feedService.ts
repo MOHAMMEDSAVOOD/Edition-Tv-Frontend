@@ -117,7 +117,7 @@ export const feedService = {
   },
 
   async getFeedByAuthor(authorId: string, page = 1, pageSize = 12): Promise<FeedResponse> {
-    const dtos = await feedRepository.getPublicFeed(page - 1, pageSize);
+    const dtos = await feedRepository.getAuthorFeed(authorId, Math.max(0, page - 1), pageSize);
     const items = (dtos || []).map(feedMapper.toArticleFeedItem);
     return {
       items,

@@ -25,8 +25,8 @@ export const commentsService = {
     return (dtos || []).map(mapCommentDtoToItem);
   },
 
-  async postComment(articleId: string, content: string, parentId?: string): Promise<CommentItem> {
-    const dto = await commentRepository.postComment(articleId, content, parentId);
+  async postComment(articleId: string, content: string, authorId?: string, authorName?: string, parentId?: string): Promise<CommentItem> {
+    const dto = await commentRepository.postComment(articleId, content, authorId, authorName, parentId);
     return mapCommentDtoToItem(dto);
   },
 

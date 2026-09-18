@@ -23,11 +23,12 @@ export const commentRepository = {
     return res || [];
   },
 
-  async postComment(articleId: string, content: string, parentId?: string): Promise<CommentResponseDto> {
+  async postComment(articleId: string, content: string, authorId?: string, authorName?: string, parentId?: string): Promise<CommentResponseDto> {
+    const payload = { content, authorId, authorName };
     if (parentId) {
-      return apiClient.post<CommentResponseDto>(`/comments/${parentId}/reply`, { content });
+      return apiClient.post<CommentResponseDto>(`/comments/${parentId}/reply`, payload);
     }
-    return apiClient.post<CommentResponseDto>(`/articles/${articleId}/comments`, { content });
+    return apiClient.post<CommentResponseDto>(`/articles/${articleId}/comments`, payload);
   },
 
   async likeComment(commentId: string): Promise<void> {

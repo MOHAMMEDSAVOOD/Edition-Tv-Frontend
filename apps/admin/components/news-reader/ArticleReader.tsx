@@ -16,6 +16,7 @@ import {
   Volume2,
   Globe,
 } from "lucide-react";
+import DOMPurify from "isomorphic-dompurify";
 import { WireItem } from "./ArticleList";
 import { cn } from "@/lib/utils";
 
@@ -249,7 +250,7 @@ export function ArticleReader({
         {/* Article Body Content / HTML */}
         <div className="prose prose-slate max-w-none text-slate-800 text-sm leading-relaxed space-y-4 font-serif">
           {item.contentHtml ? (
-            <div dangerouslySetInnerHTML={{ __html: item.contentHtml }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.contentHtml) }} />
           ) : (
             <p className="text-slate-800 whitespace-pre-line text-sm leading-relaxed">{item.summary}</p>
           )}

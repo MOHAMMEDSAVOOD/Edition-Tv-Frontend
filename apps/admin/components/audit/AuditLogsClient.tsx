@@ -64,7 +64,7 @@ export function AuditLogsClient() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiClient.get<PaginatedResponse>(`/audit?page=${p}&size=20`);
+      const data = await apiClient.get<PaginatedResponse>(`/api/v1/admin/audit-logs?page=${p}&size=20`);
       if (data) {
         setLogs(data.content.map(toAuditEntry));
         setTotalPages(data.totalPages);

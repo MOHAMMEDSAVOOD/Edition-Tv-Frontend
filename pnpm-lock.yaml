@@ -104,6 +104,9 @@ importers:
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
+      isomorphic-dompurify:
+        specifier: ^4.2.0
+        version: 4.2.0(@noble/hashes@1.8.0)
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
@@ -145,7 +148,7 @@ importers:
         version: 2.6.1
       tailwindcss-animate:
         specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@3.4.19(yaml@2.9.0))
+        version: 1.0.7(tailwindcss@3.4.19(tsx@4.23.13)(yaml@2.9.0))
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -155,7 +158,7 @@ importers:
     devDependencies:
       '@opennextjs/cloudflare':
         specifier: ^1.20.6
-        version: 1.20.6(next@15.1.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(wrangler@4.128.0)
+        version: 1.20.6(next@15.1.4(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@10.2.2)(wrangler@4.128.0)
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
@@ -179,10 +182,10 @@ importers:
         version: 10.5.4(postcss@8.5.26)
       eslint:
         specifier: ^9.16.0
-        version: 9.39.5(jiti@1.21.7)
+        version: 9.39.5(jiti@1.21.7)(supports-color@10.2.2)
       eslint-config-next:
         specifier: ^15.1.0
-        version: 15.5.25(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)
+        version: 15.5.25(eslint@9.39.5(jiti@1.21.7)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.9.3)
       postcss:
         specifier: ^8.4.49
         version: 8.5.26
@@ -191,7 +194,7 @@ importers:
         version: 3.9.6
       tailwindcss:
         specifier: ^3.4.16
-        version: 3.4.19(yaml@2.9.0)
+        version: 3.4.19(tsx@4.23.13)(yaml@2.9.0)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

@@ -41,13 +41,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
-  const comments = article.id ? await commentsService.getCommentsByArticle(article.id) : [];
+  // Concurrently fetch secondary data after primary article is available
+  const [comments, categoryFeed, relatedFeed] = await Promise.all([
+    article.id ? commentsService.getCommentsByArticle(article.id).catch(() => []) : Promise.resolve([]),
+    feedService.getFeedByCategory(article.category, 1, 6).catch(() => ({ items: [] })),
+    feedService.getPublicFeed(1, 4).catch(() => ({ items: [] })),
+  ]);
 
-  // Fetch trending stories in this specific category for the sidebar
-  const categoryFeed = await feedService.getFeedByCategory(article.category, 1, 6);
   const trendingInCategory = categoryFeed.items.filter((a) => a.slug !== slug).slice(0, 5);
-
-  const relatedFeed = await feedService.getPublicFeed(1, 4);
   const relatedArticles = relatedFeed.items.filter((a) => a.slug !== slug).slice(0, 3);
 
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://editiontv.com";

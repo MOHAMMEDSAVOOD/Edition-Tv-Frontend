@@ -147,6 +147,18 @@ export const feedRepository = {
     return unwrapArray(res);
   },
 
+  async getAuthorFeed(
+    authorId: string,
+    page = 0,
+    size = 10
+  ): Promise<FeedItemResponseDto[]> {
+    const res = await serverFetch<any>(
+      `/api/v1/feed/authors/${encodeURIComponent(authorId)}?page=${page}&size=${size}`,
+      { revalidate: REVALIDATE, tags: ["feed", `author-${authorId}`] }
+    );
+    return unwrapArray(res);
+  },
+
   async getActiveBreakingNews(): Promise<BreakingNewsTickerResponseDto[]> {
     const res = await serverFetch<any>("/api/v1/news/feed/breaking", {
       revalidate: REVALIDATE,
