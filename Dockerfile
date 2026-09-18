@@ -16,7 +16,7 @@ WORKDIR /app
 # a declaration file for module 'react'".
 COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/public-web/package.json ./apps/public-web/
-COPY apps/cms-studio/package.json ./apps/cms-studio/
+COPY apps/partner-portal/package.json ./apps/partner-portal/
 COPY apps/admin/package.json ./apps/admin/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/api/package.json ./packages/api/
@@ -53,24 +53,24 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID \
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 
-RUN pnpm run build:cms
+RUN pnpm run build:partner
 # public-web only emits .next/standalone when asked; its Cloudflare Worker build
 # uses the same next.config.ts and must not (see apps/public-web/next.config.ts).
 RUN BUILD_STANDALONE=true pnpm run build:public-web
 RUN pnpm run build:admin
 
 # CMS Studio Production Runner (port 5001)
-FROM base AS cms-runner
+FROM base AS partner-runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=5001
 
-RUN addgroup -g 10003 -S cmsgroup && adduser -u 10003 -S cmsuser -G cmsgroup
+RUN addgroup -g 10003 -S partnergroup && adduser -u 10003 -S partneruser -G partnergroup
 
-COPY --from=builder /app/apps/cms-studio/public ./apps/cms-studio/public
-COPY --from=builder --chown=cmsuser:cmsgroup /app/apps/cms-studio/.next/standalone ./
-COPY --from=builder --chown=cmsuser:cmsgroup /app/apps/cms-studio/.next/static ./apps/cms-studio/.next/static
+COPY --from=builder /app/apps/partner-portal/public ./apps/partner-portal/public
+COPY --from=builder --chown=partneruser:partnergroup /app/apps/partner-portal/.next/standalone ./
+COPY --from=builder --chown=partneruser:partnergroup /app/apps/partner-portal/.next/static ./apps/partner-portal/.next/static
 
 USER 10003:10003
 
@@ -79,7 +79,7 @@ EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5001/ || exit 1
 
-CMD ["node", "apps/cms-studio/server.js"]
+CMD ["node", "apps/partner-portal/server.js"]
 
 # Admin Studio Production Runner (port 5006)
 FROM base AS admin-runner

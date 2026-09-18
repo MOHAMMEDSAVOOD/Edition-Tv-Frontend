@@ -1,0 +1,17 @@
+{
+  "name": "edition-tv-partner",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2024-12-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Backend host. Kept here (committed) rather than only in .env.local, which is
+  // gitignored — a deploy from a machine without it used to fall through to the
+  // retired api.editiontv.com. Never point these at api.editiontv.com.
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://api1.editiontv.com/api/v1",
+    "NEXT_PUBLIC_API_BASE_URL": "https://api1.editiontv.com/api/v1"
+  }
+}
