@@ -1,11 +1,20 @@
 FROM node:22-alpine AS base
 ENV CI=true
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Pinned to the pnpm that wrote pnpm-lock.yaml (lockfileVersion 9.0), which is
+# also what developers run. pnpm@latest is now v12, which reads its settings
+# from pnpm-workspace.yaml instead of .npmrc: it silently drops
+# shamefully-hoist, and the workspace packages then fail to find @types/react.
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Install dependencies using pnpm
 FROM base AS deps
 WORKDIR /app
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+# .npmrc carries shamefully-hoist=true, which is what puts @types/react in the
+# root node_modules. The workspace packages (packages/auth, packages/ui) rely on
+# finding it there -- they declare react only as a peer -- so leaving the file
+# out builds a tree that type-checks locally and fails here with "Could not find
+# a declaration file for module 'react'".
+COPY .npmrc pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/public-web/package.json ./apps/public-web/
 COPY apps/cms-studio/package.json ./apps/cms-studio/
 COPY apps/admin/package.json ./apps/admin/
@@ -25,8 +34,29 @@ COPY --from=deps /app ./
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV CI=true
+
+# NEXT_PUBLIC_* values are inlined into the browser bundles by `next build`, so
+# they must be supplied at image build time (--build-arg), not at runtime.
+# Terraform exposes them from module.firebase_auth.web_config; see .env.example.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_FIREBASE_API_KEY
+ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ARG NEXT_PUBLIC_FIREBASE_APP_ID
+ARG NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL \
+    NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY \
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID \
+    NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID \
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=$NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+
 RUN pnpm run build:cms
-RUN pnpm run build:public-web
+# public-web only emits .next/standalone when asked; its Cloudflare Worker build
+# uses the same next.config.ts and must not (see apps/public-web/next.config.ts).
+RUN BUILD_STANDALONE=true pnpm run build:public-web
 RUN pnpm run build:admin
 
 # CMS Studio Production Runner (port 5001)

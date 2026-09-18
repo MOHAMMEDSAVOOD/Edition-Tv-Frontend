@@ -7,6 +7,9 @@
     ".": "./index.ts"
   },
   "dependencies": {
-    "@edition/api": "workspace:*"
+    "firebase": "^12.19.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

@@ -1,22 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { LogOut } from "lucide-react";
+import { displayNameOf, useAuth } from "@edition/auth";
 import { authService } from "@/services/authService";
 import { AdminAccountSwitcher } from "@/components/auth/AdminAccountSwitcher";
 
 export function AdminTopNav() {
-  const [username, setUsername] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("edition_username");
-      if (stored) setUsername(stored);
-    }
-  }, []);
+  const { user, profile } = useAuth();
+  const username = displayNameOf(profile, user?.displayName || user?.email || "");
 
   const handleLogout = () => {
-    authService.logout();
+    void authService.logout();
   };
 
   return (
@@ -31,9 +25,9 @@ export function AdminTopNav() {
         </div>
       </div>
 
-      {/* Right: Account Switcher & Logout */}
+      {/* Right: Actions, Account Menu & Logout */}
       <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-        {/* Account Switcher */}
+        {/* Account Menu */}
         <AdminAccountSwitcher />
 
         {/* Logout Button */}

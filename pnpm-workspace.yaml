@@ -2,7 +2,12 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
+  # pnpm refuses to install while a dependency's build script is neither
+  # approved nor declined (ERR_PNPM_IGNORED_BUILDS), so every one of them has to
+  # be named here. The two Firebase brought in are listed for that reason.
+  "@firebase/util": true
   esbuild: true
+  protobufjs: true
   sharp: true
   unrs-resolver: true
   workerd: true

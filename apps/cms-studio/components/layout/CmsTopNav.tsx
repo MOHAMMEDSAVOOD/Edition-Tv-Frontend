@@ -1,20 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { Search, Bell, LogOut, Plus } from "lucide-react";
+import { displayNameOf, useAuth } from "@edition/auth";
 import { authService } from "@/services/authService";
 import { CmsAccountSwitcher } from "@/components/auth/CmsAccountSwitcher";
 
 export function CmsTopNav() {
-  const [username, setUsername] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("edition_username");
-      if (stored) setUsername(stored);
-    }
-  }, []);
+  const { user, profile } = useAuth();
+  const username = displayNameOf(profile, user?.displayName || user?.email || "");
 
   return (
     <header className="h-16 bg-white border-b border-slate-200/80 px-3 sm:px-6 flex items-center justify-between shrink-0 z-20 font-sans shadow-2xs">
@@ -23,7 +18,7 @@ export function CmsTopNav() {
         <div className="truncate">
           <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 block leading-tight">Welcome 👋</span>
           <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight block capitalize truncate font-heading">
-            {username === "editor" ? "Lead Editor" : username}
+            {username || "Editorial Staff"}
           </span>
         </div>
 
@@ -63,7 +58,7 @@ export function CmsTopNav() {
 
         {/* Logout Button */}
         <button
-          onClick={() => authService.logout()}
+          onClick={() => void authService.logout()}
           title="Logout of CMS Studio"
           className="flex items-center gap-1.5 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 font-bold text-xs p-2 sm:px-3 sm:py-1.5 rounded-full transition"
         >

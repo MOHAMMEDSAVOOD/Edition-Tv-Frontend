@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@edition/auth";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -16,12 +17,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="max-w-full overflow-x-hidden" suppressHydrationWarning>
       <body className="min-h-screen flex flex-col bg-background text-foreground pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0 w-full max-w-full overflow-x-hidden" suppressHydrationWarning>
+        <AuthProvider>
           <BreakingTicker />
           <SiteHeader />
           <main className="flex-1 w-full max-w-full overflow-x-hidden">{children}</main>
           <SiteFooter />
           <BottomNav />
           <KeyboardShortcutsModal />
+        </AuthProvider>
       </body>
     </html>
   );

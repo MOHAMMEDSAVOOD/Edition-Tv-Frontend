@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@edition/auth";
 import {
   FolderKanban,
   Save,
@@ -126,10 +127,9 @@ export function JournalistWorkspaceClient() {
   const [submittingAction, setSubmittingAction] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const getAuthToken = () => {
-    if (typeof window !== "undefined") return localStorage.getItem("edition_access_token");
-    return null;
-  };
+  // apiClient attaches the Firebase ID token itself; this is only a signed-in gate.
+  const { user } = useAuth();
+  const isSignedIn = !!user;
 
   // 1. Fetch Taxonomy & Users
   useEffect(() => {
@@ -137,16 +137,16 @@ export function JournalistWorkspaceClient() {
     apiClient.get<{ id: string; name: string; slug: string }[]>('/cms/desks').then((d) => setApiDesks(Array.isArray(d) ? d : [])).catch(() => {});
     apiClient.get<{ id: string; username: string; fullName: string }[]>('/users').then((d) => setApiUsers(Array.isArray(d) ? d : [])).catch(() => {});
 
-    const token = typeof window !== "undefined" ? localStorage.getItem("edition_access_token") : null;
-    if (token) {
+    if (isSignedIn) {
       apiClient.get<{ id?: string; username?: string }>('/users/me')
-        .then((user) => {
-          if (user?.id) setCurrentUserId(user.id);
-          if (user && user.username) setCurrentUser(user as UserItem);
+        .then((me) => {
+          if (me?.id) setCurrentUserId(me.id);
+          if (me && me.username) setCurrentUser(me as UserItem);
         })
         .catch(() => {});
     }
-  }, []);
+    // Firebase resolves the session asynchronously, so this re-runs once sign-in settles.
+  }, [isSignedIn]);
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -222,8 +222,7 @@ export function JournalistWorkspaceClient() {
 
   // 4. Create New Story via API
   const handleCreateNewStory = async () => {
-    const token = getAuthToken();
-    if (!token) return alert("Login required to create story drafts.");
+    if (!isSignedIn) return alert("Login required to create story drafts.");
     setSubmittingAction(true);
     try {
       const created = await apiClient.post<Article>('/articles', {
@@ -244,8 +243,7 @@ export function JournalistWorkspaceClient() {
   // 5. Save Story via API
   const handleSave = async () => {
     if (!selectedArticle) return;
-    const token = getAuthToken();
-    if (!token) return alert("Login required to save story changes.");
+    if (!isSignedIn) return alert("Login required to save story changes.");
 
     setSaveStatus("saving");
     try {
@@ -286,8 +284,7 @@ export function JournalistWorkspaceClient() {
   // 6. Workflow Status Transition via API
   const handleStatusTransition = async (newStatus: string) => {
     if (!selectedArticle) return;
-    const token = getAuthToken();
-    if (!token) return alert("Login required to transition workflow status.");
+    if (!isSignedIn) return alert("Login required to transition workflow status.");
 
     try {
       const updated = await apiClient.post<Article>(
@@ -304,8 +301,7 @@ export function JournalistWorkspaceClient() {
   // 7. Acquire Concurrent Lock via API
   const handleAcquireLock = async () => {
     if (!selectedArticle) return;
-    const token = getAuthToken();
-    if (!token) return alert("Login required.");
+    if (!isSignedIn) return alert("Login required.");
     try {
       const lockData = await apiClient.post<LockInfo>(`/admin/editorial/articles/${selectedArticle.id}/lock`, {});
       setActiveLock(lockData);
@@ -341,8 +337,7 @@ export function JournalistWorkspaceClient() {
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedArticle || !newNoteText.trim()) return;
-    const token = getAuthToken();
-    if (!token) return alert("Login required.");
+    if (!isSignedIn) return alert("Login required.");
 
     try {
       await apiClient.post<NoteItem>(`/admin/editorial/comments`, {
