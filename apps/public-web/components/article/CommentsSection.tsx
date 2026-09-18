@@ -46,9 +46,10 @@ export function CommentsSection({ articleId, initialComments }: CommentsSectionP
         setComments((prev) => [optimistic, ...prev]);
       }
       setNewComment("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to post comment:", err);
-      if (err?.status === 401 || err?.response?.status === 401) {
+      const error = err as { status?: number; response?: { status?: number } };
+      if (error?.status === 401 || error?.response?.status === 401) {
         setError("You must be signed in to post a comment.");
       } else {
         setError("Failed to post comment. Please try again.");

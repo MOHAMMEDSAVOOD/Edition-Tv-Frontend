@@ -59,14 +59,14 @@ function getServerApiBaseUrl(): string {
     process.env.INTERNAL_API_URL ||
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://api.editiontv.com/api/v1"
+    ""
   );
 }
 
 const CLIENT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "https://api.editiontv.com/api/v1";
+  "";
 
 
 // ---------------------------------------------------------------------------
@@ -143,7 +143,7 @@ export async function serverFetch<T>(
     }
 
     return (await response.json()) as T;
-  } catch (error) {
+  } catch {
     // Network failures (backend down, DNS failure, etc.) — never crash the page, fall back to default UI
     if (process.env.NODE_ENV !== "production") {
       console.warn(`[serverFetch] Service unreachable — ${url}`);
