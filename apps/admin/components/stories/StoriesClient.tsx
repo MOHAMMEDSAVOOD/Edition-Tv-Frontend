@@ -21,6 +21,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiClient } from "@/lib/api-client";
+import { SocialShareBadges } from "@/components/social/SocialShareBadges";
+import {
+  socialService,
+  type ArticleShareSummary,
+} from "@/services/socialService";
 
 interface ArticleStats {
   total: number;
@@ -81,6 +86,10 @@ const STATUS_COLORS: Record<string, string> = {
 export function StoriesClient() {
   const router = useRouter();
   const [stories, setStories] = useState<StoryItem[]>([]);
+  /** Social state per article id, for the "Social" column; absent id means never shared. */
+  const [shareSummaries, setShareSummaries] = useState<
+    Record<string, ArticleShareSummary>
+  >({});
   const [stats, setStats] = useState<ArticleStats | null>(null);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,6 +166,31 @@ export function StoriesClient() {
   useEffect(() => {
     fetchStories();
   }, [fetchStories]);
+
+  // Social state for the rows on screen, in one call once the page has loaded. Kept separate from
+  // fetchStories so a social-media module that is down costs the list nothing but its badges.
+  useEffect(() => {
+    if (stories.length === 0) {
+      setShareSummaries({});
+      return;
+    }
+    let cancelled = false;
+    socialService
+      .getShareSummaries(stories.map((s) => s.id))
+      .then((summaries) => {
+        if (cancelled) return;
+        setShareSummaries(
+          Object.fromEntries(summaries.map((s) => [s.articleId, s])),
+        );
+      })
+      .catch(() => {
+        // Badges are an adornment; failing to load them must not disturb the list.
+        if (!cancelled) setShareSummaries({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [stories]);
 
   // Authorization headers are automatically handled by apiClient
 
@@ -401,6 +435,7 @@ export function StoriesClient() {
                 <tr className="border-b border-slate-200 bg-slate-50/80 font-mono font-bold text-slate-500 uppercase tracking-wider text-[11px]">
                   <th className="text-left px-4 py-3.5">Headline</th>
                   <th className="text-left px-4 py-3.5">Status</th>
+                  <th className="text-left px-4 py-3.5">Social</th>
                   <th className="text-left px-4 py-3.5">Category</th>
                   <th className="text-left px-4 py-3.5">Author</th>
                   <th className="text-left px-4 py-3.5">Updated</th>
@@ -427,6 +462,9 @@ export function StoriesClient() {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono border ${STATUS_COLORS[story.status] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
                         {story.status.replace(/_/g, " ")}
                       </span>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <SocialShareBadges summary={shareSummaries[story.id]} />
                     </td>
                     <td className="px-4 py-3.5 text-slate-600 text-xs font-semibold">
                       {story.category || <span className="text-slate-400">—</span>}
