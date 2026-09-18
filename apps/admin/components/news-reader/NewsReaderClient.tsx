@@ -6,7 +6,7 @@ import { ArticleList, WireItem } from "./ArticleList";
 import { ArticleReader } from "./ArticleReader";
 import { DirectPublishModal } from "./DirectPublishModal";
 import { PublicationDetailsModal } from "./PublicationDetailsModal";
-import { InstagramPublishModal } from "../social/InstagramPublishModal";
+import { SocialPublishModal } from "../social/SocialPublishModal";
 
 import { apiClient } from "../../lib/api-client";
 
@@ -328,7 +328,7 @@ export function NewsReaderClient() {
 
       {/* 4b. Instagram composer, offered once the article is live on the web */}
       {instagramTarget && (
-        <InstagramPublishModal
+        <SocialPublishModal
           articleId={instagramTarget.articleId}
           headline={instagramTarget.headline}
           onClose={() => setInstagramTarget(null)}

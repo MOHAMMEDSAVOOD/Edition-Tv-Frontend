@@ -1,18 +1,26 @@
-import { POSTER_HEIGHT, POSTER_WIDTH } from "./ArticlePosterCanvas";
+import {
+  DEFAULT_POSTER_FORMAT,
+  PosterFormatId,
+  posterFormat,
+} from "./posterFormats";
 
 /**
  * Rasterises a rendered poster element to a PNG.
  *
  * <p>The element is normally displayed shrunk by a CSS transform, so the clone html2canvas draws
- * has that transform stripped: the export is always the full 1024x1536, never the preview size.
+ * has that transform stripped: the export is always the format's full size, never the preview size.
  *
  * <p>`allowTaint` is deliberately off. With it on, a cross-origin image still paints but the canvas
  * becomes unreadable and the export throws at the very last step — after the user has waited. Off,
  * html2canvas skips what it cannot read and the export succeeds, so callers should hand in a data
  * URI for any image not served by this origin.
  */
-export async function capturePosterPng(element: HTMLElement): Promise<Blob> {
+export async function capturePosterPng(
+  element: HTMLElement,
+  format: PosterFormatId = DEFAULT_POSTER_FORMAT,
+): Promise<Blob> {
   const html2canvas = (await import("html2canvas")).default;
+  const { width: POSTER_WIDTH, height: POSTER_HEIGHT } = posterFormat(format);
 
   const canvas = await html2canvas(element, {
     useCORS: true,
@@ -52,8 +60,11 @@ export async function capturePosterPng(element: HTMLElement): Promise<Blob> {
 }
 
 /** The same capture, as base64 without the data: prefix — the form the API stores. */
-export async function capturePosterBase64(element: HTMLElement): Promise<string> {
-  const blob = await capturePosterPng(element);
+export async function capturePosterBase64(
+  element: HTMLElement,
+  format: PosterFormatId = DEFAULT_POSTER_FORMAT,
+): Promise<string> {
+  const blob = await capturePosterPng(element, format);
   const buffer = await blob.arrayBuffer();
   let binary = "";
   const bytes = new Uint8Array(buffer);

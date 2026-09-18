@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { StoryBlockComposer, StoryBlock } from "@/components/workspace/StoryBlockComposer";
 import { MediaLibraryModal, MediaAsset } from "@/components/workspace/MediaLibraryModal";
 import { FactCheckPanel } from "@/components/workspace/FactCheckPanel";
-import { InstagramPublishModal } from "@/components/social/InstagramPublishModal";
+import { SocialPublishModal } from "@/components/social/SocialPublishModal";
 
 import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@edition/auth";
@@ -589,7 +589,7 @@ export function StoryEditorClient({ storyId }: { storyId: string }) {
 
       {/* Instagram composer: offered right after publishing, or on demand once live */}
       {isInstagramModalOpen && (
-        <InstagramPublishModal
+        <SocialPublishModal
           articleId={storyId}
           headline={story.headline}
           onClose={() => setIsInstagramModalOpen(false)}

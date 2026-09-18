@@ -143,7 +143,7 @@ export function ArticleReader({
 
           {item.state === "CONVERTED_TO_STORY" ? (
             <a
-              href={process.env.NEXT_PUBLIC_CMS_STUDIO_URL ? `${process.env.NEXT_PUBLIC_CMS_STUDIO_URL}/stories` : "https://cms.editiontv.com/stories"}
+              href={process.env.NEXT_PUBLIC_CMS_STUDIO_URL ? `${process.env.NEXT_PUBLIC_CMS_STUDIO_URL}/stories` : "https://partner.editiontv.com/stories"}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl shadow-2xs transition font-sans"

@@ -25,7 +25,7 @@ export type { User } from "firebase/auth";
 const DEFAULT_API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://api.editiontv.com/api/v1";
+  "https://api1.editiontv.com/api/v1";
 
 /** Public API base URL as seen from the browser (…/api/v1). */
 export function getPublicApiBaseUrl(): string {

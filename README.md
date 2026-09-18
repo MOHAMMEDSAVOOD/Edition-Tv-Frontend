@@ -68,5 +68,5 @@ Copy `.env.example` to `apps/<app>/.env.local` and fill in the `NEXT_PUBLIC_FIRE
 - **Deployment**: Cloudflare Workers/Pages (via OpenNext)
 - **Language**: TypeScript 5
 - **Styling**: Tailwind CSS 3.4 + shadcn/ui
-- **Backend**: Spring Boot 3 @ `https://api.editiontv.com/api/v1`
+- **Backend**: Spring Boot 3 @ `https://api1.editiontv.com/api/v1`
 
