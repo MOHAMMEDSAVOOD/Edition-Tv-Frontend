@@ -104,6 +104,15 @@ export async function serverFetch<T>(
   const baseUrl = getServerApiBaseUrl();
   const url = formatUrl(baseUrl, endpoint);
 
+  if (!url.startsWith("http")) {
+    // If baseUrl was empty, url will be relative. Next.js fetches to relative URLs
+    // during static generation can cause severe deadlocks (hanging for 60s).
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`[serverFetch] Skipped relative fetch to prevent deadlock: ${url}`);
+    }
+    return null;
+  }
+
   const nextCache: RequestInit["next"] = {};
   if (revalidate !== undefined) {
     nextCache.revalidate = revalidate;
@@ -181,6 +190,10 @@ class ApiClient {
       if (token) headers["Authorization"] = `Bearer ${token}`;
       return headers;
     };
+
+    if (!url.startsWith("http")) {
+      throw new Error(`API URL is not configured. Attempted to fetch relative path: ${url}`);
+    }
 
     const doFetch = async (token: string | null): Promise<Response> => {
       try {
