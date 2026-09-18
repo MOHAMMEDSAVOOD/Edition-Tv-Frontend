@@ -146,6 +146,8 @@ export function InstagramPublishModal({
     imageUrl.trim().length > 0 &&
     captionOverBy <= 0;
 
+
+
   const handlePublish = async (force: boolean) => {
     setIsSubmitting(true);
     setError(null);
@@ -471,7 +473,6 @@ export function InstagramPublishModal({
           )}
         </div>
 
-        {/* Actions */}
         <div className="p-4 border-t border-slate-200 flex items-center justify-end gap-3 sticky bottom-0 bg-white/95 backdrop-blur">
           {progress && (
             <span className="text-[11px] text-slate-500 font-mono mr-auto">{progress}</span>
@@ -497,22 +498,26 @@ export function InstagramPublishModal({
           )}
 
           {!published && status?.enabled && !needsConfirmation && (
-            <button
-              type="button"
-              onClick={() => handlePublish(false)}
-              disabled={!canSubmit}
-              className="px-5 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center gap-2 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Posting...
-                </>
-              ) : (
-                <>
-                  <Instagram className="h-4 w-4" /> Publish to Instagram
-                </>
-              )}
-            </button>
+            <>
+
+
+              <button
+                type="button"
+                onClick={() => handlePublish(false)}
+                disabled={!canSubmit}
+                className="px-5 py-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white text-xs font-bold rounded-xl shadow-2xs transition flex items-center gap-2 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Posting...
+                  </>
+                ) : (
+                  <>
+                    <Instagram className="h-4 w-4" /> Publish to Instagram
+                  </>
+                )}
+              </button>
+            </>
           )}
         </div>
       </div>

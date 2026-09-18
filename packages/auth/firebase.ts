@@ -39,9 +39,9 @@ export function getFirebaseApp(): FirebaseApp {
   }
   const config = getFirebaseConfig();
   if (!config.apiKey || !config.authDomain || !config.projectId || !config.appId) {
-    throw new Error(
-      "@edition/auth: missing Firebase configuration. Set NEXT_PUBLIC_FIREBASE_API_KEY, " +
-        "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, NEXT_PUBLIC_FIREBASE_PROJECT_ID and NEXT_PUBLIC_FIREBASE_APP_ID."
+    console.warn(
+      "@edition/auth: missing Firebase configuration. Please ensure NEXT_PUBLIC_FIREBASE_API_KEY, " +
+        "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, NEXT_PUBLIC_FIREBASE_PROJECT_ID and NEXT_PUBLIC_FIREBASE_APP_ID are set."
     );
   }
   app = initializeApp(config);

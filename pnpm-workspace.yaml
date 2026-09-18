@@ -7,6 +7,7 @@ allowBuilds:
   # be named here. The two Firebase brought in are listed for that reason.
   "@firebase/util": true
   esbuild: true
+  onnxruntime-node: true
   protobufjs: true
   sharp: true
   unrs-resolver: true
