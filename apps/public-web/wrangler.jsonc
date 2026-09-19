@@ -12,11 +12,6 @@
   // retired api.editiontv.com. Never point these at api.editiontv.com.
   "vars": {
     "NEXT_PUBLIC_API_URL": "https://api1.editiontv.com/api/v1",
-    "NEXT_PUBLIC_API_BASE_URL": "https://api1.editiontv.com/api/v1",
-    "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyBvBe8SCWbfuV77i7hKTteMAzYcxgNkzDU",
-    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "edition-tv.firebaseapp.com",
-    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "edition-tv",
-    "NEXT_PUBLIC_FIREBASE_APP_ID": "1:156138386210:web:0858e58d8b806f8caf6b7b",
-    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "1234567890"
+    "NEXT_PUBLIC_API_BASE_URL": "https://api1.editiontv.com/api/v1"
   }
 }
