@@ -129,6 +129,19 @@ export function AudioPlayerBar({
         const available = window.speechSynthesis.getVoices();
         if (available && available.length > 0) {
           const preferred =
+            // 1. Try to find an Indian English female voice
+            available.find(
+              (v) =>
+                v.lang.startsWith("en-IN") &&
+                (v.name.toLowerCase().includes("female") ||
+                  v.name.includes("Veena") ||
+                  v.name.includes("Lekha") ||
+                  v.name.includes("Google") || // Google's default en-IN is usually female
+                  v.name.includes("Natural"))
+            ) ||
+            // 2. Fallback to any Indian English voice
+            available.find((v) => v.lang.startsWith("en-IN")) ||
+            // 3. Fallback to any natural English voice
             available.find(
               (v) =>
                 v.lang.startsWith("en") &&
@@ -138,6 +151,7 @@ export function AudioPlayerBar({
                   v.name.includes("Daniel") ||
                   v.name.includes("Siri"))
             ) ||
+            // 4. Ultimate fallback to standard en-US
             available.find((v) => v.lang.startsWith("en-US")) ||
             available.find((v) => v.lang.startsWith("en")) ||
             available[0];
