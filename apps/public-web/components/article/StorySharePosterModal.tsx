@@ -342,6 +342,11 @@ export function StorySharePosterModal({
       // Use 2x supersampling scale for ultra-crisp studio quality (2048x3072 / 2160x3840)
       const exportScale = 2;
 
+      // Await all fonts to ensure typography is fully loaded before capturing
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
       return await html2canvasFn(element, {
         useCORS: true,
         allowTaint: false,
@@ -1232,7 +1237,7 @@ export function StorySharePosterModal({
                           padding: 0,
                           display: "block",
                           wordBreak: "break-word",
-                          filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.98))",
+                          textShadow: "0 4px 16px rgba(0,0,0,0.98)",
                         }}
                       >
                         {headlineText}
@@ -1250,7 +1255,7 @@ export function StorySharePosterModal({
                             padding: 0,
                             display: "block",
                             wordBreak: "break-word",
-                            filter: "drop-shadow(0 3px 12px rgba(0,0,0,0.98))",
+                            textShadow: "0 3px 12px rgba(0,0,0,0.98)",
                           }}
                         >
                           {descriptionText}
